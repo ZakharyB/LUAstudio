@@ -1,5 +1,5 @@
 using System.Windows;
-using LUAstudio.IDE.Threading;
+using LUAstudio.Core.Threading;
 
 namespace LUAstudio;
 
@@ -16,5 +16,17 @@ public sealed class WpfMainThread : IMainThread
         }
 
         dispatcher.Invoke(action);
+    }
+
+    public T Invoke<T>(Func<T> func)
+    {
+        ArgumentNullException.ThrowIfNull(func);
+        var dispatcher = Application.Current?.Dispatcher;
+        if (dispatcher is null || dispatcher.CheckAccess())
+        {
+            return func();
+        }
+
+        return dispatcher.Invoke(func);
     }
 }

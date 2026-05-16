@@ -1,34 +1,28 @@
 using System.IO;
-using AvalonDock.Layout.Serialization;
-using AvalonDock;
 
 namespace LUAstudio;
 
+/// <summary>Legacy AvalonDock layout file helper. Layout now uses a fixed Grid; this only cleans up old saves.</summary>
 public sealed class DockLayoutStore
 {
-    private readonly string _path;
+    private static string LayoutPath =>
+        Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "LuaStudio",
+            "dock-layout.xml");
 
-    public DockLayoutStore()
+    public static void DeleteLegacyLayoutFile()
     {
-        var root = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "LuaStudio");
-        Directory.CreateDirectory(root);
-        _path = Path.Combine(root, "dock-layout.xml");
-    }
-
-    public void Save(DockingManager manager)
-    {
-        var serializer = new XmlLayoutSerializer(manager);
-        serializer.Serialize(_path);
-    }
-
-    public void TryLoad(DockingManager manager)
-    {
-        if (!File.Exists(_path))
+        try
         {
-            return;
+            if (File.Exists(LayoutPath))
+            {
+                File.Delete(LayoutPath);
+            }
         }
-
-        var serializer = new XmlLayoutSerializer(manager);
-        serializer.Deserialize(_path);
+        catch
+        {
+            // Non-fatal.
+        }
     }
 }

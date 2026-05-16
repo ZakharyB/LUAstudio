@@ -27,4 +27,14 @@ public sealed class WpfFileDialogService : IFileDialogService
 
         return dlg.ShowDialog() == true ? dlg.FileName : null;
     }
+
+    public string? ShowOpenFolderDialog()
+    {
+        var dlg = new OpenFolderDialog
+        {
+            Multiselect = false,
+        };
+
+        return dlg.ShowDialog() == true ? dlg.FolderName : null;
+    }
 }

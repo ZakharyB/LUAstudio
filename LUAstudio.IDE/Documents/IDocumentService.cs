@@ -19,4 +19,6 @@ public interface IDocumentService : INotifyPropertyChanged
     Task SaveAsync(TextDocument document, CancellationToken cancellationToken = default);
 
     Task SaveAsAsync(TextDocument document, string path, CancellationToken cancellationToken = default);
+
+    Task ReloadFromDiskAsync(TextDocument document, CancellationToken cancellationToken = default);
 }

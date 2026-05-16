@@ -1,18 +1,26 @@
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Media;
+using ICSharpCode.AvalonEdit.Editing;
 using LUAstudio.IDE.Documents;
+using LUAstudio.IDE.ViewModels;
 
 namespace LUAstudio;
 
 public partial class DocumentEditorView : UserControl
 {
     private TextDocument? _boundDocument;
+    private TextDocument? _pendingDocument;
     private bool _suppressVmPush;
+    private bool _caretHooked;
 
     public DocumentEditorView()
     {
         InitializeComponent();
-        Editor.TextChanged += (_, _) => PushTextToDocument();
+        Loaded += OnEditorLoaded;
+        Unloaded += OnEditorUnloaded;
     }
 
     public static readonly DependencyProperty DocumentProperty =
@@ -31,6 +39,33 @@ public partial class DocumentEditorView : UserControl
         view.RebindDocument(e.OldValue as TextDocument, e.NewValue as TextDocument);
     }
 
+    private void OnEditorLoaded(object sender, RoutedEventArgs e)
+    {
+        ApplyEditorChrome();
+        EnsureCaretHook();
+        if (_pendingDocument is not null)
+        {
+            ApplyDocumentToEditor(_pendingDocument);
+            _pendingDocument = null;
+        }
+        else if (_boundDocument is not null)
+        {
+            ApplyDocumentToEditor(_boundDocument);
+        }
+
+        Editor.Focus();
+        ReportCaretPositionSafe();
+    }
+
+    private void OnEditorUnloaded(object sender, RoutedEventArgs e)
+    {
+        if (_caretHooked && Editor?.TextArea?.Caret is not null)
+        {
+            Editor.TextArea.Caret.PositionChanged -= OnCaretPositionChanged;
+            _caretHooked = false;
+        }
+    }
+
     private void RebindDocument(TextDocument? oldDoc, TextDocument? newDoc)
     {
         if (oldDoc is not null)
@@ -39,29 +74,73 @@ public partial class DocumentEditorView : UserControl
         }
 
         _boundDocument = newDoc;
+        _pendingDocument = newDoc;
 
-        if (newDoc is null)
+        if (!IsLoaded)
         {
-            Editor.Text = string.Empty;
+            return;
+        }
+
+        ApplyDocumentToEditor(newDoc);
+        _pendingDocument = null;
+    }
+
+    private void ApplyDocumentToEditor(TextDocument? doc)
+    {
+        if (!IsEditorReady)
+        {
+            return;
+        }
+
+        if (doc is null)
+        {
+            _suppressVmPush = true;
+            try
+            {
+                Editor.Document = new ICSharpCode.AvalonEdit.Document.TextDocument(string.Empty);
+            }
+            finally
+            {
+                _suppressVmPush = false;
+            }
+
             return;
         }
 
         _suppressVmPush = true;
         try
         {
-            Editor.Text = newDoc.Content;
+            Editor.Document = new ICSharpCode.AvalonEdit.Document.TextDocument(doc.Content ?? string.Empty);
         }
         finally
         {
             _suppressVmPush = false;
         }
 
-        newDoc.PropertyChanged += OnDocumentPropertyChanged;
+        doc.PropertyChanged -= OnDocumentPropertyChanged;
+        doc.PropertyChanged += OnDocumentPropertyChanged;
+
+        try
+        {
+            Editor.TextArea.Caret.BringCaretToView();
+        }
+        catch
+        {
+            // Layout may not be ready yet on first open.
+        }
+
+        ReportCaretPositionSafe();
     }
 
-    private void OnDocumentPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    private void OnDocumentPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName != nameof(TextDocument.Content) || _boundDocument is null)
+        if (e.PropertyName != nameof(TextDocument.Content) || _boundDocument is null || !IsEditorReady)
+        {
+            return;
+        }
+
+        var text = _boundDocument.Content ?? string.Empty;
+        if (string.Equals(Editor.Document.Text, text, StringComparison.Ordinal))
         {
             return;
         }
@@ -69,10 +148,7 @@ public partial class DocumentEditorView : UserControl
         _suppressVmPush = true;
         try
         {
-            if (!string.Equals(Editor.Text, _boundDocument.Content, StringComparison.Ordinal))
-            {
-                Editor.Text = _boundDocument.Content;
-            }
+            Editor.Document.Text = text;
         }
         finally
         {
@@ -82,11 +158,79 @@ public partial class DocumentEditorView : UserControl
 
     private void PushTextToDocument()
     {
-        if (_suppressVmPush || _boundDocument is null)
+        if (_suppressVmPush || _boundDocument is null || !IsEditorReady)
         {
             return;
         }
 
-        _boundDocument.Content = Editor.Text;
+        _boundDocument.Content = Editor.Document.Text;
+    }
+
+    private void EnsureCaretHook()
+    {
+        if (_caretHooked || !IsEditorReady)
+        {
+            return;
+        }
+
+        Editor.TextChanged += (_, _) => PushTextToDocument();
+        Editor.TextArea.Caret.PositionChanged += OnCaretPositionChanged;
+        _caretHooked = true;
+    }
+
+    private void OnCaretPositionChanged(object? sender, EventArgs e)
+    {
+        ReportCaretPositionSafe();
+    }
+
+    private void ReportCaretPositionSafe()
+    {
+        if (!IsEditorReady || Window.GetWindow(this)?.DataContext is not MainViewModel main)
+        {
+            return;
+        }
+
+        var line = Editor.TextArea.Caret.Line + 1;
+        var column = Editor.TextArea.Caret.Column + 1;
+        main.UpdateCaretPosition(line, column);
+    }
+
+    private bool IsEditorReady => Editor is not null && Editor.TextArea is not null;
+
+    private void ApplyEditorChrome()
+    {
+        Editor.Background = new SolidColorBrush(Color.FromRgb(0x0E, 0x0F, 0x11));
+        Editor.Foreground = new SolidColorBrush(Color.FromRgb(0xE6, 0xE7, 0xEA));
+
+        foreach (var margin in Editor.TextArea.LeftMargins)
+        {
+            if (margin is LineNumberMargin lineNumbers)
+            {
+                lineNumbers.SetValue(TextBlock.ForegroundProperty, new SolidColorBrush(Color.FromRgb(0x9A, 0x9D, 0xA5)));
+            }
+        }
+
+        Editor.TextArea.TextView.LinkTextForegroundBrush = new SolidColorBrush(Color.FromRgb(0x35, 0x74, 0xF0));
+        HideEditorScrollBars(Editor);
+    }
+
+    private static void HideEditorScrollBars(DependencyObject root)
+    {
+        var hiddenStyle = (Style?)Application.Current.TryFindResource("HiddenScrollBar");
+        if (hiddenStyle is null)
+        {
+            return;
+        }
+
+        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
+        {
+            var child = VisualTreeHelper.GetChild(root, i);
+            if (child is ScrollBar scrollBar)
+            {
+                scrollBar.Style = hiddenStyle;
+            }
+
+            HideEditorScrollBars(child);
+        }
     }
 }

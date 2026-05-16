@@ -1,0 +1,232 @@
+<UserControl x:Class="LUAstudio.WorkspaceExplorerView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:conv="clr-namespace:LUAstudio.Converters"
+             xmlns:ctrl="clr-namespace:LUAstudio.Controls"
+             xmlns:local="clr-namespace:LUAstudio"
+             xmlns:ws="clr-namespace:LUAstudio.Workspace;assembly=LUAstudio.Workspace"
+             Background="{StaticResource BrushBgPanel}">
+    <UserControl.Resources>
+        <conv:CountToVisibilityConverter x:Key="EmptyRootsVisible" Invert="True" />
+        <conv:CountToVisibilityConverter x:Key="HasRootsVisible" />
+        <conv:StringNullOrEmptyToVisibilityConverter x:Key="StringToVisibility" />
+        <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
+        <conv:InverseBooleanToVisibilityConverter x:Key="InverseBoolToVisibility" />
+        <local:ExplorerNodeIconConverter x:Key="NodeIconConverter" />
+        <Style TargetType="ScrollBar" BasedOn="{StaticResource ExplorerScrollBar}" />
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0"
+                Padding="8,6"
+                Background="{StaticResource BrushBgToolbar}"
+                BorderBrush="{StaticResource BrushBorder}"
+                BorderThickness="0,0,0,1">
+            <DockPanel LastChildFill="True">
+                <Button DockPanel.Dock="Right"
+                        x:Name="ExplorerOverflowButton"
+                        Click="ExplorerOverflowButton_OnClick"
+                        Padding="8,2"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Cursor="Hand"
+                        ToolTip="Explorer actions">
+                    <TextBlock FontSize="16"
+                               Foreground="{StaticResource BrushTextMuted}"
+                               Text="⋯" />
+                </Button>
+                <TextBlock VerticalAlignment="Center"
+                           FontSize="11"
+                           FontWeight="SemiBold"
+                           Foreground="{StaticResource BrushTextMuted}"
+                           Text="EXPLORER" />
+            </DockPanel>
+        </Border>
+
+        <Border Grid.Row="1"
+                Padding="8,6"
+                Background="{StaticResource BrushBgPanel}"
+                BorderBrush="{StaticResource BrushBorder}"
+                BorderThickness="0,0,0,1">
+            <Grid>
+                <TextBox x:Name="FilterBox"
+                         Style="{StaticResource ExplorerSearchBox}"
+                         Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}"
+                         KeyDown="FilterBox_OnKeyDown" />
+                <TextBlock Margin="10,0,0,0"
+                           VerticalAlignment="Center"
+                           FontFamily="Segoe MDL2 Assets"
+                           FontSize="12"
+                           Foreground="{StaticResource BrushTextMuted}"
+                           IsHitTestVisible="False"
+                           Text="{x:Static local:ExplorerGlyphs.Search}" />
+                <Button HorizontalAlignment="Right"
+                        Margin="0,0,2,0"
+                        Padding="6,2"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Cursor="Hand"
+                        ToolTip="Clear filter (Esc)"
+                        Command="{Binding ClearFilterCommand}"
+                        Visibility="{Binding IsFilterActive, Converter={StaticResource BoolToVisibility}}">
+                    <TextBlock FontFamily="Segoe MDL2 Assets"
+                               FontSize="10"
+                               Foreground="{StaticResource BrushTextMuted}"
+                               Text="{x:Static local:ExplorerGlyphs.Clear}" />
+                </Button>
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="2"
+                Margin="12"
+                Visibility="{Binding RootNodeCount, Converter={StaticResource EmptyRootsVisible}}">
+            <StackPanel VerticalAlignment="Center">
+                <TextBlock HorizontalAlignment="Center"
+                           Foreground="{StaticResource BrushTextMuted}"
+                           Text="No workspace folders"
+                           TextAlignment="Center" />
+                <TextBlock Margin="0,8,0,0"
+                           HorizontalAlignment="Center"
+                           Foreground="{StaticResource BrushTextMuted}"
+                           FontSize="12"
+                           Text="Use the ⋯ menu above to open a folder."
+                           TextAlignment="Center"
+                           TextWrapping="Wrap" />
+            </StackPanel>
+        </Border>
+
+        <TreeView x:Name="WorkspaceTree"
+                  Grid.Row="2"
+                  Margin="0"
+                  HorizontalAlignment="Stretch"
+                  VerticalAlignment="Stretch"
+                  AllowDrop="True"
+                  BorderThickness="0"
+                  Background="Transparent"
+                  DragOver="WorkspaceTree_OnDragOver"
+                  Drop="WorkspaceTree_OnDrop"
+                  ItemsSource="{Binding RootNodes}"
+                  Visibility="{Binding RootNodeCount, Converter={StaticResource HasRootsVisible}}"
+                  PreviewMouseLeftButtonDown="WorkspaceTree_OnPreviewMouseLeftButtonDown"
+                  PreviewMouseRightButtonDown="WorkspaceTree_OnPreviewMouseRightButtonDown"
+                  MouseDoubleClick="WorkspaceTree_OnMouseDoubleClick"
+                  KeyDown="WorkspaceTree_OnKeyDown">
+            <TreeView.ItemContainerStyle>
+                <Style TargetType="TreeViewItem" BasedOn="{StaticResource ExplorerTreeViewItem}">
+                    <Setter Property="HorizontalAlignment" Value="Stretch" />
+                    <Setter Property="Width" Value="{Binding ActualWidth, ElementName=WorkspaceTree}" />
+                    <EventSetter Event="MouseMove" Handler="TreeViewItem_OnMouseMove" />
+                    <EventSetter Event="DragOver" Handler="TreeViewItem_OnDragOver" />
+                    <EventSetter Event="Drop" Handler="TreeViewItem_OnDrop" />
+                </Style>
+            </TreeView.ItemContainerStyle>
+            <TreeView.ItemTemplate>
+                <HierarchicalDataTemplate DataType="{x:Type ws:FileSystemEntryNode}"
+                                          ItemsSource="{Binding Children}">
+                    <Grid HorizontalAlignment="Stretch"
+                          MinWidth="0"
+                          ToolTip="{Binding FullPath}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="18" />
+                            <ColumnDefinition Width="*" MinWidth="0" />
+                            <ColumnDefinition Width="44" />
+                        </Grid.ColumnDefinitions>
+                        <ContentControl Grid.Column="0"
+                                        Width="16"
+                                        Height="16"
+                                        VerticalAlignment="Center"
+                                        IsHitTestVisible="False">
+                            <ContentControl.Content>
+                                <MultiBinding Converter="{StaticResource NodeIconConverter}">
+                                    <Binding />
+                                    <Binding RelativeSource="{RelativeSource AncestorType=TreeViewItem}" Path="IsExpanded" />
+                                </MultiBinding>
+                            </ContentControl.Content>
+                            <ContentControl.ContentTemplate>
+                                <DataTemplate DataType="{x:Type local:ExplorerIconDisplay}">
+                                    <Grid Width="16" Height="16">
+                                        <Image Width="16"
+                                               Height="16"
+                                               Stretch="Uniform"
+                                               Source="{Binding Image}"
+                                               Visibility="{Binding HasImage, Converter={StaticResource BoolToVisibility}}" />
+                                        <TextBlock FontFamily="Segoe MDL2 Assets"
+                                                   FontSize="14"
+                                                   Foreground="{StaticResource BrushTextMuted}"
+                                                   Text="{Binding Glyph}"
+                                                   Visibility="{Binding HasImage, Converter={StaticResource InverseBoolToVisibility}}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ContentControl.ContentTemplate>
+                        </ContentControl>
+                        <Grid Grid.Column="1"
+                              Margin="4,0,4,0"
+                              MinWidth="0"
+                              ClipToBounds="True">
+                            <StackPanel>
+                                <ctrl:ExplorerHighlightedTextBlock FontSize="13"
+                                                                   IsFilterMatch="{Binding IsFilterNameMatch}"
+                                                                   MatchIndexCsv="{Binding FilterMatchIndexCsv}"
+                                                                   SourceText="{Binding DisplayName}"
+                                                                   TextTrimming="CharacterEllipsis"
+                                                                   TextWrapping="NoWrap">
+                                    <ctrl:ExplorerHighlightedTextBlock.Style>
+                                        <Style TargetType="ctrl:ExplorerHighlightedTextBlock">
+                                            <Setter Property="Foreground" Value="{StaticResource BrushText}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsWorkspaceRoot}" Value="True">
+                                                    <Setter Property="FontWeight" Value="SemiBold" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding HasErrorDecoration}" Value="True">
+                                                    <Setter Property="TextDecorations" Value="Underline" />
+                                                    <Setter Property="Foreground" Value="{StaticResource BrushExplorerError}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ctrl:ExplorerHighlightedTextBlock.Style>
+                                </ctrl:ExplorerHighlightedTextBlock>
+                                <TextBlock FontSize="10"
+                                           Foreground="{StaticResource BrushTextMuted}"
+                                           Text="{Binding FullPath}"
+                                           TextTrimming="CharacterEllipsis"
+                                           TextWrapping="NoWrap"
+                                           Visibility="{Binding IsWorkspaceRoot, Converter={StaticResource BoolToVisibility}}" />
+                            </StackPanel>
+                        </Grid>
+                        <StackPanel Grid.Column="2"
+                                    Orientation="Horizontal"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Center">
+                            <TextBlock VerticalAlignment="Center"
+                                       FontSize="11"
+                                       FontWeight="SemiBold"
+                                       Foreground="{StaticResource BrushAccent}"
+                                       Text="{Binding GitStatusGlyph}"
+                                       Visibility="{Binding GitStatusGlyph, Converter={StaticResource StringToVisibility}}" />
+                            <Ellipse Width="6"
+                                     Height="6"
+                                     Margin="4,0,0,0"
+                                     VerticalAlignment="Center"
+                                     Fill="{StaticResource BrushExplorerModified}"
+                                     ToolTip="Modified"
+                                     Visibility="{Binding ShowModifiedDot, Converter={StaticResource BoolToVisibility}}" />
+                            <TextBlock Margin="4,0,0,0"
+                                       VerticalAlignment="Center"
+                                       FontSize="10"
+                                       Foreground="{StaticResource BrushTextMuted}"
+                                       Text="{Binding DecorationBadge}"
+                                       ToolTip="{Binding DecorationToolTip}"
+                                       Visibility="{Binding DecorationBadge, Converter={StaticResource StringToVisibility}}" />
+                        </StackPanel>
+                    </Grid>
+                </HierarchicalDataTemplate>
+            </TreeView.ItemTemplate>
+        </TreeView>
+    </Grid>
+</UserControl>

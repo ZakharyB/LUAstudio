@@ -4,7 +4,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using LUAstudio.Core.Events;
 using LUAstudio.Core.Logging;
 using LUAstudio.IDE.Events;
-using LUAstudio.IDE.Threading;
+using LUAstudio.Core.Threading;
 
 namespace LUAstudio.IDE.Documents;
 
@@ -122,5 +122,22 @@ public sealed partial class DocumentService : ObservableObject, IDocumentService
 
         _mainThread.Send(() => document.LoadFromDisk(fullPath, document.Content, document.Encoding));
         _logger.Info($"Saved document as: {fullPath}");
+    }
+
+    public async Task ReloadFromDiskAsync(TextDocument document, CancellationToken cancellationToken = default)
+    {
+        if (document.FilePath is null)
+        {
+            throw new InvalidOperationException("Cannot reload a document without a path.");
+        }
+
+        await using var stream = File.OpenRead(document.FilePath);
+        using var reader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
+        var text = await reader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
+        var encoding = reader.CurrentEncoding;
+        var path = document.FilePath;
+
+        _mainThread.Send(() => document.LoadFromDisk(path, text, encoding));
+        _logger.Info($"Reloaded document from disk: {path}");
     }
 }

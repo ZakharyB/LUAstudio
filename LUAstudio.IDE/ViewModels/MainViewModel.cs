@@ -1,28 +1,46 @@
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using LUAstudio.Core.Logging;
 using LUAstudio.IDE.Documents;
 using LUAstudio.IDE.Services;
+using LUAstudio.Workspace;
 
 namespace LUAstudio.IDE.ViewModels;
 
-public sealed partial class MainViewModel : ObservableObject
+public sealed partial class MainViewModel : ObservableObject, IFileSystemActivitySink
 {
     private readonly IDocumentService _documents;
     private readonly IFileDialogService _fileDialogs;
     private readonly IUserPromptService _prompts;
+    private readonly IWorkspaceService _workspace;
+    private readonly IAppLogger _logger;
     private TextDocument? _hookedDocument;
 
-    public MainViewModel(IDocumentService documents, IFileDialogService fileDialogs, IUserPromptService prompts)
+    public MainViewModel(
+        IDocumentService documents,
+        IFileDialogService fileDialogs,
+        IUserPromptService prompts,
+        IWorkspaceService workspace,
+        IAppLogger logger,
+        WorkspaceExplorerViewModel explorer)
     {
         _documents = documents;
         _fileDialogs = fileDialogs;
         _prompts = prompts;
+        _workspace = workspace;
+        _logger = logger;
+        Explorer = explorer;
 
         _documents.PropertyChanged += OnDocumentsPropertyChanged;
+        _documents.Documents.CollectionChanged += OnDocumentsCollectionChanged;
         HookActiveDocument(_documents.ActiveDocument);
+        RefreshDocumentPresence();
     }
+
+    public WorkspaceExplorerViewModel Explorer { get; }
 
     public ObservableCollection<TextDocument> OpenDocuments => _documents.Documents;
 
@@ -32,12 +50,75 @@ public sealed partial class MainViewModel : ObservableObject
         set => _documents.ActiveDocument = value;
     }
 
+    [ObservableProperty]
+    private string? _externalDiskMessage;
+
+    [ObservableProperty]
+    private bool _restoreWorkspaceOnStartup = true;
+
+    [ObservableProperty]
+    private bool _hasOpenDocuments;
+
+    [ObservableProperty]
+    private int _caretLine = 1;
+
+    [ObservableProperty]
+    private int _caretColumn = 1;
+
+    [ObservableProperty]
+    private string _activeDocumentPath = string.Empty;
+
     public string WindowTitle
     {
         get
         {
             var doc = _documents.ActiveDocument;
             return doc is null ? "LuaStudio" : $"LuaStudio - {doc.DisplayName}{(doc.IsDirty ? " *" : string.Empty)}";
+        }
+    }
+
+    public async Task InitializeAsync()
+    {
+        RestoreWorkspaceOnStartup = await _workspace.GetRestoreWorkspaceRootsAsync().ConfigureAwait(true);
+        await _workspace.LoadAsync().ConfigureAwait(true);
+    }
+
+    void IFileSystemActivitySink.ReportFileSystemActivity(string? message)
+    {
+        ExternalDiskMessage = message;
+    }
+
+    public void UpdateCaretPosition(int line, int column)
+    {
+        CaretLine = line;
+        CaretColumn = column;
+    }
+
+    private void OnDocumentsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        RefreshDocumentPresence();
+    }
+
+    private void RefreshDocumentPresence()
+    {
+        HasOpenDocuments = OpenDocuments.Count > 0;
+        ActiveDocumentPath = ActiveDocument?.FilePath ?? string.Empty;
+    }
+
+    partial void OnRestoreWorkspaceOnStartupChanged(bool value)
+    {
+        _ = SaveRestorePreferenceAsync(value);
+    }
+
+    private async Task SaveRestorePreferenceAsync(bool value)
+    {
+        try
+        {
+            await _workspace.SetRestoreWorkspaceRootsAsync(value).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _logger.Warn($"Failed to save restore_workspace_roots: {ex.Message}");
         }
     }
 
@@ -177,6 +258,7 @@ public sealed partial class MainViewModel : ObservableObject
         {
             HookActiveDocument(_documents.ActiveDocument);
             OnPropertyChanged(nameof(WindowTitle));
+            ActiveDocumentPath = ActiveDocument?.FilePath ?? string.Empty;
         }
     }
 

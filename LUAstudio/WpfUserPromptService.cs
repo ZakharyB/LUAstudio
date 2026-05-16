@@ -25,4 +25,20 @@ public sealed class WpfUserPromptService : IUserPromptService
     {
         MessageBox.Show(message, "LuaStudio", MessageBoxButton.OK, MessageBoxImage.Error);
     }
+
+    public string? PromptForText(string title, string message, string defaultValue = "")
+    {
+        var owner = Application.Current?.MainWindow;
+        var dialog = new TextInputDialog(title, message, defaultValue)
+        {
+            Owner = owner,
+        };
+
+        return dialog.ShowDialog() == true ? dialog.Result : null;
+    }
+
+    public bool Confirm(string title, string message)
+    {
+        return MessageBox.Show(message, title, MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes;
+    }
 }

@@ -83,6 +83,28 @@
                         </MenuItem>
                         <MenuItem Header="_View">
                             <MenuItem Header="Reset tool window layout" Click="ResetDockLayout_OnClick" />
+                            <MenuItem Header="Explorer" IsEnabled="False" />
+                            <MenuItem Header="Output" IsEnabled="False" />
+                        </MenuItem>
+                        <MenuItem Header="_Selection">
+                            <MenuItem Header="Select _All" IsEnabled="False" InputGestureText="Ctrl+A" />
+                            <MenuItem Header="Expand Selection" IsEnabled="False" />
+                            <MenuItem Header="Shrink Selection" IsEnabled="False" />
+                            <Separator />
+                            <MenuItem Header="Add Cursor Above" IsEnabled="False" />
+                            <MenuItem Header="Add Cursor Below" IsEnabled="False" />
+                        </MenuItem>
+                        <MenuItem Header="_Terminal">
+                            <MenuItem Header="_New Terminal" IsEnabled="False" InputGestureText="Ctrl+`" />
+                            <MenuItem Header="Split Terminal" IsEnabled="False" />
+                            <Separator />
+                            <MenuItem Header="Clear Terminal" IsEnabled="False" />
+                        </MenuItem>
+                        <MenuItem Header="_Help">
+                            <MenuItem Header="_Documentation" IsEnabled="False" />
+                            <MenuItem Header="Keyboard Shortcuts" IsEnabled="False" />
+                            <Separator />
+                            <MenuItem Header="_About LuaStudio" IsEnabled="False" />
                         </MenuItem>
                     </Menu>
                 </StackPanel>
