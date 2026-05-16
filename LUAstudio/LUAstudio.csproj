@@ -1,11 +1,28 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+    <ItemGroup>
+      <ProjectReference Include="..\LUAstudio.Core\LUAstudio.Core.csproj" />
+      <ProjectReference Include="..\LUAstudio.IDE\LUAstudio.IDE.csproj" />
+      <ProjectReference Include="..\LUAstudio.Workspace\LUAstudio.Workspace.csproj" />
+      <ProjectReference Include="..\LUAstudio.Themes\LUAstudio.Themes.csproj" />
+      <ProjectReference Include="..\LUAstudio.Tools\LUAstudio.Tools.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="AvalonEdit" Version="6.3.1.120" />
+      <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+      <PackageReference Include="Dirkster.AvalonDock" Version="4.74.1" />
+      <PackageReference Include="Dirkster.AvalonDock.Themes.VS2013" Version="4.74.1" />
+      <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.8" />
+    </ItemGroup>
+
     <PropertyGroup>
         <OutputType>WinExe</OutputType>
         <TargetFramework>net8.0-windows</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <UseWPF>true</UseWPF>
+        <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
     </PropertyGroup>
 
 </Project>
