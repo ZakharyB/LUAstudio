@@ -1,6 +1,7 @@
 ﻿using System.Windows;
 using LUAstudio.Core.DependencyInjection;
 using LUAstudio.Core.Threading;
+using LUAstudio.Editor.DependencyInjection;
 using LUAstudio.IDE.DependencyInjection;
 using LUAstudio.IDE.Handlers;
 using LUAstudio.IDE.Services;
@@ -13,6 +14,9 @@ namespace LUAstudio;
 public partial class App : Application
 {
     private ServiceProvider? _services;
+
+    public static IServiceProvider Services =>
+        ((App)Current)._services ?? throw new InvalidOperationException("Application services are not initialized.");
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -31,17 +35,20 @@ public partial class App : Application
         var services = new ServiceCollection();
         services.AddLuaStudioCore();
         services.AddLuaStudioWorkspace();
+        services.AddLuaStudioEditor();
         services.AddLuaStudioIde();
         services.AddSingleton<IMainThread, WpfMainThread>();
         services.AddSingleton<IFileDialogService, WpfFileDialogService>();
         services.AddSingleton<IUserPromptService, WpfUserPromptService>();
         services.AddSingleton<IExplorerShellService, WpfExplorerShellService>();
         services.AddSingleton<MainWindow>();
+        services.AddSingleton<WpfDocumentEditorHost>();
 
         _services = services.BuildServiceProvider();
 
         _ = _services.GetRequiredService<DocumentSyncHandler>();
         _ = _services.GetRequiredService<RecentFilesRecordingHandler>();
+        _ = _services.GetRequiredService<DocumentAnalysisHandler>();
 
         var mainWindow = _services.GetRequiredService<MainWindow>();
         MainWindow = mainWindow;

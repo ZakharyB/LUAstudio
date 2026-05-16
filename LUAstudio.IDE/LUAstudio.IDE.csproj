@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\LUAstudio.Core\LUAstudio.Core.csproj" />
+    <ProjectReference Include="..\LUAstudio.IntelliSense\LUAstudio.IntelliSense.csproj" />
     <ProjectReference Include="..\LUAstudio.Workspace\LUAstudio.Workspace.csproj" />
   </ItemGroup>
 

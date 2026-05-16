@@ -17,6 +17,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IFileSystemActivitySink>(sp => sp.GetRequiredService<MainViewModel>());
         services.AddSingleton<DocumentSyncHandler>();
         services.AddSingleton<RecentFilesRecordingHandler>();
+        services.AddSingleton<DocumentAnalysisHandler>();
         return services;
     }
 }

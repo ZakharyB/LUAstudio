@@ -6,6 +6,7 @@ using System.Windows.Media;
 using ICSharpCode.AvalonEdit.Editing;
 using LUAstudio.IDE.Documents;
 using LUAstudio.IDE.ViewModels;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace LUAstudio;
 
@@ -15,12 +16,19 @@ public partial class DocumentEditorView : UserControl
     private TextDocument? _pendingDocument;
     private bool _suppressVmPush;
     private bool _caretHooked;
+    private WpfDocumentEditorHost? _languageHost;
 
     public DocumentEditorView()
     {
         InitializeComponent();
         Loaded += OnEditorLoaded;
         Unloaded += OnEditorUnloaded;
+    }
+
+    public WpfDocumentEditorHost? LanguageHost
+    {
+        get => _languageHost;
+        set => _languageHost = value;
     }
 
     public static readonly DependencyProperty DocumentProperty =
@@ -41,6 +49,7 @@ public partial class DocumentEditorView : UserControl
 
     private void OnEditorLoaded(object sender, RoutedEventArgs e)
     {
+        _languageHost ??= App.Services.GetRequiredService<WpfDocumentEditorHost>();
         ApplyEditorChrome();
         EnsureCaretHook();
         if (_pendingDocument is not null)
@@ -64,6 +73,11 @@ public partial class DocumentEditorView : UserControl
             Editor.TextArea.Caret.PositionChanged -= OnCaretPositionChanged;
             _caretHooked = false;
         }
+
+        if (_boundDocument is not null && IsEditorReady)
+        {
+            _languageHost?.Detach(Editor, _boundDocument);
+        }
     }
 
     private void RebindDocument(TextDocument? oldDoc, TextDocument? newDoc)
@@ -71,6 +85,10 @@ public partial class DocumentEditorView : UserControl
         if (oldDoc is not null)
         {
             oldDoc.PropertyChanged -= OnDocumentPropertyChanged;
+            if (IsEditorReady)
+            {
+                _languageHost?.Detach(Editor, oldDoc);
+            }
         }
 
         _boundDocument = newDoc;
@@ -120,6 +138,8 @@ public partial class DocumentEditorView : UserControl
         doc.PropertyChanged -= OnDocumentPropertyChanged;
         doc.PropertyChanged += OnDocumentPropertyChanged;
 
+        _languageHost?.Attach(Editor, doc);
+
         try
         {
             Editor.TextArea.Caret.BringCaretToView();
@@ -164,6 +184,7 @@ public partial class DocumentEditorView : UserControl
         }
 
         _boundDocument.Content = Editor.Document.Text;
+        _languageHost?.NotifyContentChanged(_boundDocument);
     }
 
     private void EnsureCaretHook()

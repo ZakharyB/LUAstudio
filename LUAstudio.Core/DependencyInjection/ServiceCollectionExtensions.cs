@@ -12,6 +12,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IEventBus, EventBus>();
         services.AddSingleton<IAppLogger, DebugAppLogger>();
         services.AddSingleton<IBackgroundWorkScheduler, BackgroundWorkScheduler>();
+        services.AddSingleton<IAnalysisWorkQueue, AnalysisWorkQueue>();
         return services;
     }
 }
