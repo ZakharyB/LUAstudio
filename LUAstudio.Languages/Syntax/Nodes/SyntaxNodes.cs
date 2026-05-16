@@ -275,6 +275,59 @@ public sealed class RequireCallSyntax : SyntaxNode
     public override IReadOnlyList<SyntaxNode> Children => [ModulePath];
 }
 
+public sealed class IfStatementSyntax : SyntaxNode
+{
+    public IfStatementSyntax(TextSpan span, SyntaxNode? parent, SyntaxNode condition, BlockSyntax thenBlock, BlockSyntax? elseBlock)
+        : base(SyntaxKind.IfStatement, span, parent)
+    {
+        Condition = condition;
+        ThenBlock = thenBlock;
+        ElseBlock = elseBlock;
+    }
+
+    public SyntaxNode Condition { get; }
+    public BlockSyntax ThenBlock { get; }
+    public BlockSyntax? ElseBlock { get; }
+
+    public override IReadOnlyList<SyntaxNode> Children
+    {
+        get
+        {
+            var list = new List<SyntaxNode> { Condition, ThenBlock };
+            if (ElseBlock is not null) list.Add(ElseBlock);
+            return list;
+        }
+    }
+}
+
+public sealed class WhileStatementSyntax : SyntaxNode
+{
+    public WhileStatementSyntax(TextSpan span, SyntaxNode? parent, SyntaxNode condition, BlockSyntax body)
+        : base(SyntaxKind.WhileStatement, span, parent)
+    {
+        Condition = condition;
+        Body = body;
+    }
+
+    public SyntaxNode Condition { get; }
+    public BlockSyntax Body { get; }
+
+    public override IReadOnlyList<SyntaxNode> Children => [Condition, Body];
+}
+
+public sealed class ForStatementSyntax : SyntaxNode
+{
+    public ForStatementSyntax(TextSpan span, SyntaxNode? parent, BlockSyntax body)
+        : base(SyntaxKind.ForStatement, span, parent)
+    {
+        Body = body;
+    }
+
+    public BlockSyntax Body { get; }
+
+    public override IReadOnlyList<SyntaxNode> Children => [Body];
+}
+
 public sealed class AssignmentStatementSyntax : SyntaxNode
 {
     public AssignmentStatementSyntax(TextSpan span, SyntaxNode? parent, SyntaxNode target, SyntaxNode value)

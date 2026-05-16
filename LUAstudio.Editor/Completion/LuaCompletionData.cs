@@ -11,9 +11,13 @@ public sealed class LuaCompletionData : ICompletionData
     public LuaCompletionData(CompletionItem item)
     {
         Item = item;
-        Text = item.InsertText;
+        Text = SnippetEngine.ContainsPlaceholders(item.InsertText)
+            ? SnippetEngine.Expand(item.InsertText).Text
+            : item.InsertText;
         Content = item.DisplayText;
-        Description = string.IsNullOrWhiteSpace(item.Documentation) ? item.Detail : item.Documentation;
+        Description = string.IsNullOrWhiteSpace(item.Documentation)
+            ? item.Detail ?? string.Empty
+            : item.Documentation;
     }
 
     public CompletionItem Item { get; }
@@ -30,6 +34,18 @@ public sealed class LuaCompletionData : ICompletionData
 
     public void Complete(TextArea textArea, ISegment completionSegment, EventArgs insertionRequestEventArgs)
     {
-        textArea.Document.Replace(completionSegment, Text);
+        if (SnippetEngine.ContainsPlaceholders(Item.InsertText))
+        {
+            var expansion = SnippetEngine.Expand(Item.InsertText);
+            textArea.Document.Replace(completionSegment, expansion.Text);
+            if (expansion.Placeholders.Count > 0)
+            {
+                _ = new SnippetSession(textArea, expansion);
+            }
+        }
+        else
+        {
+            textArea.Document.Replace(completionSegment, Text);
+        }
     }
 }

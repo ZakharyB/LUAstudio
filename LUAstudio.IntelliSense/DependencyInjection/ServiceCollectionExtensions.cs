@@ -21,13 +21,18 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ISymbolIndex, SymbolIndex>();
         services.AddSingleton<IModuleResolver, ModuleResolver>();
         services.AddSingleton<IRobloxApiDatabase, RobloxApiDatabase>();
+        services.AddSingleton<ExpressionTypeResolver>();
         services.AddSingleton<SemanticAnalyzer>();
         services.AddSingleton<IAnalysisOrchestrator, AnalysisOrchestrator>();
 
         services.AddSingleton<ICompletionProvider, ScopeCompletionProvider>();
         services.AddSingleton<ICompletionProvider, RobloxCompletionProvider>();
+        services.AddSingleton<ICompletionProvider, GetServiceCompletionProvider>();
         services.AddSingleton<ICompletionProvider, KeywordSnippetCompletionProvider>();
         services.AddSingleton<ICompletionService, CompletionService>();
+
+        services.AddSingleton<SignatureHelpService>();
+        services.AddSingleton<HoverInfoService>();
 
         return services;
     }

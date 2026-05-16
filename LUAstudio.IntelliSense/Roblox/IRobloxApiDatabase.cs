@@ -1,25 +1,22 @@
-using LUAstudio.IntelliSense.Symbols;
-
 namespace LUAstudio.IntelliSense.Roblox;
 
 public interface IRobloxApiDatabase
 {
+    IReadOnlyDictionary<string, string> GlobalTypeAliases { get; }
+
+    IReadOnlyList<string> ServiceNames { get; }
+
     bool TryGetGlobal(string name, out RobloxMember member);
 
-    bool TryGetService(string serviceName, out RobloxClass service);
+    bool TryGetClass(string className, out RobloxClass service);
 
     bool TryGetMember(string className, string memberName, out RobloxMember member);
 
-    IReadOnlyList<RobloxMember> GetMembers(string className);
+    IReadOnlyList<RobloxMember> GetMembers(string className, bool includeInherited = true);
 
     Task EnsureLoadedAsync(CancellationToken cancellationToken = default);
+
+    Task ReloadFromPathAsync(string? path, CancellationToken cancellationToken = default);
+
+    Task DownloadLatestAsync(string? url = null, CancellationToken cancellationToken = default);
 }
-
-public sealed record RobloxClass(string Name, string? Documentation, IReadOnlyList<RobloxMember> Members);
-
-public sealed record RobloxMember(
-    string Name,
-    SymbolKind Kind,
-    string? Documentation,
-    string? ReturnType = null,
-    IReadOnlyList<RobloxMember>? Children = null);

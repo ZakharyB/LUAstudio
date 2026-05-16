@@ -10,6 +10,7 @@ public interface ICompletionService
 public sealed class CompletionService : ICompletionService
 {
     private readonly IReadOnlyList<ICompletionProvider> _providers;
+    private readonly CompletionResultCache _cache = new();
 
     public CompletionService(IEnumerable<ICompletionProvider> providers) =>
         _providers = providers.ToArray();
@@ -18,6 +19,16 @@ public sealed class CompletionService : ICompletionService
         CompletionContext context,
         CancellationToken cancellationToken = default)
     {
+        if (_cache.TryGet(
+                context.Snapshot.DocumentId,
+                context.Snapshot.Version,
+                context.CaretOffset,
+                context.TriggerPrefix,
+                out var cached) && cached is not null)
+        {
+            return cached;
+        }
+
         var tasks = _providers.Select(p => p.GetCompletionsAsync(context, cancellationToken));
         var results = await Task.WhenAll(tasks).ConfigureAwait(false);
 
@@ -34,11 +45,20 @@ public sealed class CompletionService : ICompletionService
             }
         }
 
-        return merged.Values
+        var result = merged.Values
             .OrderByDescending(i => i.Score)
             .ThenByDescending(i => i.Priority)
             .ThenBy(i => i.DisplayText, StringComparer.OrdinalIgnoreCase)
             .ToArray();
+
+        _cache.Store(
+            context.Snapshot.DocumentId,
+            context.Snapshot.Version,
+            context.CaretOffset,
+            context.TriggerPrefix,
+            result);
+
+        return result;
     }
 
     private static double ScoreItem(CompletionItem item, string prefix)

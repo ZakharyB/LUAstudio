@@ -22,6 +22,12 @@
       <Content Include="..\Assets\Icons\*.svg" Link="Assets\Icons\%(Filename)%(Extension)">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </Content>
+      <Content Include="..\Assets\Roblox\api-dump.json" Link="Assets\Roblox\api-dump.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Assets\Editor\Lua.xshd" Link="Assets\Editor\Lua.xshd">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
     </ItemGroup>
 
     <PropertyGroup>

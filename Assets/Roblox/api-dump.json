@@ -1,0 +1,52 @@
+{
+  "Classes": [
+    {
+      "Name": "Instance",
+      "Superclass": null,
+      "Members": [
+        { "Name": "Name", "MemberType": "Property", "ReturnType": "string" },
+        { "Name": "Parent", "MemberType": "Property", "ReturnType": "Instance" },
+        { "Name": "FindFirstChild", "MemberType": "Function", "ReturnType": "Instance" },
+        { "Name": "WaitForChild", "MemberType": "Function", "ReturnType": "Instance" },
+        { "Name": "GetChildren", "MemberType": "Function", "ReturnType": "Instances" },
+        { "Name": "Destroy", "MemberType": "Function" },
+        { "Name": "Clone", "MemberType": "Function", "ReturnType": "Instance" }
+      ]
+    },
+    {
+      "Name": "DataModel",
+      "Superclass": "Instance",
+      "Members": [
+        { "Name": "Workspace", "MemberType": "Property", "ReturnType": "Workspace" },
+        { "Name": "GetService", "MemberType": "Function", "ReturnType": "Instance" },
+        { "Name": "BindToClose", "MemberType": "Function" }
+      ]
+    },
+    {
+      "Name": "Workspace",
+      "Superclass": "Model",
+      "Members": []
+    },
+    {
+      "Name": "Model",
+      "Superclass": "Instance",
+      "Members": []
+    },
+    {
+      "Name": "Players",
+      "Superclass": "Instance",
+      "Members": [
+        { "Name": "LocalPlayer", "MemberType": "Property", "ReturnType": "Player" },
+        { "Name": "GetPlayerFromCharacter", "MemberType": "Function", "ReturnType": "Player" }
+      ]
+    },
+    {
+      "Name": "Player",
+      "Superclass": "Instance",
+      "Members": [
+        { "Name": "Character", "MemberType": "Property", "ReturnType": "Model" },
+        { "Name": "UserId", "MemberType": "Property", "ReturnType": "number" }
+      ]
+    }
+  ]
+}

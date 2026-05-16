@@ -1,4 +1,5 @@
 using LUAstudio.IntelliSense.Roblox;
+using LUAstudio.IntelliSense.Semantic;
 using LUAstudio.IntelliSense.Symbols;
 using LUAstudio.Languages.Syntax.Nodes;
 
@@ -7,8 +8,13 @@ namespace LUAstudio.IntelliSense.Completion.Providers;
 public sealed class RobloxCompletionProvider : ICompletionProvider
 {
     private readonly IRobloxApiDatabase _roblox;
+    private readonly ExpressionTypeResolver _types;
 
-    public RobloxCompletionProvider(IRobloxApiDatabase roblox) => _roblox = roblox;
+    public RobloxCompletionProvider(IRobloxApiDatabase roblox, ExpressionTypeResolver types)
+    {
+        _roblox = roblox;
+        _types = types;
+    }
 
     public string Name => "roblox";
 
@@ -19,40 +25,53 @@ public sealed class RobloxCompletionProvider : ICompletionProvider
         await _roblox.EnsureLoadedAsync(cancellationToken).ConfigureAwait(false);
         var items = new List<CompletionItem>();
 
-        if (context.NodeAtCaret is MemberAccessExpressionSyntax member)
+        if (context.TriggerKind is CompletionTriggerKind.Dot or CompletionTriggerKind.Colon)
         {
-            var typeName = member.Expression switch
+            var typeName = _types.ResolveCompletionTargetType(context) ?? "Instance";
+            foreach (var m in _roblox.GetMembers(typeName, includeInherited: true))
             {
-                IdentifierNameSyntax id => id.Name.Text,
-                MemberAccessExpressionSyntax nested => nested.Member.Text,
-                _ => "Instance"
-            };
+                if (context.TriggerKind == CompletionTriggerKind.Colon &&
+                    m.Kind is not (SymbolKind.Method or SymbolKind.Function))
+                {
+                    continue;
+                }
 
-            foreach (var m in _roblox.GetMembers(typeName))
-            {
+                var insert = m.Kind is SymbolKind.Method or SymbolKind.Function
+                    ? m.Name + (m.Name == "GetService" ? "(\"${1:Players}\")" : "()")
+                    : m.Name;
+
                 items.Add(new CompletionItem(
                     m.Name,
-                    m.Name,
+                    insert,
                     MapKind(m.Kind),
                     m.ReturnType,
                     m.Documentation,
-                    priority: 80));
+                    priority: 90));
             }
 
             return items;
         }
 
-        foreach (var key in new[] { "game", "workspace", "script" })
+        foreach (var (name, typeName) in _roblox.GlobalTypeAliases)
         {
-            if (_roblox.TryGetGlobal(key, out var g))
+            if (!string.IsNullOrEmpty(context.TriggerPrefix) &&
+                !name.StartsWith(context.TriggerPrefix, StringComparison.OrdinalIgnoreCase))
             {
-                items.Add(new CompletionItem(g.Name, g.Name, CompletionItemKind.Service, documentation: g.Documentation, priority: 90));
+                continue;
             }
+
+            items.Add(new CompletionItem(name, name, CompletionItemKind.Service, typeName, priority: 95));
         }
 
-        if (_roblox.TryGetService("Workspace", out _))
+        foreach (var service in _roblox.ServiceNames)
         {
-            items.Add(new CompletionItem("Workspace", "workspace", CompletionItemKind.Service, priority: 85));
+            if (!string.IsNullOrEmpty(context.TriggerPrefix) &&
+                !service.StartsWith(context.TriggerPrefix, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            items.Add(new CompletionItem(service, service, CompletionItemKind.Class, service, priority: 70));
         }
 
         return items;
@@ -60,7 +79,7 @@ public sealed class RobloxCompletionProvider : ICompletionProvider
 
     private static CompletionItemKind MapKind(SymbolKind kind) => kind switch
     {
-        SymbolKind.Method => CompletionItemKind.Method,
+        SymbolKind.Method or SymbolKind.Function => CompletionItemKind.Method,
         SymbolKind.Property => CompletionItemKind.Property,
         SymbolKind.Service => CompletionItemKind.Service,
         _ => CompletionItemKind.Field

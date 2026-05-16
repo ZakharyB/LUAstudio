@@ -22,6 +22,16 @@
     <Color x:Key="Accent">#3574F0</Color>
     <Color x:Key="AccentPressed">#2650B5</Color>
     <Color x:Key="Warning">#E5A84B</Color>
+    <Color x:Key="EditorKeyword">#C586C8</Color>
+    <Color x:Key="EditorString">#CE9178</Color>
+    <Color x:Key="EditorNumber">#B5CEA8</Color>
+    <Color x:Key="EditorComment">#6A9955</Color>
+    <Color x:Key="EditorOperator">#D4D4D4</Color>
+    <Color x:Key="EditorFunction">#DCDCAA</Color>
+    <Color x:Key="EditorType">#4EC9B0</Color>
+    <Color x:Key="EditorBuiltin">#4EC9B0</Color>
+    <Color x:Key="EditorGlobal">#569CD6</Color>
+    <Color x:Key="EditorGhostText">#5A5D66</Color>
 
     <SolidColorBrush x:Key="BrushBgRoot" Color="{StaticResource BgRoot}" />
     <SolidColorBrush x:Key="BrushBgPanel" Color="{StaticResource BgPanel}" />

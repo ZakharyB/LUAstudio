@@ -1,4 +1,7 @@
+using LUAstudio.Editor.Completion;
 using LUAstudio.Editor.Diagnostics;
+using LUAstudio.Editor.Editing;
+using LUAstudio.Editor.Highlighting;
 using LUAstudio.Editor.IntelliSense;
 using LUAstudio.IntelliSense.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,6 +14,11 @@ public static class ServiceCollectionExtensions
     {
         services.AddLuaStudioIntelliSense();
         services.AddSingleton<EditorDiagnosticService>();
+        services.AddSingleton<InlineCompletionService>();
+        services.AddSingleton<SmartEnterHandler>();
+        services.AddSingleton<AutoPairInsertService>();
+        services.AddSingleton<SyntaxHighlightingService>();
+        services.AddSingleton<SemanticHighlightingClassifier>();
         services.AddSingleton<EditorIntelliSenseController>();
         return services;
     }

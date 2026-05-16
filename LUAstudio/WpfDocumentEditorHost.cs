@@ -1,5 +1,6 @@
 using ICSharpCode.AvalonEdit;
 using LUAstudio.Editor.Diagnostics;
+using LUAstudio.Editor.Editing;
 using LUAstudio.Editor.IntelliSense;
 using LUAstudio.IDE.Documents;
 using LUAstudio.IDE.Handlers;
@@ -15,6 +16,7 @@ public sealed class WpfDocumentEditorHost : IDisposable
     private readonly EditorDiagnosticService _diagnostics;
     private readonly DocumentAnalysisHandler _analysisHandler;
     private readonly Dictionary<Guid, TextEditor> _editors = new();
+    private readonly Dictionary<Guid, EditorFoldingManager> _foldings = new();
 
     public WpfDocumentEditorHost(
         EditorIntelliSenseController intelliSense,
@@ -37,6 +39,14 @@ public sealed class WpfDocumentEditorHost : IDisposable
         _editors[document.Id] = editor;
         _diagnostics.Attach(editor, document.Id);
         _diagnostics.RegisterMarkerRenderer(editor);
+
+        if (!_foldings.TryGetValue(document.Id, out var folding))
+        {
+            folding = new EditorFoldingManager();
+            _foldings[document.Id] = folding;
+        }
+
+        folding.Attach(editor);
         _intelliSense.Attach(editor, document.Id, document.FilePath, dialect);
     }
 
@@ -44,7 +54,14 @@ public sealed class WpfDocumentEditorHost : IDisposable
     {
         _editors.Remove(document.Id);
         _diagnostics.ClearMarkers(editor, document.Id);
-        _intelliSense.Detach();
+
+        if (_foldings.Remove(document.Id, out var folding))
+        {
+            folding.Detach();
+            folding.Dispose();
+        }
+
+        _intelliSense.DetachIfEditor(editor);
     }
 
     public void NotifyContentChanged(TextDocument document)
@@ -66,5 +83,14 @@ public sealed class WpfDocumentEditorHost : IDisposable
         _diagnostics.ApplyDiagnostics(editor, e.Result);
     }
 
-    public void Dispose() => _intelliSense.Dispose();
+    public void Dispose()
+    {
+        foreach (var folding in _foldings.Values)
+        {
+            folding.Dispose();
+        }
+
+        _foldings.Clear();
+        _intelliSense.Dispose();
+    }
 }

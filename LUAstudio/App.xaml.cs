@@ -14,6 +14,7 @@ namespace LUAstudio;
 public partial class App : Application
 {
     private ServiceProvider? _services;
+    private bool _isShowingErrorDialog;
 
     public static IServiceProvider Services =>
         ((App)Current)._services ?? throw new InvalidOperationException("Application services are not initialized.");
@@ -24,11 +25,26 @@ public partial class App : Application
 
         DispatcherUnhandledException += (_, args) =>
         {
-            MessageBox.Show(
-                $"An unexpected error occurred:{Environment.NewLine}{Environment.NewLine}{args.Exception.Message}",
-                "LuaStudio",
-                MessageBoxButton.OK,
-                MessageBoxImage.Error);
+            if (_isShowingErrorDialog)
+            {
+                args.Handled = true;
+                return;
+            }
+
+            _isShowingErrorDialog = true;
+            try
+            {
+                MessageBox.Show(
+                    $"An unexpected error occurred:{Environment.NewLine}{Environment.NewLine}{args.Exception.Message}",
+                    "LuaStudio",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
+            finally
+            {
+                _isShowingErrorDialog = false;
+            }
+
             args.Handled = true;
         };
 

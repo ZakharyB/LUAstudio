@@ -27,7 +27,8 @@ public sealed class SemanticAnalyzer
         {
             if (node is IdentifierNameSyntax id && !IsDeclaredInScopes(id.Name.Text, rootScope, declared))
             {
-                if (!_roblox.TryGetGlobal(id.Name.Text, out _) && !IsLuaBuiltin(id.Name.Text))
+                if (!_roblox.GlobalTypeAliases.ContainsKey(id.Name.Text) &&
+                    !_roblox.TryGetGlobal(id.Name.Text, out _) && !IsLuaBuiltin(id.Name.Text))
                 {
                     diagnostics.Add(new SemanticDiagnostic(
                         "LUA2001",

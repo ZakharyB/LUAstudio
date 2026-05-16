@@ -68,6 +68,26 @@ internal sealed class LuaParser
                 new SyntaxToken("return", TextSpan.FromBounds(start, start), null));
         }
 
+        if (MatchKeyword("if"))
+        {
+            return ParseIfStatement();
+        }
+
+        if (MatchKeyword("while"))
+        {
+            return ParseWhileStatement();
+        }
+
+        if (MatchKeyword("for"))
+        {
+            return ParseForStatement();
+        }
+
+        if (MatchKeyword("do"))
+        {
+            return ParseDoStatement();
+        }
+
         var exprStart = Current().Span.Start;
         var expr = ParsePrefixExpression();
         if (expr is null)
@@ -161,6 +181,70 @@ internal sealed class LuaParser
         return new ParameterListSyntax(TextSpan.FromBounds(start, end), null, parameters);
     }
 
+    private SyntaxNode ParseIfStatement()
+    {
+        var start = Previous().Span.Start;
+        var cond = ParseExpression()!;
+        ExpectKeyword("then");
+        var thenBlock = ParseBlockNode();
+        BlockSyntax? elseBlock = null;
+        if (MatchKeyword("elseif"))
+        {
+            // Simplified: treat as else for structure
+        }
+        else if (MatchKeyword("else"))
+        {
+            elseBlock = ParseBlockNode();
+        }
+
+        ExpectKeyword("end");
+        var end = Previous().Span.End;
+        return new IfStatementSyntax(TextSpan.FromBounds(start, end), null, cond, thenBlock, elseBlock);
+    }
+
+    private SyntaxNode ParseWhileStatement()
+    {
+        var start = Previous().Span.Start;
+        var cond = ParseExpression()!;
+        ExpectKeyword("do");
+        var body = ParseBlockNode();
+        ExpectKeyword("end");
+        var end = Previous().Span.End;
+        return new WhileStatementSyntax(TextSpan.FromBounds(start, end), null, cond, body);
+    }
+
+    private SyntaxNode ParseForStatement()
+    {
+        var start = Previous().Span.Start;
+        while (!IsAtEnd() && Current().Keyword != "do")
+        {
+            Advance();
+        }
+
+        ExpectKeyword("do");
+        var body = ParseBlockNode();
+        ExpectKeyword("end");
+        var end = Previous().Span.End;
+        return new ForStatementSyntax(TextSpan.FromBounds(start, end), null, body);
+    }
+
+    private SyntaxNode ParseDoStatement()
+    {
+        var start = Previous().Span.Start;
+        var body = ParseBlockNode();
+        ExpectKeyword("end");
+        var end = Previous().Span.End;
+        return new ForStatementSyntax(TextSpan.FromBounds(start, end), null, body);
+    }
+
+    private BlockSyntax ParseBlockNode()
+    {
+        var start = Current().Span.Start;
+        var statements = ParseBlockStatements();
+        var end = Previous().Span.End;
+        return new BlockSyntax(TextSpan.FromBounds(start, end), null, statements);
+    }
+
     private FunctionBodySyntax ParseFunctionBody()
     {
         var start = Current().Span.Start;
@@ -207,7 +291,7 @@ internal sealed class LuaParser
 
         while (true)
         {
-            if (MatchText("."))
+            if (MatchText(".") || MatchText(":"))
             {
                 var member = ExpectIdentifier();
                 expr = new MemberAccessExpressionSyntax(
