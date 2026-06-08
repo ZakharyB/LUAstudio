@@ -3,12 +3,14 @@ using System.Windows.Media;
 using ICSharpCode.AvalonEdit;
 using ICSharpCode.AvalonEdit.Document;
 using ICSharpCode.AvalonEdit.Rendering;
+using LUAstudio.Abstractions;
+using LUAstudio.Core;
 
 namespace LUAstudio.Editor.Completion;
 
 public sealed class GhostTextRenderer : IBackgroundRenderer
 {
-    private static readonly SolidColorBrush GhostBrush = CreateGhostBrush();
+    private SolidColorBrush _ghostBrush = CreateGhostBrush();
     private string _ghostSuffix = string.Empty;
     private int _ghostStartOffset;
 
@@ -20,9 +22,15 @@ public sealed class GhostTextRenderer : IBackgroundRenderer
 
     public string GhostSuffix => _ghostSuffix;
 
-    /// <summary>
-    /// Draw ghost suffix after the typed prefix at caretOffset.
-    /// </summary>
+    public GhostTextRenderer()
+    {
+        var global = Engine.Globals.Get<string>(SettingKeys.EditorColorGhostText);
+        if (global is not null)
+        {
+            global.Changed += _ => _ghostBrush = CreateGhostBrush();
+        }
+    }
+
     public void SetGhostText(int caretOffset, string prefix, string fullText)
     {
         if (string.IsNullOrEmpty(fullText) || fullText.Length <= prefix.Length ||
@@ -69,7 +77,7 @@ public sealed class GhostTextRenderer : IBackgroundRenderer
                 FlowDirection.LeftToRight,
                 new Typeface(fontFamily, FontStyles.Normal, FontWeights.Normal, FontStretches.Normal),
                 fontSize,
-                GhostBrush,
+                _ghostBrush,
                 VisualTreeHelper.GetDpi(textView).PixelsPerDip);
 
             drawingContext.DrawText(formatted, pos);
@@ -78,7 +86,12 @@ public sealed class GhostTextRenderer : IBackgroundRenderer
 
     private static SolidColorBrush CreateGhostBrush()
     {
-        var brush = new SolidColorBrush(Color.FromRgb(0x5A, 0x5D, 0x66));
+        var hex = Engine.Globals.Get<string>(SettingKeys.EditorColorGhostText)?.Value;
+        var rgb = SettingColorParser.ParseRgb(hex, 0x5A5D66);
+        var brush = new SolidColorBrush(Color.FromRgb(
+            (byte)((rgb >> 16) & 0xFF),
+            (byte)((rgb >> 8) & 0xFF),
+            (byte)(rgb & 0xFF)));
         brush.Freeze();
         return brush;
     }

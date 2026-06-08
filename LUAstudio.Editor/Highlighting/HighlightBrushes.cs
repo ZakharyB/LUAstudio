@@ -1,29 +1,49 @@
 using System.Windows.Media;
+using LUAstudio.Abstractions;
+using LUAstudio.Core;
 
 namespace LUAstudio.Editor.Highlighting;
 
-internal static class HighlightBrushes
+public static class HighlightBrushes
 {
-    public static readonly SolidColorBrush Text = Freeze(0xBC, 0xBE, 0xC8);
-    public static readonly SolidColorBrush Operator = Freeze(0xAA, 0xAF, 0xB9);
-    public static readonly SolidColorBrush Number = Freeze(0xBE, 0xD7, 0xAA);
-    public static readonly SolidColorBrush String = Freeze(0xCE, 0x91, 0x78);
-    public static readonly SolidColorBrush Comment = Freeze(0x6A, 0x99, 0x55);
-    public static readonly SolidColorBrush Keyword = Freeze(0xC5, 0x86, 0xC0);
-    public static readonly SolidColorBrush Bool = Freeze(0x56, 0x9C, 0xD6);
-    public static readonly SolidColorBrush Information = Freeze(0x56, 0x9C, 0xD6);
-    public static readonly SolidColorBrush Builtin = Freeze(0x4E, 0xC9, 0xB0);
-    public static readonly SolidColorBrush LocalMethod = Freeze(0xD4, 0xD4, 0xAA);
-    public static readonly SolidColorBrush LocalProperty = Freeze(0x9C, 0xDC, 0xFE);
-    public static readonly SolidColorBrush FunctionName = Freeze(0xDC, 0xDC, 0xAA);
-    public static readonly SolidColorBrush Type = Freeze(0x4F, 0xC1, 0xFF);
-    public static readonly SolidColorBrush Todo = Freeze(0xFF, 0xCC, 0x66);
-    public static readonly SolidColorBrush Bracket = Freeze(0xBC, 0xBE, 0xC8);
+    private static readonly Dictionary<string, SolidColorBrush> Cache = new();
 
-    private static SolidColorBrush Freeze(byte r, byte g, byte b)
+    public static SolidColorBrush Text => Get(SettingKeys.EditorColorText, 0xBCBEC8);
+    public static SolidColorBrush Operator => Get(SettingKeys.EditorColorOperator, 0xD4D4D4);
+    public static SolidColorBrush Number => Get(SettingKeys.EditorColorNumber, 0xB5CEA8);
+    public static SolidColorBrush String => Get(SettingKeys.EditorColorString, 0xCE9178);
+    public static SolidColorBrush Comment => Get(SettingKeys.EditorColorComment, 0x6A9955);
+    public static SolidColorBrush Keyword => Get(SettingKeys.EditorColorKeyword, 0xC586C8);
+    public static SolidColorBrush Bool => Get(SettingKeys.EditorColorGlobal, 0x569CD6);
+    public static SolidColorBrush Information => Get(SettingKeys.EditorColorGlobal, 0x569CD6);
+    public static SolidColorBrush Builtin => Get(SettingKeys.EditorColorBuiltin, 0x4EC9B0);
+    public static SolidColorBrush LocalMethod => Get(SettingKeys.EditorColorLocalMethod, 0xD4D4AA);
+    public static SolidColorBrush LocalProperty => Get(SettingKeys.EditorColorLocalProperty, 0x9CDCFE);
+    public static SolidColorBrush FunctionName => Get(SettingKeys.EditorColorFunction, 0xDCDCAA);
+    public static SolidColorBrush Type => Get(SettingKeys.EditorColorType, 0x4EC9B0);
+    public static SolidColorBrush Todo => Get(SettingKeys.EditorColorTodo, 0xFFCC66);
+    public static SolidColorBrush Bracket => Get(SettingKeys.EditorColorBracket, 0xBCBEC8);
+
+    public static void Invalidate() => Cache.Clear();
+
+    private static SolidColorBrush Get(string key, uint defaultRgb)
     {
-        var brush = new SolidColorBrush(Color.FromRgb(r, g, b));
+        if (Cache.TryGetValue(key, out var cached))
+        {
+            return cached;
+        }
+
+        var hex = Engine.Globals.Get<string>(key)?.Value;
+        var rgb = SettingColorParser.ParseRgb(hex, defaultRgb);
+        var brush = new SolidColorBrush(ColorFromRgb(rgb));
         brush.Freeze();
+        Cache[key] = brush;
         return brush;
     }
+
+    private static Color ColorFromRgb(uint rgb) =>
+        Color.FromRgb(
+            (byte)((rgb >> 16) & 0xFF),
+            (byte)((rgb >> 8) & 0xFF),
+            (byte)(rgb & 0xFF));
 }

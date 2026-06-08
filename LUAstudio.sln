@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# 
+#
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LUAstudio", "LUAstudio\LUAstudio.csproj", "{B375FF25-EEF0-494C-97FE-F1E59564C57D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LUAstudio.Core", "LUAstudio.Core\LUAstudio.Core.csproj", "{66F2F986-572A-4811-AA84-540E9F0FB43F}"
@@ -26,6 +26,10 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LUAstudio.Editor", "LUAstudio.Editor\LUAstudio.Editor.csproj", "{B2C3D4E5-F6A7-8901-BCDE-F12345678901}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LUAstudio.Tests", "LUAstudio.Tests\LUAstudio.Tests.csproj", "{C3D4E5F6-A7B8-9012-CDEF-123456789012}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LUAstudio.Abstractions", "LUAstudio.Abstractions\LUAstudio.Abstractions.csproj", "{5C7CE4B8-C073-4E96-9B5A-6A55222DCA39}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LUAstudio.Settings", "LUAstudio.Settings\LUAstudio.Settings.csproj", "{7D5E3927-5B28-43FE-91E6-79CB663DEF25}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -85,5 +89,13 @@ Global
 		{C3D4E5F6-A7B8-9012-CDEF-123456789012}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C3D4E5F6-A7B8-9012-CDEF-123456789012}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C3D4E5F6-A7B8-9012-CDEF-123456789012}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5C7CE4B8-C073-4E96-9B5A-6A55222DCA39}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5C7CE4B8-C073-4E96-9B5A-6A55222DCA39}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5C7CE4B8-C073-4E96-9B5A-6A55222DCA39}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5C7CE4B8-C073-4E96-9B5A-6A55222DCA39}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7D5E3927-5B28-43FE-91E6-79CB663DEF25}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7D5E3927-5B28-43FE-91E6-79CB663DEF25}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7D5E3927-5B28-43FE-91E6-79CB663DEF25}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7D5E3927-5B28-43FE-91E6-79CB663DEF25}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

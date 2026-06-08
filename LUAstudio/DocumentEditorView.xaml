@@ -10,8 +10,6 @@
                   VerticalAlignment="Stretch"
                   Background="{StaticResource BrushBgEditor}"
                   BorderThickness="0"
-                  FontFamily="Cascadia Code, Consolas, Courier New"
-                  FontSize="14"
                   HorizontalScrollBarVisibility="Hidden"
                   ShowLineNumbers="True"
                   VerticalScrollBarVisibility="Hidden"

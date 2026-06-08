@@ -1,4 +1,6 @@
 using ICSharpCode.AvalonEdit;
+using LUAstudio.Abstractions;
+using LUAstudio.Core;
 using LUAstudio.IntelliSense.Analysis;
 using LUAstudio.IntelliSense.Completion;
 using LUAstudio.IntelliSense.Documents;
@@ -111,6 +113,12 @@ public sealed class InlineCompletionService : IDisposable
 
     private void RequestUpdate(int selectedIndex)
     {
+        if (Engine.Globals.Get<bool>(SettingKeys.EditorInlineCompletions)?.Value == false)
+        {
+            Dismiss();
+            return;
+        }
+
         _debounceCts?.Cancel();
         _debounceCts = new CancellationTokenSource();
         var cts = _debounceCts;

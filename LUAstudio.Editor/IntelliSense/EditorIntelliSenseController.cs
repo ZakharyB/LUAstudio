@@ -16,6 +16,8 @@ using LUAstudio.IntelliSense.Events;
 using LUAstudio.IntelliSense.Roblox;
 using LUAstudio.IntelliSense.Semantic;
 using LUAstudio.Core.Events;
+using LUAstudio.Abstractions;
+using LUAstudio.Core;
 using LUAstudio.Languages.Text;
 
 namespace LUAstudio.Editor.IntelliSense;
@@ -182,11 +184,11 @@ public sealed class EditorIntelliSenseController : IDisposable
             return;
         }
 
-        if (ShouldTriggerCompletion(e.Text))
+        if (IsEnabled(SettingKeys.EditorAutoComplete) && ShouldTriggerCompletion(e.Text))
         {
             await ShowCompletionPopupAsync(selectIndex: 0).ConfigureAwait(false);
         }
-        else if (IsIdentifierChar(e.Text))
+        else if (IsEnabled(SettingKeys.EditorInlineCompletions) && IsIdentifierChar(e.Text))
         {
             _inline.OnTextChanged();
         }
@@ -199,7 +201,7 @@ public sealed class EditorIntelliSenseController : IDisposable
             return;
         }
 
-        if (e.Key == Key.Enter && _smartEnter.TryHandleEnter())
+        if (e.Key == Key.Enter && IsEnabled(SettingKeys.EditorSmartEnter) && _smartEnter.TryHandleEnter())
         {
             e.Handled = true;
             return;
@@ -262,7 +264,8 @@ public sealed class EditorIntelliSenseController : IDisposable
             return;
         }
 
-        if (e.Key == Key.Space && Keyboard.Modifiers == ModifierKeys.Control)
+        if (e.Key == Key.Space && Keyboard.Modifiers == ModifierKeys.Control &&
+            IsEnabled(SettingKeys.EditorAutoComplete))
         {
             e.Handled = true;
             await ShowCompletionPopupAsync(selectIndex: 0).ConfigureAwait(false);
@@ -308,9 +311,12 @@ public sealed class EditorIntelliSenseController : IDisposable
     private static bool IsIdentifierChar(string text) =>
         text.Length == 1 && (char.IsLetterOrDigit(text[0]) || text[0] == '_');
 
+    private static bool IsEnabled(string key) =>
+        Engine.Globals.Get<bool>(key)?.Value != false;
+
     private async Task ShowCompletionPopupAsync(int selectIndex)
     {
-        if (_editor is null)
+        if (_editor is null || !IsEnabled(SettingKeys.EditorAutoComplete))
         {
             return;
         }

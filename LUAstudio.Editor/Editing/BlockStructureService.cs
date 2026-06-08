@@ -7,7 +7,7 @@ public sealed record BlockInfo(string Keyword, int HeaderLineEnd, int IndentLeve
 
 public static class BlockStructureService
 {
-    private const int IndentSize = 4;
+    public static int TabWidth { get; set; } = 4;
 
     public static BlockInfo? GetBlockAfterCaret(string text, int caretOffset, SyntaxNode? root)
     {
@@ -20,27 +20,27 @@ public static class BlockStructureService
             if (!trimmed.Contains("end", StringComparison.Ordinal))
             {
                 var indent = line.Length - trimmed.Length;
-                return new BlockInfo("function", caretOffset, indent / IndentSize);
+                return new BlockInfo("function", caretOffset, indent / TabWidth);
             }
         }
 
         if (trimmed.StartsWith("if ", StringComparison.Ordinal) && trimmed.Contains("then", StringComparison.Ordinal))
         {
             var indent = line.Length - trimmed.Length;
-            return new BlockInfo("if", caretOffset, indent / IndentSize);
+            return new BlockInfo("if", caretOffset, indent / TabWidth);
         }
 
         if (trimmed.StartsWith("for ", StringComparison.Ordinal) ||
             trimmed.StartsWith("while ", StringComparison.Ordinal))
         {
             var indent = line.Length - trimmed.Length;
-            return new BlockInfo("loop", caretOffset, indent / IndentSize);
+            return new BlockInfo("loop", caretOffset, indent / TabWidth);
         }
 
         return null;
     }
 
-    public static string GetIndent(int level) => new(' ', level * IndentSize);
+    public static string GetIndent(int level) => new(' ', level * TabWidth);
 
     private static string GetLineFromOffset(string text, int offset)
     {

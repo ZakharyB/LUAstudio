@@ -1,5 +1,7 @@
 ﻿using System.Windows;
+using LUAstudio.Core;
 using LUAstudio.Core.DependencyInjection;
+using LUAstudio.Storage;
 using LUAstudio.Core.Threading;
 using LUAstudio.Editor.DependencyInjection;
 using LUAstudio.IDE.DependencyInjection;
@@ -23,6 +25,12 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
+        // that registers the system that will later
+        // allow to set any value to be changeable on the fly
+        // for plugins or setting implementations
+        Engine.Initialize();
+        RuntimeGlobals.RegisterDefaults();
+        
         DispatcherUnhandledException += (_, args) =>
         {
             if (_isShowingErrorDialog)
@@ -59,8 +67,15 @@ public partial class App : Application
         services.AddSingleton<IExplorerShellService, WpfExplorerShellService>();
         services.AddSingleton<MainWindow>();
         services.AddSingleton<WpfDocumentEditorHost>();
+        services.AddSingleton<SettingsBootstrap>();
+        services.AddSingleton<EditorSettingsCoordinator>();
 
         _services = services.BuildServiceProvider();
+
+        var bootstrap = _services.GetRequiredService<SettingsBootstrap>();
+        bootstrap.LoadAsync().GetAwaiter().GetResult();
+        bootstrap.AttachPersistence();
+        _services.GetRequiredService<EditorSettingsCoordinator>().Start();
 
         _ = _services.GetRequiredService<DocumentSyncHandler>();
         _ = _services.GetRequiredService<RecentFilesRecordingHandler>();

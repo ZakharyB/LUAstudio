@@ -1,6 +1,8 @@
 using System.Windows.Input;
 using ICSharpCode.AvalonEdit;
 using ICSharpCode.AvalonEdit.Editing;
+using LUAstudio.Abstractions;
+using LUAstudio.Core;
 
 namespace LUAstudio.Editor.Editing;
 
@@ -27,7 +29,8 @@ public sealed class AutoPairInsertService
 
     private void OnTextEntering(object? sender, TextCompositionEventArgs e)
     {
-        if (_editor is null || string.IsNullOrEmpty(e.Text))
+        if (_editor is null || string.IsNullOrEmpty(e.Text) ||
+            Engine.Globals.Get<bool>(SettingKeys.EditorAutoPairBrackets)?.Value == false)
         {
             return;
         }

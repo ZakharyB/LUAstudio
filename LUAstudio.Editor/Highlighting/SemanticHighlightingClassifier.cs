@@ -8,6 +8,8 @@ using LUAstudio.IntelliSense.Semantic;
 using LUAstudio.IntelliSense.Symbols;
 using LUAstudio.Languages.Parsing;
 using LUAstudio.Languages.Syntax.Nodes;
+using LUAstudio.Abstractions;
+using LUAstudio.Core;
 using LUAstudio.Languages.Text;
 
 namespace LUAstudio.Editor.Highlighting;
@@ -57,6 +59,11 @@ public sealed class SemanticHighlightingClassifier : DocumentColorizingTransform
 
     protected override void ColorizeLine(DocumentLine line)
     {
+        if (Engine.Globals.Get<bool>(SettingKeys.EditorSemanticHighlighting)?.Value == false)
+        {
+            return;
+        }
+
         var tokens = GetTokens();
         var result = _analysis.GetLatestResult(_documentId);
         var scope = result?.SemanticModel.RootScope;

@@ -1,4 +1,7 @@
-﻿using LUAstudio.IDE.ViewModels;
+﻿using LUAstudio.Abstractions;
+using LUAstudio.Core;
+using LUAstudio.IDE.ViewModels;
+using LUAstudio.Settings.Views;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Windows;
@@ -168,12 +171,19 @@ public partial class MainWindow
         MaximizeButton.ToolTip = maximized ? "Restore" : "Maximize";
     }
 
+    private void OpenSettings_OnClick(object sender, RoutedEventArgs e)
+    {
+        var window = new SettingsWindow { Owner = this };
+        window.ShowDialog();
+    }
+
     private async void OnLoaded(object sender, RoutedEventArgs e)
     {
         Loaded -= OnLoaded;
         if (DataContext is MainViewModel vm)
         {
             await vm.InitializeAsync().ConfigureAwait(true);
+            vm.RestoreWorkspaceOnStartup = Engine.Globals.Get<bool>(SettingKeys.RestoreWorkspaceRoots)?.Value ?? vm.RestoreWorkspaceOnStartup;
         }
 
         DockLayoutStore.DeleteLegacyLayoutFile();
