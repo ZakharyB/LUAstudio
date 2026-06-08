@@ -20,18 +20,31 @@ public sealed class LuaParserService : ILuaParser
             cancellationToken.ThrowIfCancellationRequested();
 
             var fromCache = false;
+
             if (previous is not null &&
                 previous.ChangedSpan.Length <= IncrementalReuseMaxLength &&
                 !previous.PreviousResult.Tree.HasErrors &&
-                string.Equals(previous.PreviousResult.Snapshot.Content, snapshot.Content, StringComparison.Ordinal))
+                string.Equals(
+                    previous.PreviousResult.Snapshot.Content,
+                    snapshot.Content,
+                    StringComparison.Ordinal))
             {
                 fromCache = true;
-                return new ParseResult(previous.PreviousResult.Tree, fromCache);
+
+                return new ParseResult(
+                    previous.PreviousResult.Tree,
+                    fromCache,
+                    previous.PreviousResult.Tokens);
             }
 
+            var lexer = new LuaLexer(snapshot.Content);
+            var allTokens = lexer.Tokenize();
+
             var (root, diagnostics) = LuaParser.Parse(snapshot.Content);
-            var tree = new SyntaxTree(snapshot, root, diagnostics);
-            return new ParseResult(tree, fromCache);
+            var tree = new SyntaxTree(snapshot, root, diagnostics, allTokens);
+
+            return new ParseResult(tree, fromCache, allTokens);
+
         }, cancellationToken);
     }
 }

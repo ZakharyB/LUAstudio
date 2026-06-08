@@ -221,7 +221,7 @@ public partial class DocumentEditorView : UserControl
     private void ApplyEditorChrome()
     {
         Editor.Background = new SolidColorBrush(Color.FromRgb(0x0E, 0x0F, 0x11));
-        Editor.Foreground = new SolidColorBrush(Color.FromRgb(0xE6, 0xE7, 0xEA));
+        Editor.Foreground = new SolidColorBrush(Color.FromRgb(0xBC, 0xBE, 0xC8));
 
         foreach (var margin in Editor.TextArea.LeftMargins)
         {

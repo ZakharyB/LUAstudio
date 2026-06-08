@@ -5,10 +5,11 @@ namespace LUAstudio.Languages.Parsing;
 
 public sealed class ParseResult
 {
-    public ParseResult(SyntaxTree tree, bool fromIncrementalCache)
+    public ParseResult(SyntaxTree tree, bool fromIncrementalCache, IReadOnlyList<LuaToken> tokens)
     {
         Tree = tree;
         FromIncrementalCache = fromIncrementalCache;
+        Tokens = tokens;
     }
 
     public SyntaxTree Tree { get; }
@@ -16,4 +17,6 @@ public sealed class ParseResult
     public SourceSnapshot Snapshot => Tree.Snapshot;
 
     public bool FromIncrementalCache { get; }
+
+    public IReadOnlyList<LuaToken> Tokens { get; }
 }

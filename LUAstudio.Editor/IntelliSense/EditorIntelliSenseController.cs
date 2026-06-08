@@ -13,6 +13,8 @@ using LUAstudio.IntelliSense.Analysis;
 using LUAstudio.IntelliSense.Completion;
 using LUAstudio.IntelliSense.Documents;
 using LUAstudio.IntelliSense.Events;
+using LUAstudio.IntelliSense.Roblox;
+using LUAstudio.IntelliSense.Semantic;
 using LUAstudio.Core.Events;
 using LUAstudio.Languages.Text;
 
@@ -28,8 +30,10 @@ public sealed class EditorIntelliSenseController : IDisposable
     private readonly InlineCompletionService _inline;
     private readonly SmartEnterHandler _smartEnter;
     private readonly AutoPairInsertService _autoPairs;
-    private readonly SyntaxHighlightingService _syntax;
-    private readonly SemanticHighlightingClassifier _semanticHighlight;
+    private readonly IRobloxApiDatabase _roblox;
+    private readonly ExpressionTypeResolver _typeResolver;
+    private LuaSyntaxHighlighting? _syntaxHighlight;
+    private SemanticHighlightingClassifier? _semanticHighlight;
     private TextEditor? _editor;
     private Guid _documentId;
     private CompletionWindow? _completionWindow;
@@ -46,8 +50,8 @@ public sealed class EditorIntelliSenseController : IDisposable
         InlineCompletionService inline,
         SmartEnterHandler smartEnter,
         AutoPairInsertService autoPairs,
-        SyntaxHighlightingService syntax,
-        SemanticHighlightingClassifier semanticHighlight)
+        IRobloxApiDatabase roblox,
+        ExpressionTypeResolver typeResolver)
     {
         _completion = completion;
         _analysis = analysis;
@@ -57,8 +61,8 @@ public sealed class EditorIntelliSenseController : IDisposable
         _inline = inline;
         _smartEnter = smartEnter;
         _autoPairs = autoPairs;
-        _syntax = syntax;
-        _semanticHighlight = semanticHighlight;
+        _roblox = roblox;
+        _typeResolver = typeResolver;
 
         _eventBus.Subscribe<DocumentAnalyzedEvent>(OnDocumentAnalyzed);
     }
@@ -69,7 +73,12 @@ public sealed class EditorIntelliSenseController : IDisposable
         _editor = editor;
         _documentId = documentId;
 
-        _syntax.Apply(editor);
+        editor.SyntaxHighlighting = null;
+
+        _syntaxHighlight = new LuaSyntaxHighlighting(_roblox);
+        editor.TextArea.TextView.LineTransformers.Add(_syntaxHighlight);
+
+        _semanticHighlight = new SemanticHighlightingClassifier(_analysis, _roblox, _typeResolver);
         _semanticHighlight.SetDocument(documentId);
         editor.TextArea.TextView.LineTransformers.Add(_semanticHighlight);
         _inline.Attach(editor, documentId);
@@ -104,6 +113,19 @@ public sealed class EditorIntelliSenseController : IDisposable
         _editor.TextArea.TextEntered -= OnTextEntered;
         _editor.TextArea.KeyDown -= OnKeyDown;
         _editor.TextChanged -= OnEditorTextChanged;
+
+        if (_semanticHighlight is not null)
+        {
+            _editor.TextArea.TextView.LineTransformers.Remove(_semanticHighlight);
+            _semanticHighlight = null;
+        }
+
+        if (_syntaxHighlight is not null)
+        {
+            _editor.TextArea.TextView.LineTransformers.Remove(_syntaxHighlight);
+            _syntaxHighlight = null;
+        }
+
         _inline.Detach();
         _smartEnter.Detach();
         _autoPairs.Detach();

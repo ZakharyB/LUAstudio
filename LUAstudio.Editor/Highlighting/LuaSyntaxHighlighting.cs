@@ -1,56 +1,125 @@
-using System.Text.RegularExpressions;
-using System.Windows;
 using System.Windows.Media;
 using ICSharpCode.AvalonEdit.Document;
 using ICSharpCode.AvalonEdit.Rendering;
+using LUAstudio.IntelliSense.Roblox;
+using LUAstudio.Languages.Parsing;
+using LUAstudio.Languages.Text;
 
 namespace LUAstudio.Editor.Highlighting;
 
 /// <summary>
-/// Lightweight Lua/Luau syntax colorizer for AvalonEdit without loading full XSHD definitions.
+/// Token-driven Lua/Luau syntax highlighter (no regex, fully lexer-backed).
 /// </summary>
 public sealed class LuaSyntaxHighlighting : DocumentColorizingTransformer
 {
-    private static readonly SolidColorBrush KeywordBrush = Freeze(Color.FromRgb(0xC5, 0x86, 0xC8));
-    private static readonly SolidColorBrush StringBrush = Freeze(Color.FromRgb(0xCE, 0x91, 0x78));
-    private static readonly SolidColorBrush NumberBrush = Freeze(Color.FromRgb(0xB5, 0xCE, 0xA8));
-    private static readonly SolidColorBrush CommentBrush = Freeze(Color.FromRgb(0x6A, 0x99, 0x55));
-    private static readonly SolidColorBrush BuiltinBrush = Freeze(Color.FromRgb(0x4E, 0xC9, 0xB0));
+    private static readonly HashSet<string> BuiltinFunctions = new(StringComparer.Ordinal)
+    {
+        "print", "require", "pairs", "ipairs", "next", "typeof", "assert", "error", "pcall", "xpcall",
+        "tick", "wait", "spawn", "delay", "warn", "rawget", "rawset", "setmetatable", "getmetatable",
+        "select", "unpack", "tonumber", "tostring", "type", "task", "game"
+    };
 
-    private static readonly Regex KeywordRegex = new(
-        @"\b(and|break|do|else|elseif|end|false|for|function|goto|if|in|local|nil|not|or|repeat|return|then|true|until|while|type|export)\b",
-        RegexOptions.Compiled);
+    private readonly IRobloxApiDatabase _roblox;
+    private string? _cachedText;
+    private IReadOnlyList<LuaToken>? _cachedTokens;
 
-    private static readonly Regex StringRegex = new(@"('[^'\\]*(?:\\.[^'\\]*)*'|""[^""\\]*(?:\\.[^""\\]*)*"")", RegexOptions.Compiled);
-    private static readonly Regex NumberRegex = new(@"\b\d+(?:\.\d+)?\b", RegexOptions.Compiled);
-    private static readonly Regex CommentRegex = new(@"--[^\n]*", RegexOptions.Compiled);
-    private static readonly Regex BuiltinRegex = new(@"\b(print|require|pairs|ipairs|typeof|game|workspace)\b", RegexOptions.Compiled);
+    public LuaSyntaxHighlighting(IRobloxApiDatabase roblox) => _roblox = roblox;
 
     protected override void ColorizeLine(DocumentLine line)
     {
-        var text = CurrentContext.Document.GetText(line);
-        Apply(KeywordRegex, KeywordBrush, line, text);
-        Apply(StringRegex, StringBrush, line, text);
-        Apply(NumberRegex, NumberBrush, line, text);
-        Apply(CommentRegex, CommentBrush, line, text);
-        Apply(BuiltinRegex, BuiltinBrush, line, text);
-    }
-
-    private void Apply(Regex regex, SolidColorBrush brush, DocumentLine line, string text)
-    {
-        foreach (Match match in regex.Matches(text))
+        var text = CurrentContext.Document.Text;
+        if (!string.Equals(_cachedText, text, StringComparison.Ordinal))
         {
-            ChangeLinePart(
-                line.Offset + match.Index,
-                line.Offset + match.Index + match.Length,
-                element => element.TextRunProperties.SetForegroundBrush(brush));
+            _cachedTokens = LuaTokenizer.Tokenize(text);
+            _cachedText = text;
+        }
+
+        if (_cachedTokens is null)
+        {
+            return;
+        }
+
+        foreach (var token in _cachedTokens)
+        {
+            if (token.Span.End <= line.Offset || token.Span.Start >= line.EndOffset)
+            {
+                continue;
+            }
+
+            if (token.Kind == LuaTokenKind.Comment)
+            {
+                ColorizeSpan(token.Span, HighlightBrushes.Comment, line);
+                ColorizeTodoInComment(token, line);
+                continue;
+            }
+
+            var brush = GetBrush(token);
+            if (brush is null)
+            {
+                continue;
+            }
+
+            ColorizeSpan(token.Span, brush, line);
         }
     }
 
-    private static SolidColorBrush Freeze(Color color)
+    private void ColorizeTodoInComment(LuaToken token, DocumentLine line)
     {
-        var brush = new SolidColorBrush(color);
-        brush.Freeze();
-        return brush;
+        const string marker = "TODO";
+        var index = token.Text.IndexOf(marker, StringComparison.Ordinal);
+        while (index >= 0)
+        {
+            var start = token.Span.Start + index;
+            var end = start + marker.Length;
+            if (end > line.Offset && start < line.EndOffset)
+            {
+                ColorizeSpan(TextSpan.FromBounds(start, end), HighlightBrushes.Todo, line);
+            }
+
+            index = token.Text.IndexOf(marker, index + marker.Length, StringComparison.Ordinal);
+        }
+    }
+
+    private SolidColorBrush? GetBrush(LuaToken token)
+    {
+        return token.Kind switch
+        {
+            LuaTokenKind.Keyword when token.Keyword is "nil" or "true" or "false" => HighlightBrushes.Bool,
+            LuaTokenKind.Keyword => HighlightBrushes.Keyword,
+
+            LuaTokenKind.String => HighlightBrushes.String,
+
+            LuaTokenKind.Number => HighlightBrushes.Number,
+
+            LuaTokenKind.Operator => HighlightBrushes.Operator,
+
+            LuaTokenKind.Punctuation => HighlightBrushes.Bracket,
+
+            LuaTokenKind.Identifier when token.Text == "self" => HighlightBrushes.Keyword,
+
+            LuaTokenKind.Identifier when _roblox.GlobalTypeAliases.ContainsKey(token.Text) => HighlightBrushes.Information,
+
+            LuaTokenKind.Identifier when BuiltinFunctions.Contains(token.Text) => HighlightBrushes.Builtin,
+
+            LuaTokenKind.Identifier => HighlightBrushes.Text,
+
+            _ => null
+        };
+    }
+
+    private void ColorizeSpan(TextSpan span, SolidColorBrush brush, DocumentLine line)
+    {
+        var start = Math.Max(span.Start, line.Offset);
+        var end = Math.Min(span.End, line.EndOffset);
+
+        if (start >= end)
+        {
+            return;
+        }
+
+        ChangeLinePart(
+            start,
+            end,
+            element => element.TextRunProperties.SetForegroundBrush(brush));
     }
 }

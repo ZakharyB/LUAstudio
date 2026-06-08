@@ -15,7 +15,7 @@
     <!-- Multiline block comments must be listed before line comments -->
     <Span color="Comment" ruleSet="" multiline="true">
       <Begin>--\[\[</Begin>
-      <End>\]\]</End>
+      <End>(?:--)?\]\]</End>
     </Span>
     <Span color="Comment" ruleSet="" multiline="false">
       <Begin>--(?!\[\[)</Begin>

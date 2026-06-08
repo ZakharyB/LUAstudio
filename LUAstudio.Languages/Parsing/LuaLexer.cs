@@ -2,7 +2,7 @@ using LUAstudio.Languages.Text;
 
 namespace LUAstudio.Languages.Parsing;
 
-internal enum LuaTokenKind
+public  enum LuaTokenKind
 {
     EndOfFile,
     Identifier,
@@ -15,7 +15,7 @@ internal enum LuaTokenKind
     Whitespace
 }
 
-internal readonly record struct LuaToken(LuaTokenKind Kind, string Text, TextSpan Span, string? Keyword = null);
+public readonly record struct LuaToken(LuaTokenKind Kind, string Text, TextSpan Span, string? Keyword = null);
 
 internal sealed class LuaLexer
 {
@@ -125,46 +125,81 @@ internal sealed class LuaLexer
 
         tokens.Add(new LuaToken(LuaTokenKind.String, _text[start.._pos], TextSpan.FromBounds(start, _pos)));
     }
-
+    
     private void ReadComment(int start, List<LuaToken> tokens)
     {
         _pos += 2;
+
         if (_pos < _text.Length && _text[_pos] == '[' && Peek(1) == '[')
         {
             _pos += 2;
-            while (_pos < _text.Length && !(_text[_pos] == ']' && Peek(1) == ']'))
-            {
-                _pos++;
-            }
 
-            if (_pos < _text.Length)
+            while (_pos < _text.Length)
             {
-                _pos += 2;
+                if (_text[_pos] == ']' && Peek(1) == ']')
+                {
+                    _pos += 2;
+                    break;
+                }
+
+             
+                if (_text[_pos] == '-' &&
+                    Peek(1) == '-' &&
+                    Peek(2) == ']' &&
+                    Peek(3) == ']')
+                {
+                    _pos += 4;
+                    break;
+                }
+
+                _pos++;
             }
         }
         else
         {
             while (_pos < _text.Length && _text[_pos] != '\n')
-            {
                 _pos++;
-            }
         }
 
-        tokens.Add(new LuaToken(LuaTokenKind.Comment, _text[start.._pos], TextSpan.FromBounds(start, _pos)));
+        tokens.Add(new LuaToken(
+            LuaTokenKind.Comment,
+            _text[start.._pos],
+            TextSpan.FromBounds(start, _pos)
+        ));
     }
 
     private void ReadOperatorOrPunctuation(int start, List<LuaToken> tokens)
     {
-        _pos++;
-        var two = _pos < _text.Length ? _text[start..(_pos + 1)] : _text[start.._pos];
-        if (two is ".." or "::" or "->" or ">=" or "<=" or "~=" or "==" or "::")
-        {
-            _pos++;
-        }
+        _pos = start;
 
-        var text = _text[start.._pos];
-        var kind = text is "(" or ")" or "{" or "}" or "[" or "]" or "," or ";" or "." ? LuaTokenKind.Punctuation : LuaTokenKind.Operator;
-        tokens.Add(new LuaToken(kind, text, TextSpan.FromBounds(start, _pos)));
+        char c1 = _text[_pos];
+        char c2 = _pos + 1 < _text.Length ? _text[_pos + 1] : '\0';
+
+        bool isTwoCharOp =
+            (c1 == '.' && c2 == '.') ||   // ..
+            (c1 == ':' && c2 == ':') ||   // ::
+            (c1 == '-' && c2 == '>') ||   // ->
+            (c1 == '>' && c2 == '=') ||   // >=
+            (c1 == '<' && c2 == '=') ||   // <=
+            (c1 == '~' && c2 == '=') ||   // ~=
+            (c1 == '=' && c2 == '=');     // ==
+
+        _pos += isTwoCharOp ? 2 : 1;
+
+        int length = _pos - start;
+        var span = _text.AsSpan(start, length);
+
+        bool isPunctuation =
+            length == 1 &&
+            (c1 == '(' || c1 == ')' || c1 == '{' || c1 == '}' ||
+             c1 == '[' || c1 == ']' || c1 == ',' || c1 == ';' ||
+             c1 == '.');
+
+        tokens.Add(new LuaToken(
+            isPunctuation ? LuaTokenKind.Punctuation : LuaTokenKind.Operator,
+            span.ToString(),
+            TextSpan.FromBounds(start, _pos)
+        ));
     }
 
     private char Peek(int offset) =>

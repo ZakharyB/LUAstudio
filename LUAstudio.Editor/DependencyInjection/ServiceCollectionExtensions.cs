@@ -17,8 +17,6 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<InlineCompletionService>();
         services.AddSingleton<SmartEnterHandler>();
         services.AddSingleton<AutoPairInsertService>();
-        services.AddSingleton<SyntaxHighlightingService>();
-        services.AddSingleton<SemanticHighlightingClassifier>();
         services.AddSingleton<EditorIntelliSenseController>();
         return services;
     }
