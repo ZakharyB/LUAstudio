@@ -1,7 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <ProjectReference Include="..\LUAstudio.Abstractions\LUAstudio.Abstractions.csproj" />
     <ProjectReference Include="..\LUAstudio.Core\LUAstudio.Core.csproj" />
+    <ProjectReference Include="..\LUAstudio.IntelliSense\LUAstudio.IntelliSense.csproj" />
     <ProjectReference Include="..\LUAstudio.Workspace\LUAstudio.Workspace.csproj" />
   </ItemGroup>
 

@@ -1,8 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <ItemGroup>
+      <ProjectReference Include="..\LUAstudio.Abstractions\LUAstudio.Abstractions.csproj" />
       <ProjectReference Include="..\LUAstudio.Core\LUAstudio.Core.csproj" />
+      <ProjectReference Include="..\LUAstudio.Editor\LUAstudio.Editor.csproj" />
       <ProjectReference Include="..\LUAstudio.IDE\LUAstudio.IDE.csproj" />
+      <ProjectReference Include="..\LUAstudio.Settings\LUAstudio.Settings.csproj" />
+      <ProjectReference Include="..\LUAstudio.Storage\LUAstudio.Storage.csproj" />
       <ProjectReference Include="..\LUAstudio.Workspace\LUAstudio.Workspace.csproj" />
       <ProjectReference Include="..\LUAstudio.Themes\LUAstudio.Themes.csproj" />
       <ProjectReference Include="..\LUAstudio.Tools\LUAstudio.Tools.csproj" />
@@ -19,6 +23,12 @@
 
     <ItemGroup>
       <Content Include="..\Assets\Icons\*.svg" Link="Assets\Icons\%(Filename)%(Extension)">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="..\Assets\Roblox\api-dump.json" Link="Assets\Roblox\api-dump.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Assets\Editor\Lua.xshd" Link="Assets\Editor\Lua.xshd">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </Content>
     </ItemGroup>

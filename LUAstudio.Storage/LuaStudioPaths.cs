@@ -13,4 +13,14 @@ public static class LuaStudioPaths
     }
 
     public static string DatabasePath => Path.Combine(AppDataRoot, "luastudio.db");
+
+    public static string CacheDirectory
+    {
+        get
+        {
+            var path = Path.Combine(AppDataRoot, "cache");
+            Directory.CreateDirectory(path);
+            return path;
+        }
+    }
 }

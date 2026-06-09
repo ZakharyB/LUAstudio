@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0-windows</TargetFramework>
+        <Nullable>enable</Nullable>
+        <UseWPF>true</UseWPF>
+        <ImplicitUsings>enable</ImplicitUsings>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\LUAstudio.Abstractions\LUAstudio.Abstractions.csproj" />
+      <ProjectReference Include="..\LUAstudio.Core\LUAstudio.Core.csproj" />
+      <ProjectReference Include="..\LUAstudio.Editor\LUAstudio.Editor.csproj" />
+      <ProjectReference Include="..\LUAstudio.IDE\LUAstudio.IDE.csproj" />
+      <ProjectReference Include="..\LUAstudio.Themes\LUAstudio.Themes.csproj" />
+      <ProjectReference Include="..\LUAstudio.Workspace\LUAstudio.Workspace.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    </ItemGroup>
+
+</Project>

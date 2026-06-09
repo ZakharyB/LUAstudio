@@ -1,11 +1,9 @@
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
-using System.Windows.Media;
-using ICSharpCode.AvalonEdit.Editing;
 using LUAstudio.IDE.Documents;
 using LUAstudio.IDE.ViewModels;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace LUAstudio;
 
@@ -15,12 +13,20 @@ public partial class DocumentEditorView : UserControl
     private TextDocument? _pendingDocument;
     private bool _suppressVmPush;
     private bool _caretHooked;
+    private WpfDocumentEditorHost? _languageHost;
+    private EditorSettingsCoordinator? _settingsCoordinator;
 
     public DocumentEditorView()
     {
         InitializeComponent();
         Loaded += OnEditorLoaded;
         Unloaded += OnEditorUnloaded;
+    }
+
+    public WpfDocumentEditorHost? LanguageHost
+    {
+        get => _languageHost;
+        set => _languageHost = value;
     }
 
     public static readonly DependencyProperty DocumentProperty =
@@ -41,7 +47,9 @@ public partial class DocumentEditorView : UserControl
 
     private void OnEditorLoaded(object sender, RoutedEventArgs e)
     {
-        ApplyEditorChrome();
+        _languageHost ??= App.Services.GetRequiredService<WpfDocumentEditorHost>();
+        _settingsCoordinator ??= App.Services.GetRequiredService<EditorSettingsCoordinator>();
+        _settingsCoordinator.Register(Editor);
         EnsureCaretHook();
         if (_pendingDocument is not null)
         {
@@ -64,6 +72,16 @@ public partial class DocumentEditorView : UserControl
             Editor.TextArea.Caret.PositionChanged -= OnCaretPositionChanged;
             _caretHooked = false;
         }
+
+        if (_boundDocument is not null && IsEditorReady)
+        {
+            _languageHost?.Detach(Editor, _boundDocument);
+        }
+
+        if (IsEditorReady)
+        {
+            _settingsCoordinator?.Unregister(Editor);
+        }
     }
 
     private void RebindDocument(TextDocument? oldDoc, TextDocument? newDoc)
@@ -71,6 +89,10 @@ public partial class DocumentEditorView : UserControl
         if (oldDoc is not null)
         {
             oldDoc.PropertyChanged -= OnDocumentPropertyChanged;
+            if (IsEditorReady)
+            {
+                _languageHost?.Detach(Editor, oldDoc);
+            }
         }
 
         _boundDocument = newDoc;
@@ -120,6 +142,8 @@ public partial class DocumentEditorView : UserControl
         doc.PropertyChanged -= OnDocumentPropertyChanged;
         doc.PropertyChanged += OnDocumentPropertyChanged;
 
+        _languageHost?.Attach(Editor, doc);
+
         try
         {
             Editor.TextArea.Caret.BringCaretToView();
@@ -164,6 +188,7 @@ public partial class DocumentEditorView : UserControl
         }
 
         _boundDocument.Content = Editor.Document.Text;
+        _languageHost?.NotifyContentChanged(_boundDocument);
     }
 
     private void EnsureCaretHook()
@@ -196,41 +221,4 @@ public partial class DocumentEditorView : UserControl
     }
 
     private bool IsEditorReady => Editor is not null && Editor.TextArea is not null;
-
-    private void ApplyEditorChrome()
-    {
-        Editor.Background = new SolidColorBrush(Color.FromRgb(0x0E, 0x0F, 0x11));
-        Editor.Foreground = new SolidColorBrush(Color.FromRgb(0xE6, 0xE7, 0xEA));
-
-        foreach (var margin in Editor.TextArea.LeftMargins)
-        {
-            if (margin is LineNumberMargin lineNumbers)
-            {
-                lineNumbers.SetValue(TextBlock.ForegroundProperty, new SolidColorBrush(Color.FromRgb(0x9A, 0x9D, 0xA5)));
-            }
-        }
-
-        Editor.TextArea.TextView.LinkTextForegroundBrush = new SolidColorBrush(Color.FromRgb(0x35, 0x74, 0xF0));
-        HideEditorScrollBars(Editor);
-    }
-
-    private static void HideEditorScrollBars(DependencyObject root)
-    {
-        var hiddenStyle = (Style?)Application.Current.TryFindResource("HiddenScrollBar");
-        if (hiddenStyle is null)
-        {
-            return;
-        }
-
-        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
-        {
-            var child = VisualTreeHelper.GetChild(root, i);
-            if (child is ScrollBar scrollBar)
-            {
-                scrollBar.Style = hiddenStyle;
-            }
-
-            HideEditorScrollBars(child);
-        }
-    }
 }

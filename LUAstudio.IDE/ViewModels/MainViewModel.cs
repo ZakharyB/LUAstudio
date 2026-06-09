@@ -3,6 +3,8 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using LUAstudio.Abstractions;
+using LUAstudio.Core;
 using LUAstudio.Core.Logging;
 using LUAstudio.IDE.Documents;
 using LUAstudio.IDE.Services;
@@ -38,6 +40,12 @@ public sealed partial class MainViewModel : ObservableObject, IFileSystemActivit
         _documents.Documents.CollectionChanged += OnDocumentsCollectionChanged;
         HookActiveDocument(_documents.ActiveDocument);
         RefreshDocumentPresence();
+
+        var restoreGlobal = Engine.Globals.Get<bool>(SettingKeys.RestoreWorkspaceRoots);
+        if (restoreGlobal is not null)
+        {
+            restoreGlobal.Changed += value => RestoreWorkspaceOnStartup = value;
+        }
     }
 
     public WorkspaceExplorerViewModel Explorer { get; }
@@ -107,6 +115,12 @@ public sealed partial class MainViewModel : ObservableObject, IFileSystemActivit
 
     partial void OnRestoreWorkspaceOnStartupChanged(bool value)
     {
+        var global = Engine.Globals.Get<bool>(SettingKeys.RestoreWorkspaceRoots);
+        if (global is not null && global.Value != value)
+        {
+            global.Value = value;
+        }
+
         _ = SaveRestorePreferenceAsync(value);
     }
 

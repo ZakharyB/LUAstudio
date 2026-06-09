@@ -32,7 +32,7 @@
         <KeyBinding Key="N" Modifiers="Control" Command="{Binding NewDocumentCommand}" />
         <KeyBinding Key="O" Modifiers="Control" Command="{Binding OpenDocumentCommand}" />
         <KeyBinding Key="S" Modifiers="Control" Command="{Binding SaveActiveCommand}" />
-        <KeyBinding Key="S" Modifiers="Control+Shift" Command="{Binding SaveAsActiveCommand}" />
+   <!--     <KeyBinding Key="S" Modifiers="Control+Shift" Command="{Binding SaveAsActiveCommand}" /> -->
         <KeyBinding Key="W" Modifiers="Control" Command="{Binding CloseActiveCommand}" />
     </Window.InputBindings>
 
@@ -75,9 +75,13 @@
                             <MenuItem Header="_New" Command="{Binding NewDocumentCommand}" InputGestureText="Ctrl+N" />
                             <MenuItem Header="_Open file…" Command="{Binding OpenDocumentCommand}" InputGestureText="Ctrl+O" />
                             <MenuItem Header="Open _folder…" Command="{Binding Explorer.AddWorkspaceRootCommand}" />
+                            <MenuItem Header="Recent"/>
                             <Separator />
                             <MenuItem Header="_Save" Command="{Binding SaveActiveCommand}" InputGestureText="Ctrl+S" />
                             <MenuItem Header="Save _as…" Command="{Binding SaveAsActiveCommand}" InputGestureText="Ctrl+Shift+S" />
+                            <Separator />
+                            <MenuItem Header="Settings" Click="OpenSettings_OnClick" />
+                            <MenuItem Header="Beta Features"/>
                             <Separator />
                             <MenuItem Header="_Close" Command="{Binding CloseActiveCommand}" InputGestureText="Ctrl+W" />
                         </MenuItem>
