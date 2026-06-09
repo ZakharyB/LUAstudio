@@ -24,6 +24,8 @@ All notable changes to this project will be documented in this file.
 ### ADDED
 
 - Added built in support for TODOs
+- Added various new options in the top drop-downs
+- Added settings for Font Family, Size, Tab Width, Color and much more
 
 ---
 

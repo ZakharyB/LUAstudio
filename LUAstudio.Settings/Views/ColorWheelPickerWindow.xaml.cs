@@ -2,6 +2,7 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -13,23 +14,52 @@ public partial class ColorWheelPickerWindow : Window, INotifyPropertyChanged
     public event PropertyChangedEventHandler? PropertyChanged;
 
     private bool _isDragging;
-    private WriteableBitmap _wheelBitmap;
-    private DateTime _lastUpdate = DateTime.MinValue;
+    private WriteableBitmap? _wheelBitmap;
 
     private const int WheelSize = 240;
 
     private readonly SolidColorBrush _previewBrush = new(Colors.White);
+
     public Brush PreviewBrush => _previewBrush;
 
     private string _hex = "#FFFFFF";
+
+    private string? _hexError;
+    public string? HexError
+    {
+        get => _hexError;
+        set
+        {
+            _hexError = value;
+            OnPropertyChanged();
+        }
+    }
+    
     public string Hex
     {
         get => _hex;
         set
         {
-            if (_hex == value) return;
+            if (_hex == value)
+                return;
+
             _hex = value;
             OnPropertyChanged();
+
+            try
+            {
+                var color = (Color)ColorConverter.ConvertFromString(value);
+
+                _currentColor = color;
+                _previewBrush.Color = color;
+
+                HexError = null;
+                OnPropertyChanged(nameof(PreviewBrush));
+            }
+            catch
+            {
+                HexError = "Invalid HEX provided!";
+            }
         }
     }
 
@@ -38,9 +68,20 @@ public partial class ColorWheelPickerWindow : Window, INotifyPropertyChanged
     public ColorWheelPickerWindow()
     {
         InitializeComponent();
+
         DataContext = this;
 
-        Loaded += (_, _) => DrawWheel();
+        Loaded += (_, _) =>
+        {
+            DrawWheel();
+
+            Dispatcher.BeginInvoke(() =>
+            {
+                InvalidateMeasure();
+                InvalidateArrange();
+                UpdateLayout();
+            });
+        };
     }
 
     private void DrawWheel()
@@ -49,7 +90,12 @@ public partial class ColorWheelPickerWindow : Window, INotifyPropertyChanged
         int radius = size / 2;
 
         _wheelBitmap = new WriteableBitmap(
-            size, size, 96, 96, PixelFormats.Pbgra32, null);
+            size,
+            size,
+            96,
+            96,
+            PixelFormats.Pbgra32,
+            null);
 
         int stride = size * 4;
         byte[] pixels = new byte[size * size * 4];
@@ -71,10 +117,12 @@ public partial class ColorWheelPickerWindow : Window, INotifyPropertyChanged
 
                 double saturation = distance / radius;
 
-                double hue = Math.Atan2(dy, dx) * (180 / Math.PI);
-                if (hue < 0) hue += 360;
+                double hue = Math.Atan2(dy, dx) * (180.0 / Math.PI);
 
-                var color = FromHSV(hue, saturation, 1.0);
+                if (hue < 0)
+                    hue += 360;
+
+                Color color = FromHSV(hue, saturation, 1.0);
 
                 int index = (y * size + x) * 4;
 
@@ -92,76 +140,107 @@ public partial class ColorWheelPickerWindow : Window, INotifyPropertyChanged
             0);
 
         _wheelBitmap.Freeze();
+
         Wheel.Fill = new ImageBrush(_wheelBitmap);
     }
 
     private void Wheel_MouseDown(object sender, MouseButtonEventArgs e)
     {
         _isDragging = true;
-        CaptureMouse();
+
+        Mouse.Capture(Wheel);
+
         UpdateColor(e.GetPosition(Wheel));
+    }
+
+    private void Wheel_MouseMove(object sender, MouseEventArgs e)
+    {
+        if (!_isDragging)
+            return;
+
+        UpdateColor(e.GetPosition(Wheel));
+    }
+
+    private void Wheel_MouseUp(object sender, MouseButtonEventArgs e)
+    {
+        EndDrag();
+    }
+
+    private void Wheel_MouseLeave(object sender, MouseEventArgs e)
+    {
+        if (!_isDragging)
+            return;
+
+        Point p = e.GetPosition(Wheel);
+        UpdateColor(ClampToCircle(p));
     }
 
     private void EndDrag()
     {
         _isDragging = false;
 
-        if (IsMouseCaptured)
-            ReleaseMouseCapture();
+        if (Mouse.Captured == Wheel)
+            Mouse.Capture(null);
     }
-    
-    private void Wheel_MouseMove(object sender, MouseEventArgs e)
-    {
-        if (!_isDragging) return;
 
-        if ((DateTime.Now - _lastUpdate).TotalMilliseconds < 16)
-            return;
-
-        _lastUpdate = DateTime.Now;
-
-        UpdateColor(e.GetPosition(Wheel));
-    }
-    
-    private void Wheel_MouseLeave(object sender, MouseEventArgs e)
+    private Point ClampToCircle(Point p)
     {
-        EndDrag();
+        double cx = WheelSize / 2.0;
+        double cy = WheelSize / 2.0;
+        double radius = WheelSize / 2.0;
+
+        double dx = p.X - cx;
+        double dy = p.Y - cy;
+
+        double dist = Math.Sqrt(dx * dx + dy * dy);
+
+        if (dist <= radius)
+            return p;
+
+        double scale = radius / dist;
+
+        return new Point(
+            cx + dx * scale,
+            cy + dy * scale);
     }
-    
-    private void Wheel_MouseUp(object sender, MouseButtonEventArgs e)
-    {
-        EndDrag();
-    }
-    
+
     private void UpdateColor(Point p)
     {
-        double cx = WheelSize / 2;
-        double cy = WheelSize / 2;
+        p = ClampToCircle(p);
+
+        double cx = WheelSize / 2.0;
+        double cy = WheelSize / 2.0;
 
         double dx = p.X - cx;
         double dy = p.Y - cy;
 
         double radius = Math.Sqrt(dx * dx + dy * dy);
-        double maxRadius = WheelSize / 2;
 
-        if (radius > maxRadius)
-            return;
+        double hue = Math.Atan2(dy, dx) * (180.0 / Math.PI);
 
-        double hue = Math.Atan2(dy, dx) * (180 / Math.PI);
-        if (hue < 0) hue += 360;
+        if (hue < 0)
+            hue += 360;
 
-        double saturation = radius / maxRadius;
+        double saturation = radius / (WheelSize / 2.0);
 
-        var color = FromHSV(hue, saturation, 1.0);
+        Color color = FromHSV(hue, saturation, 1.0);
 
         _currentColor = color;
 
+        Hex = $"#{color.R:X2}{color.G:X2}{color.B:X2}";
+
         _previewBrush.Color = color;
+
+        OnPropertyChanged(nameof(PreviewBrush));
+
+        Canvas.SetLeft(Selector, p.X - Selector.Width / 2);
+        Canvas.SetTop(Selector, p.Y - Selector.Height / 2);
     }
 
     private void Ok_Click(object sender, RoutedEventArgs e)
     {
         EndDrag();
-        Hex = $"#{_currentColor.R:X2}{_currentColor.G:X2}{_currentColor.B:X2}";
+
         DialogResult = true;
         Close();
     }
@@ -169,6 +248,7 @@ public partial class ColorWheelPickerWindow : Window, INotifyPropertyChanged
     private void Cancel_Click(object sender, RoutedEventArgs e)
     {
         EndDrag();
+
         DialogResult = false;
         Close();
     }
@@ -176,9 +256,11 @@ public partial class ColorWheelPickerWindow : Window, INotifyPropertyChanged
     private Color FromHSV(double h, double s, double v)
     {
         int hi = (int)(h / 60) % 6;
+
         double f = h / 60 - Math.Floor(h / 60);
 
         v *= 255;
+
         byte vByte = (byte)v;
         byte p = (byte)(v * (1 - s));
         byte q = (byte)(v * (1 - f * s));
@@ -191,10 +273,12 @@ public partial class ColorWheelPickerWindow : Window, INotifyPropertyChanged
             2 => Color.FromRgb(p, vByte, t),
             3 => Color.FromRgb(p, q, vByte),
             4 => Color.FromRgb(t, p, vByte),
-            _ => Color.FromRgb(vByte, p, q),
+            _ => Color.FromRgb(vByte, p, q)
         };
     }
 
     private void OnPropertyChanged([CallerMemberName] string? name = null)
-        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+    }
 }

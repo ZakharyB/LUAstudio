@@ -24,6 +24,7 @@ public partial class ColorSettingRow : UserControl
     public ColorSettingRow()
     {
         InitializeComponent();
+        UpdatePreviewBrush(HexValue);
     }
 
     private void OnColorClicked(object sender, RoutedEventArgs e)
@@ -57,16 +58,22 @@ public partial class ColorSettingRow : UserControl
         get => (Brush)GetValue(PreviewBrushProperty);
         private set => SetValue(PreviewBrushProperty, value);
     }
-
+    
+    
     private static void OnHexChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        if (d is not ColorSettingRow row)
+        if (d is ColorSettingRow row)
         {
-            return;
+            row.UpdatePreviewBrush(e.NewValue as string);
         }
+    }
 
-        var rgb = SettingColorParser.ParseRgb(e.NewValue as string, 0xFFFFFF);
-        row.PreviewBrush = new SolidColorBrush(Color.FromRgb(
+    
+    private void UpdatePreviewBrush(string hex)
+    {
+        var rgb = SettingColorParser.ParseRgb(hex, 0xFFFFFF);
+
+        PreviewBrush = new SolidColorBrush(Color.FromRgb(
             (byte)((rgb >> 16) & 0xFF),
             (byte)((rgb >> 8) & 0xFF),
             (byte)(rgb & 0xFF)));
