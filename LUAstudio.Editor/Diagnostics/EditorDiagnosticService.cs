@@ -16,6 +16,7 @@ namespace LUAstudio.Editor.Diagnostics;
 public sealed class EditorDiagnosticService
 {
     private readonly Dictionary<Guid, List<DiagnosticMarker>> _markers = new();
+    private readonly HashSet<TextEditor> _renderersRegistered = new();
 
     private sealed record DiagnosticMarker(
         int StartOffset,
@@ -104,6 +105,11 @@ public sealed class EditorDiagnosticService
 
     public void RegisterMarkerRenderer(TextEditor editor)
     {
+        if (!_renderersRegistered.Add(editor))
+        {
+            return;
+        }
+
         editor.TextArea.TextView.LineTransformers.Add(new DiagnosticSquiggleTransformer(this, editor));
     }
 
@@ -182,6 +188,8 @@ public sealed class EditorDiagnosticHoverController
 
     private TextEditor? _editor;
     private Guid _documentId;
+    private System.Windows.Threading.DispatcherTimer? _hoverTimer;
+    private int _pendingOffset = -1;
 
     public EditorDiagnosticHoverController(EditorDiagnosticService diagnostics) => _diagnostics = diagnostics;
 
@@ -203,6 +211,8 @@ public sealed class EditorDiagnosticHoverController
 
         _editor.TextArea.MouseMove -= OnMouseMove;
         _editor.TextArea.MouseLeave -= OnMouseLeave;
+        _hoverTimer?.Stop();
+        _hoverTimer = null;
         _popup.IsOpen = false;
         _editor = null;
     }
@@ -221,15 +231,36 @@ public sealed class EditorDiagnosticHoverController
             return;
         }
 
-        var offset = _editor.Document.GetOffset(pos.Value.Line, pos.Value.Column);
-        var diagnostic = _diagnostics.GetDiagnosticAt(_documentId, offset);
-        if (diagnostic is null)
-        {
-            _popup.IsOpen = false;
-            return;
-        }
+        _pendingOffset = _editor.Document.GetOffset(pos.Value.Line, pos.Value.Column);
+        _hoverTimer ??= CreateHoverTimer();
+        _hoverTimer.Stop();
+        _hoverTimer.Start();
+    }
 
-        ShowTooltip(diagnostic);
+    private System.Windows.Threading.DispatcherTimer CreateHoverTimer()
+    {
+        var timer = new System.Windows.Threading.DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(50)
+        };
+        timer.Tick += (_, _) =>
+        {
+            timer.Stop();
+            if (_editor is null || _pendingOffset < 0)
+            {
+                return;
+            }
+
+            var diagnostic = _diagnostics.GetDiagnosticAt(_documentId, _pendingOffset);
+            if (diagnostic is null)
+            {
+                _popup.IsOpen = false;
+                return;
+            }
+
+            ShowTooltip(diagnostic);
+        };
+        return timer;
     }
 
     private void OnMouseLeave(object sender, System.Windows.Input.MouseEventArgs e) => _popup.IsOpen = false;

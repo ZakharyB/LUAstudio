@@ -92,6 +92,30 @@ public sealed class SandboxHostServer
                     return Ack(envelope, null);
                 }
 
+                case SandboxMessageKind.SetWorkspaceModules:
+                {
+                    var request = Required<SetWorkspaceModulesRequest>(envelope);
+                    _sessions.Get(request.SessionId).SetWorkspaceModules(request.Modules);
+                    return Ack(envelope, null);
+                }
+
+                case SandboxMessageKind.LoadModule:
+                {
+                    var request = Required<LoadModuleRequest>(envelope);
+                    _sessions.Get(request.SessionId).LoadModule(request.Path, request.Source);
+                    return Ack(envelope, null);
+                }
+
+                case SandboxMessageKind.ConfigureEnvironment:
+                {
+                    var request = Required<ConfigureEnvironmentRequest>(envelope);
+                    _sessions.Get(request.SessionId).ConfigureEnvironment(
+                        request.EnvironmentProfile,
+                        request.EnableRobloxMocks,
+                        request.AllowNetwork);
+                    return Ack(envelope, null);
+                }
+
                 case SandboxMessageKind.Execute:
                     _sessions.Get(Required<SessionCommandRequest>(envelope).SessionId).Execute();
                     return null;

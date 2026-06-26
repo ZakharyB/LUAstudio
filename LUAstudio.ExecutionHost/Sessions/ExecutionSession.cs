@@ -1,11 +1,9 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Text;
 using LUAstudio.Execution.Abstractions;
 using LUAstudio.ExecutionHost.Debugging;
 using LUAstudio.ExecutionHost.Runtime;
-using LUAstudio.Languages.Parsing;
-using LUAstudio.Languages.Syntax.Nodes;
-using LUAstudio.Languages.Text;
 
 namespace LUAstudio.ExecutionHost.Sessions;
 
@@ -13,12 +11,11 @@ public sealed class ExecutionSession : IDisposable
 {
     private readonly SessionConfiguration _configuration;
     private readonly Action<SandboxEnvelope> _publish;
-    private readonly DebugController _debug;
-    private readonly SandboxEnvironment _environment;
-    private readonly InstrumentedAstInterpreter _interpreter;
+    private readonly LuauDebugController _debug;
+    private readonly ModuleResolver _modules;
+    private readonly ExecutionTraceRecorder _trace;
+    private readonly LuauRuntime _runtime;
     private readonly CancellationTokenSource _sessionCts = new();
-    private ParseResult? _parseResult;
-    private string _source = string.Empty;
     private Task? _executionTask;
     private string? _sourcePath;
     private Stopwatch? _stopwatch;
@@ -28,22 +25,40 @@ public sealed class ExecutionSession : IDisposable
         SessionId = sessionId;
         _configuration = configuration;
         _publish = publish;
-        _debug = new DebugController();
-        _environment = new SandboxEnvironment(configuration.EnableRobloxMocks);
-        _interpreter = new InstrumentedAstInterpreter(_environment, _debug);
-        _interpreter.Output += (_, text) => _publish(new SandboxEnvelope(
+        _debug = new LuauDebugController();
+        _modules = new ModuleResolver();
+        _trace = new ExecutionTraceRecorder();
+        _runtime = new LuauRuntime(_debug, _modules, configuration, _trace);
+        _runtime.Output += (_, text) => _publish(new SandboxEnvelope(
             SandboxMessageKind.OutputLog,
             SessionId,
             null,
             new OutputLogPayload(SessionId, "stdout", text)));
-        _debug.BreakpointHit += (line, path) =>
+
+        _debug.Paused += (line, path, reason) =>
         {
-            State = ExecutionSessionState.Paused;
-            _publish(new SandboxEnvelope(
-                SandboxMessageKind.BreakpointHit,
-                SessionId,
-                null,
-                new BreakpointHitPayload(SessionId, line, path ?? _sourcePath, "breakpoint")));
+            State = reason.StartsWith("step", StringComparison.Ordinal)
+                ? ExecutionSessionState.Stepping
+                : ExecutionSessionState.Paused;
+
+            PublishStateChanged();
+
+            if (reason.StartsWith("step", StringComparison.Ordinal))
+            {
+                _publish(new SandboxEnvelope(
+                    SandboxMessageKind.StepCompleted,
+                    SessionId,
+                    null,
+                    new StepCompletedPayload(SessionId, line, path ?? _sourcePath, reason)));
+            }
+            else
+            {
+                _publish(new SandboxEnvelope(
+                    SandboxMessageKind.BreakpointHit,
+                    SessionId,
+                    null,
+                    new BreakpointHitPayload(SessionId, line, path ?? _sourcePath, reason)));
+            }
         };
     }
 
@@ -51,20 +66,30 @@ public sealed class ExecutionSession : IDisposable
 
     public ExecutionSessionState State { get; private set; } = ExecutionSessionState.Created;
 
+    public void ConfigureEnvironment(string profile, bool enableRobloxMocks, bool allowNetwork)
+    {
+        EnsureState(ExecutionSessionState.Created, ExecutionSessionState.Loaded, ExecutionSessionState.Stopped);
+        _runtime.Initialize(enableRobloxMocks);
+        State = ExecutionSessionState.Created;
+    }
+
+    public void SetWorkspaceModules(IReadOnlyList<WorkspaceModuleEntry> modules)
+    {
+        _modules.SetModules(modules.Select(m => (m.Path, m.Source)).ToList());
+    }
+
+    public void LoadModule(string path, string source) => _modules.SetModule(path, source);
+
     public void LoadScript(string source, string? sourcePath)
     {
         EnsureState(ExecutionSessionState.Created, ExecutionSessionState.Loaded, ExecutionSessionState.Stopped);
         _sourcePath = sourcePath;
-        _source = source;
-        var snapshot = new SourceSnapshot(SessionId, 1, SourceText.From(source), sourcePath, LuaDialect.Luau);
-        _parseResult = new LuaParserService().ParseDocumentAsync(snapshot).GetAwaiter().GetResult();
+        _runtime.LoadScript(source, sourcePath);
         State = ExecutionSessionState.Loaded;
     }
 
-    public void SetBreakpoints(string? sourcePath, IReadOnlyList<BreakpointSpec> breakpoints)
-    {
+    public void SetBreakpoints(string? sourcePath, IReadOnlyList<BreakpointSpec> breakpoints) =>
         _debug.SetBreakpoints(sourcePath ?? _sourcePath, breakpoints);
-    }
 
     public void Execute()
     {
@@ -77,6 +102,7 @@ public sealed class ExecutionSession : IDisposable
         _stopwatch = Stopwatch.StartNew();
         State = ExecutionSessionState.Running;
         _debug.ResetExecutionControl();
+        PublishStateChanged();
         _publish(new SandboxEnvelope(
             SandboxMessageKind.SessionStarted,
             SessionId,
@@ -86,20 +112,43 @@ public sealed class ExecutionSession : IDisposable
         _executionTask = Task.Run(() => RunExecutionAsync(_sessionCts.Token));
     }
 
-    public void Continue() => _debug.Continue();
+    public void Continue()
+    {
+        State = ExecutionSessionState.Running;
+        PublishStateChanged();
+        _debug.Continue();
+    }
 
     public void Pause() => _debug.RequestPause();
 
-    public void StepOver() => _debug.StepOver();
+    public void StepOver()
+    {
+        State = ExecutionSessionState.Stepping;
+        PublishStateChanged();
+        _debug.StepOver();
+    }
 
-    public void StepInto() => _debug.StepInto();
+    public void StepInto()
+    {
+        State = ExecutionSessionState.Stepping;
+        PublishStateChanged();
+        _debug.StepInto();
+    }
 
-    public void StepOut() => _debug.StepOut();
+    public void StepOut()
+    {
+        State = ExecutionSessionState.Stepping;
+        PublishStateChanged();
+        _debug.StepOut();
+    }
 
     public void Stop()
     {
+        _debug.RequestStop();
+        _debug.Interrupt();
         _sessionCts.Cancel();
         State = ExecutionSessionState.Stopped;
+        PublishStateChanged();
         _publish(new SandboxEnvelope(
             SandboxMessageKind.SessionStopped,
             SessionId,
@@ -107,23 +156,14 @@ public sealed class ExecutionSession : IDisposable
             new SessionStartedPayload(SessionId, State)));
     }
 
-    public StackTraceResponsePayload GetStackTrace(int frameId)
-    {
-        var frames = _debug.GetStackFrames(_sourcePath);
-        return new StackTraceResponsePayload(SessionId, frames);
-    }
+    public StackTraceResponsePayload GetStackTrace(int frameId) =>
+        new(SessionId, _debug.GetStackFrames(_sourcePath));
 
-    public ScopesResponsePayload GetScopes(int frameId)
-    {
-        var scopes = _debug.GetScopes(frameId);
-        return new ScopesResponsePayload(SessionId, scopes);
-    }
+    public ScopesResponsePayload GetScopes(int frameId) =>
+        new(SessionId, _debug.GetScopes(frameId));
 
-    public VariablesResponsePayload GetVariables(int variablesReference)
-    {
-        var variables = _debug.GetVariables(variablesReference);
-        return new VariablesResponsePayload(SessionId, variables);
-    }
+    public VariablesResponsePayload GetVariables(int variablesReference) =>
+        new(SessionId, _debug.GetVariables(variablesReference));
 
     public EvaluateResultPayload Evaluate(int frameId, string expression)
     {
@@ -145,17 +185,13 @@ public sealed class ExecutionSession : IDisposable
 
         try
         {
-            if (_parseResult?.Tree.Root is not CompilationUnitSyntax unit)
-            {
-                throw new InvalidOperationException("Script did not produce a valid compilation unit.");
-            }
-
-            await _interpreter.ExecuteAsync(unit, _source, _sourcePath, timeoutCts.Token).ConfigureAwait(false);
+            await Task.Run(() => _runtime.Execute(timeoutCts.Token), timeoutCts.Token).ConfigureAwait(false);
             Finish(ExecutionFinishReason.Completed);
         }
         catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
         {
             State = ExecutionSessionState.TimedOut;
+            PublishError("Execution timed out.", _sourcePath, 1, 1, "timeout");
             Finish(ExecutionFinishReason.Timeout);
         }
         catch (SandboxRuntimeException ex)
@@ -171,27 +207,40 @@ public sealed class ExecutionSession : IDisposable
         catch (Exception ex)
         {
             State = ExecutionSessionState.Crashed;
-            _publish(new SandboxEnvelope(
-                SandboxMessageKind.ErrorThrown,
-                SessionId,
-                null,
-                new ErrorThrownPayload(SessionId, new ExecutionErrorInfo(
-                    ex.Message,
-                    _sourcePath,
-                    1,
-                    1,
-                    Array.Empty<string>()))));
+            PublishError(ex.Message, _sourcePath, 1, 1, "runtime");
             Finish(ExecutionFinishReason.Error);
         }
     }
 
+    private void PublishError(string message, string? sourcePath, int line, int column, string errorKind)
+    {
+        _publish(new SandboxEnvelope(
+            SandboxMessageKind.ErrorThrown,
+            SessionId,
+            null,
+            new ErrorThrownPayload(SessionId, new ExecutionErrorInfo(
+                message,
+                sourcePath,
+                line,
+                column,
+                BuildStackTrace(),
+                errorKind))));
+    }
+
+    private IReadOnlyList<string> BuildStackTrace() =>
+        _debug.GetStackFrames(_sourcePath)
+            .Select(f => $"{f.Name} at {f.SourcePath}:{f.Line}")
+            .ToArray();
+
     private void Finish(ExecutionFinishReason reason)
     {
         _stopwatch?.Stop();
-        State = reason == ExecutionFinishReason.Completed
-            ? ExecutionSessionState.Stopped
-            : State;
+        if (reason == ExecutionFinishReason.Completed)
+        {
+            State = ExecutionSessionState.Stopped;
+        }
 
+        PublishStateChanged();
         _publish(new SandboxEnvelope(
             SandboxMessageKind.ExecutionFinished,
             SessionId,
@@ -199,11 +248,21 @@ public sealed class ExecutionSession : IDisposable
             new ExecutionFinishedPayload(SessionId, reason, _stopwatch?.Elapsed.TotalMilliseconds ?? 0)));
     }
 
+    private void PublishStateChanged() =>
+        _publish(new SandboxEnvelope(
+            SandboxMessageKind.ExecutionStateChanged,
+            SessionId,
+            null,
+            new ExecutionStateChangedPayload(SessionId, State)));
+
     private void EnsureLoaded()
     {
-        if (_parseResult is null)
+        if (State != ExecutionSessionState.Loaded && State != ExecutionSessionState.Stopped)
         {
-            throw new InvalidOperationException("LoadScript must be called before execution.");
+            if (State == ExecutionSessionState.Created)
+            {
+                throw new InvalidOperationException("LoadScript must be called before execution.");
+            }
         }
     }
 
@@ -219,6 +278,7 @@ public sealed class ExecutionSession : IDisposable
     {
         _sessionCts.Cancel();
         _sessionCts.Dispose();
+        _runtime.Dispose();
     }
 }
 
@@ -235,6 +295,7 @@ public sealed class SessionManager
             throw new InvalidOperationException($"Session '{sessionId}' already exists.");
         }
 
+        session.ConfigureEnvironment(configuration.EnvironmentProfile, configuration.EnableRobloxMocks, configuration.AllowNetwork);
         return session;
     }
 

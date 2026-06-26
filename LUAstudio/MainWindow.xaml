@@ -34,7 +34,9 @@
         <KeyBinding Key="S" Modifiers="Control" Command="{Binding SaveActiveCommand}" />
    <!--     <KeyBinding Key="S" Modifiers="Control+Shift" Command="{Binding SaveAsActiveCommand}" /> -->
         <KeyBinding Key="W" Modifiers="Control" Command="{Binding CloseActiveCommand}" />
+        <KeyBinding Key="F5" Command="{Binding ElementName=DebugPanel, Path=DataContext.RunOrContinueCommand}" />
         <KeyBinding Key="F5" Modifiers="Shift" Command="{Binding ElementName=DebugPanel, Path=DataContext.StopCommand}" />
+        <KeyBinding Key="F9" Command="{Binding ElementName=DebugPanel, Path=DataContext.ToggleActiveBreakpointCommand}" />
         <KeyBinding Key="F6" Command="{Binding ElementName=DebugPanel, Path=DataContext.PauseCommand}" />
         <KeyBinding Key="F10" Command="{Binding ElementName=DebugPanel, Path=DataContext.StepOverCommand}" />
         <KeyBinding Key="F11" Command="{Binding ElementName=DebugPanel, Path=DataContext.StepIntoCommand}" />

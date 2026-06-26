@@ -71,6 +71,11 @@ public partial class App : Application
         services.AddSingleton<MainWindow>();
         services.AddSingleton<WpfDocumentEditorHost>();
         services.AddSingleton<DiagnosticsPanelViewModel>();
+        services.AddSingleton<DebugPanelViewModel>();
+        services.AddSingleton<DebugSessionCoordinator>();
+        services.AddSingleton<WorkspaceModuleBridge>();
+        services.AddSingleton<EditorNavigationService>();
+        services.AddSingleton<IDebugEditorNavigation, DebugEditorNavigation>();
         services.AddSingleton<SettingsBootstrap>();
         services.AddSingleton<EditorSettingsCoordinator>();
 

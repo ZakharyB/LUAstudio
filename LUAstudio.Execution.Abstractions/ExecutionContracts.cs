@@ -31,7 +31,8 @@ public sealed record ExecutionErrorInfo(
     string? SourcePath,
     int Line,
     int Column,
-    IReadOnlyList<string> StackTrace);
+    IReadOnlyList<string> StackTrace,
+    string? ErrorKind = null);
 
 public sealed record SessionConfiguration(
     int ExecutionTimeoutMs = 30_000,
@@ -66,6 +67,33 @@ public sealed record StackTraceRequest(Guid SessionId, int FrameId);
 public sealed record ScopesRequest(Guid SessionId, int FrameId);
 
 public sealed record VariablesRequest(Guid SessionId, int VariablesReference);
+
+public sealed record WorkspaceModuleEntry(string Path, string Source);
+
+public sealed record SetWorkspaceModulesRequest(
+    Guid SessionId,
+    IReadOnlyList<WorkspaceModuleEntry> Modules);
+
+public sealed record LoadModuleRequest(
+    Guid SessionId,
+    string Path,
+    string Source);
+
+public sealed record ConfigureEnvironmentRequest(
+    Guid SessionId,
+    string EnvironmentProfile,
+    bool EnableRobloxMocks,
+    bool AllowNetwork);
+
+public sealed record StepCompletedPayload(
+    Guid SessionId,
+    int Line,
+    string? SourcePath,
+    string Reason);
+
+public sealed record ExecutionStateChangedPayload(
+    Guid SessionId,
+    ExecutionSessionState State);
 
 public sealed record SandboxEnvelope(
     SandboxMessageKind Kind,
@@ -119,6 +147,22 @@ public interface IExecutionHostClient : IAsyncDisposable
         Guid sessionId,
         string? sourcePath,
         IReadOnlyList<BreakpointSpec> breakpoints,
+        CancellationToken cancellationToken = default);
+
+    Task SetWorkspaceModulesAsync(
+        Guid sessionId,
+        IReadOnlyList<WorkspaceModuleEntry> modules,
+        CancellationToken cancellationToken = default);
+
+    Task LoadModuleAsync(
+        Guid sessionId,
+        string path,
+        string source,
+        CancellationToken cancellationToken = default);
+
+    Task ConfigureEnvironmentAsync(
+        Guid sessionId,
+        ConfigureEnvironmentRequest configuration,
         CancellationToken cancellationToken = default);
 
     Task ExecuteAsync(Guid sessionId, CancellationToken cancellationToken = default);

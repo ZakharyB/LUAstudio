@@ -11,7 +11,7 @@
     <ProjectReference Include="..\LUAstudio.Abstractions\LUAstudio.Abstractions.csproj" />
     <ProjectReference Include="..\LUAstudio.Core\LUAstudio.Core.csproj" />
     <ProjectReference Include="..\LUAstudio.IntelliSense\LUAstudio.IntelliSense.csproj" />
-    <ProjectReference Include="..\LUAstudio.Languages\LUAstudio.Languages.csproj" />
+    <ProjectReference Include="..\LUAstudio.Execution.Abstractions\LUAstudio.Execution.Abstractions.csproj" />
   </ItemGroup>
 
   <ItemGroup>

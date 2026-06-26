@@ -22,7 +22,9 @@ public sealed class AnalysisOrchestrator : IAnalysisOrchestrator
     private readonly ConcurrentDictionary<Guid, DocumentAnalysisResult> _latest = new();
     private readonly ConcurrentDictionary<Guid, ParseResult> _previousParse = new();
     private readonly ConcurrentDictionary<Guid, DateTime> _lastRequestTime = new();
-    private const int DebounceMs = 150;
+    private DateTime _lastRequireGraphPublishUtc = DateTime.MinValue;
+    private const int DebounceMs = 0;
+    private const int RequireGraphThrottleMs = 2000;
 
     public AnalysisOrchestrator(
         ILuaParser parser,
@@ -98,7 +100,19 @@ public sealed class AnalysisOrchestrator : IAnalysisOrchestrator
         _latest[snapshot.DocumentId] = result;
 
         _eventBus.Publish(new DocumentAnalyzedEvent(snapshot.DocumentId, snapshot.Version, result));
-        _requireGraphScanner.PublishUpdated();
+        MaybePublishRequireGraph();
         return result;
+    }
+
+    private void MaybePublishRequireGraph()
+    {
+        var now = DateTime.UtcNow;
+        if ((now - _lastRequireGraphPublishUtc).TotalMilliseconds < RequireGraphThrottleMs)
+        {
+            return;
+        }
+
+        _lastRequireGraphPublishUtc = now;
+        _requireGraphScanner.PublishUpdated();
     }
 }
