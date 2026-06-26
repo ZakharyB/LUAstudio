@@ -6,13 +6,26 @@
              VerticalAlignment="Stretch"
              Background="{StaticResource BrushBgEditor}">
 
-    <a:TextEditor x:Name="Editor"
-                  HorizontalAlignment="Stretch"
-                  VerticalAlignment="Stretch"
-                  Background="{StaticResource BrushBgEditor}"
-                  BorderThickness="0"
-                  HorizontalScrollBarVisibility="Hidden"
-                  VerticalScrollBarVisibility="Hidden"
-                  ShowLineNumbers="True"
-                  WordWrap="False" />
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="16" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <Border Grid.Column="0"
+                Background="{StaticResource BrushBgEditor}"
+                BorderBrush="{StaticResource BrushBorder}"
+                BorderThickness="0,0,1,0" />
+
+        <a:TextEditor x:Name="Editor"
+                      Grid.Column="1"
+                      HorizontalAlignment="Stretch"
+                      VerticalAlignment="Stretch"
+                      Background="{StaticResource BrushBgEditor}"
+                      BorderThickness="0"
+                      HorizontalScrollBarVisibility="Hidden"
+                      VerticalScrollBarVisibility="Hidden"
+                      ShowLineNumbers="True"
+                      WordWrap="False" />
+    </Grid>
 </UserControl>

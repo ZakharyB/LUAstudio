@@ -4,12 +4,13 @@ namespace LUAstudio.ExecutionHost.Runtime;
 
 public sealed class SandboxRuntimeException : Exception
 {
-    public SandboxRuntimeException(string message, string? sourcePath, int line, int column)
+    public SandboxRuntimeException(string message, string? sourcePath, int line, int column, string? errorKind = "runtime")
         : base(message)
     {
         SourcePath = sourcePath;
         Line = line;
         Column = column;
+        ErrorKind = errorKind;
     }
 
     public string? SourcePath { get; }
@@ -18,8 +19,10 @@ public sealed class SandboxRuntimeException : Exception
 
     public int Column { get; }
 
+    public string? ErrorKind { get; }
+
     public ExecutionErrorInfo ToErrorInfo() =>
-        new(Message, SourcePath, Line, Column, Array.Empty<string>());
+        new(Message, SourcePath, Line, Column, Array.Empty<string>(), ErrorKind);
 }
 
 public sealed class SandboxEnvironment

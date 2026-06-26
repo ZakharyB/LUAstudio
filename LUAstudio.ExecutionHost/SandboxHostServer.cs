@@ -17,7 +17,7 @@ public sealed class SandboxHostServer
     {
         while (!cancellationToken.IsCancellationRequested)
         {
-            await using var stream = new NamedPipeServerStream(
+            var stream = new NamedPipeServerStream(
                 _pipeName,
                 PipeDirection.InOut,
                 NamedPipeServerStream.MaxAllowedServerInstances,
@@ -55,6 +55,14 @@ public sealed class SandboxHostServer
         finally
         {
             await transport.DisposeAsync().ConfigureAwait(false);
+            if (stream is IAsyncDisposable asyncDisposable)
+            {
+                await asyncDisposable.DisposeAsync().ConfigureAwait(false);
+            }
+            else
+            {
+                stream.Dispose();
+            }
         }
     }
 
@@ -89,6 +97,30 @@ public sealed class SandboxHostServer
                 {
                     var request = Required<SetBreakpointsRequest>(envelope);
                     _sessions.Get(request.SessionId).SetBreakpoints(request.SourcePath, request.Breakpoints);
+                    return Ack(envelope, null);
+                }
+
+                case SandboxMessageKind.SetWorkspaceModules:
+                {
+                    var request = Required<SetWorkspaceModulesRequest>(envelope);
+                    _sessions.Get(request.SessionId).SetWorkspaceModules(request.Modules);
+                    return Ack(envelope, null);
+                }
+
+                case SandboxMessageKind.LoadModule:
+                {
+                    var request = Required<LoadModuleRequest>(envelope);
+                    _sessions.Get(request.SessionId).LoadModule(request.Path, request.Source);
+                    return Ack(envelope, null);
+                }
+
+                case SandboxMessageKind.ConfigureEnvironment:
+                {
+                    var request = Required<ConfigureEnvironmentRequest>(envelope);
+                    _sessions.Get(request.SessionId).ConfigureEnvironment(
+                        request.EnvironmentProfile,
+                        request.EnableRobloxMocks,
+                        request.AllowNetwork);
                     return Ack(envelope, null);
                 }
 

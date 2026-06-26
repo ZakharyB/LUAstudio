@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using LUAstudio.Editor.Debugging;
 using LUAstudio.Execution.Abstractions;
 using LUAstudio.Execution.Abstractions.Protocol;
 
@@ -11,9 +12,11 @@ namespace LUAstudio;
 public sealed partial class DebugPanelViewModel : ObservableObject
 {
     private IExecutionHostClient? _client;
+    private DebugSessionCoordinator? _coordinator;
+    private IBreakpointService? _breakpoints;
+    private IDebugEditorNavigation? _navigation;
     private Guid _sessionId;
     private CancellationTokenSource? _eventLoopCts;
-    private readonly Dictionary<int, BreakpointSpec> _breakpoints = new();
 
     [ObservableProperty]
     private ExecutionSessionState _sessionState = ExecutionSessionState.Stopped;
@@ -42,6 +45,9 @@ public sealed partial class DebugPanelViewModel : ObservableObject
     [ObservableProperty]
     private bool _canContinue;
 
+    [ObservableProperty]
+    private string _watchExpression = string.Empty;
+
     public ObservableCollection<StackFrameInfo> StackFrames { get; } = new();
 
     public ObservableCollection<VariableInfo> Variables { get; } = new();
@@ -50,25 +56,20 @@ public sealed partial class DebugPanelViewModel : ObservableObject
 
     public ObservableCollection<BreakpointListItem> Breakpoints { get; } = new();
 
-    partial void OnSessionStateChanged(ExecutionSessionState value)
-    {
-        UpdateCommandStates();
-    }
+    partial void OnSessionStateChanged(ExecutionSessionState value) => UpdateCommandStates();
 
-    partial void OnIsConnectedChanged(bool value)
-    {
-        UpdateCommandStates();
-    }
+    partial void OnIsConnectedChanged(bool value) => UpdateCommandStates();
 
-    private void UpdateCommandStates()
+    public void Configure(
+        DebugSessionCoordinator coordinator,
+        IBreakpointService breakpoints,
+        IDebugEditorNavigation navigation)
     {
-        CanRun = IsConnected && SessionState is ExecutionSessionState.Created or ExecutionSessionState.Loaded or ExecutionSessionState.Stopped;
-        CanStop = IsConnected && SessionState is ExecutionSessionState.Running or ExecutionSessionState.Paused or ExecutionSessionState.Stepping;
-        CanPause = IsConnected && SessionState == ExecutionSessionState.Running;
-        CanStepOver = IsConnected && SessionState == ExecutionSessionState.Paused;
-        CanStepInto = IsConnected && SessionState == ExecutionSessionState.Paused;
-        CanStepOut = IsConnected && SessionState == ExecutionSessionState.Paused;
-        CanContinue = IsConnected && SessionState == ExecutionSessionState.Paused;
+        _coordinator = coordinator;
+        _breakpoints = breakpoints;
+        _navigation = navigation;
+        _breakpoints.BreakpointsChanged += SyncBreakpointList;
+        SyncBreakpointList();
     }
 
     public async Task InitializeAsync(IExecutionHostClient client)
@@ -98,33 +99,48 @@ public sealed partial class DebugPanelViewModel : ObservableObject
         switch (evt.Kind)
         {
             case SandboxMessageKind.SessionStarted:
-                var started = SandboxPayload.As<SessionStartedPayload>(evt.Payload);
-                if (started is not null)
+                if (SandboxPayload.As<SessionStartedPayload>(evt.Payload) is { } started)
                 {
                     SessionState = started.State;
                 }
                 break;
 
+            case SandboxMessageKind.ExecutionStateChanged:
+                if (SandboxPayload.As<ExecutionStateChangedPayload>(evt.Payload) is { } stateChanged)
+                {
+                    SessionState = stateChanged.State;
+                }
+                break;
+
             case SandboxMessageKind.BreakpointHit:
-                var bpHit = SandboxPayload.As<BreakpointHitPayload>(evt.Payload);
-                if (bpHit is not null)
+                if (SandboxPayload.As<BreakpointHitPayload>(evt.Payload) is { } bpHit)
                 {
                     SessionState = ExecutionSessionState.Paused;
-                    OutputLog.Add($"Breakpoint hit at line {bpHit.Line} in {bpHit.SourcePath ?? "<unknown>"}");
+                    OutputLog.Add($"Paused at line {bpHit.Line} in {bpHit.SourcePath ?? "<unknown>"} ({bpHit.Reason})");
+                    _navigation?.NavigateTo(bpHit.SourcePath, bpHit.Line);
+                    _ = RefreshDebugInspectionAsync();
+                }
+                break;
+
+            case SandboxMessageKind.StepCompleted:
+                if (SandboxPayload.As<StepCompletedPayload>(evt.Payload) is { } step)
+                {
+                    SessionState = ExecutionSessionState.Paused;
+                    OutputLog.Add($"Step completed at line {step.Line} ({step.Reason})");
+                    _navigation?.NavigateTo(step.SourcePath, step.Line);
+                    _ = RefreshDebugInspectionAsync();
                 }
                 break;
 
             case SandboxMessageKind.OutputLog:
-                var output = SandboxPayload.As<OutputLogPayload>(evt.Payload);
-                if (output is not null)
+                if (SandboxPayload.As<OutputLogPayload>(evt.Payload) is { } output)
                 {
                     OutputLog.Add($"[{output.Channel}] {output.Text}");
                 }
                 break;
 
             case SandboxMessageKind.ExecutionFinished:
-                var finished = SandboxPayload.As<ExecutionFinishedPayload>(evt.Payload);
-                if (finished is not null)
+                if (SandboxPayload.As<ExecutionFinishedPayload>(evt.Payload) is { } finished)
                 {
                     SessionState = ExecutionSessionState.Stopped;
                     OutputLog.Add($"Execution finished: {finished.Reason} ({finished.ElapsedMs:F2}ms)");
@@ -132,40 +148,66 @@ public sealed partial class DebugPanelViewModel : ObservableObject
                 break;
 
             case SandboxMessageKind.ErrorThrown:
-                var error = SandboxPayload.As<ErrorThrownPayload>(evt.Payload);
-                if (error is not null)
+                if (SandboxPayload.As<ErrorThrownPayload>(evt.Payload) is { } error)
                 {
                     SessionState = ExecutionSessionState.Crashed;
-                    OutputLog.Add($"Error: {error.Error.Message}");
+                    OutputLog.Add($"Error ({error.Error.ErrorKind ?? "runtime"}): {error.Error.Message}");
+                    foreach (var frame in error.Error.StackTrace)
+                    {
+                        OutputLog.Add($"  at {frame}");
+                    }
+
+                    _navigation?.NavigateTo(error.Error.SourcePath, error.Error.Line);
                 }
+                break;
+
+            case SandboxMessageKind.SessionStopped:
+                SessionState = ExecutionSessionState.Stopped;
+                OutputLog.Add("Session stopped.");
+                break;
+
+            case SandboxMessageKind.Error:
+                OutputLog.Add($"Protocol error: {evt.Payload}");
                 break;
         }
     }
 
     public async Task RunDocumentAsync(string source, string? sourcePath)
     {
-        if (_client is null || !IsConnected)
+        if (_coordinator is null)
         {
             return;
         }
 
         try
         {
-            _sessionId = await _client.CreateSessionAsync(new SessionConfiguration());
-            SessionState = ExecutionSessionState.Created;
-
-            if (source is not null)
+            var client = await _coordinator.EnsureHostRunningAsync();
+            if (_client != client)
             {
-                await _client.LoadScriptAsync(_sessionId, source, sourcePath);
-                SessionState = ExecutionSessionState.Loaded;
+                await InitializeAsync(client);
             }
 
-            await _client.ExecuteAsync(_sessionId);
+            _sessionId = await _coordinator.RunAsync(source, sourcePath);
             SessionState = ExecutionSessionState.Running;
         }
         catch (Exception ex)
         {
             OutputLog.Add($"Error starting session: {ex.Message}");
+        }
+    }
+
+    [RelayCommand]
+    private async Task RunOrContinueAsync()
+    {
+        if (SessionState == ExecutionSessionState.Paused && _client is not null && IsConnected)
+        {
+            await ContinueAsync();
+            return;
+        }
+
+        if (RunActiveDocumentAsync is not null)
+        {
+            await RunActiveDocumentAsync();
         }
     }
 
@@ -199,7 +241,6 @@ public sealed partial class DebugPanelViewModel : ObservableObject
         try
         {
             await _client.PauseAsync(_sessionId);
-            SessionState = ExecutionSessionState.Paused;
         }
         catch (Exception ex)
         {
@@ -318,7 +359,7 @@ public sealed partial class DebugPanelViewModel : ObservableObject
         {
             var scopes = await _client.GetScopesAsync(_sessionId, frameId);
             Variables.Clear();
-            
+
             foreach (var scope in scopes)
             {
                 var vars = await _client.GetVariablesAsync(_sessionId, scope.VariablesReference);
@@ -334,53 +375,87 @@ public sealed partial class DebugPanelViewModel : ObservableObject
         }
     }
 
-    public void SetBreakpoint(string? sourcePath, int line)
+    [RelayCommand]
+    private async Task EvaluateWatchAsync()
     {
-        var key = line;
-        if (_breakpoints.ContainsKey(key))
-        {
-            _breakpoints.Remove(key);
-            var existing = Breakpoints.FirstOrDefault(b => b.Line == line && b.SourcePath == sourcePath);
-            if (existing is not null)
-            {
-                Breakpoints.Remove(existing);
-            }
-        }
-        else
-        {
-            var bp = new BreakpointSpec(line);
-            _breakpoints[key] = bp;
-            Breakpoints.Add(new BreakpointListItem(sourcePath, line));
-        }
-
-        _ = SendBreakpointsAsync(sourcePath);
-    }
-
-    private async Task SendBreakpointsAsync(string? sourcePath)
-    {
-        if (_client is null || !IsConnected)
+        if (_client is null || !IsConnected || string.IsNullOrWhiteSpace(WatchExpression))
         {
             return;
         }
 
         try
         {
-            var bps = _breakpoints.Values.ToList();
-            await _client.SetBreakpointsAsync(_sessionId, sourcePath, bps);
+            var result = await _client.EvaluateAsync(_sessionId, 0, WatchExpression);
+            OutputLog.Add($"Watch: {WatchExpression} = {result}");
         }
         catch (Exception ex)
         {
-            OutputLog.Add($"Error setting breakpoints: {ex.Message}");
+            OutputLog.Add($"Watch error: {ex.Message}");
         }
+    }
+
+    public Func<(string? SourcePath, int Line)?>? GetActiveEditorLocation { get; set; }
+
+    public Func<Task>? RunActiveDocumentAsync { get; set; }
+
+    [RelayCommand]
+    private void ToggleActiveBreakpoint()
+    {
+        var location = GetActiveEditorLocation?.Invoke();
+        if (location is null)
+        {
+            return;
+        }
+
+        ToggleBreakpoint(location.Value.SourcePath, location.Value.Line);
+    }
+
+    public void ToggleBreakpoint(string? sourcePath, int line) =>
+        _breakpoints?.ToggleBreakpoint(sourcePath, line);
+
+    private void SyncBreakpointList()
+    {
+        Breakpoints.Clear();
+        if (_breakpoints is null)
+        {
+            return;
+        }
+
+        foreach (var bp in _breakpoints.Breakpoints.OrderBy(b => b.SourcePath).ThenBy(b => b.Line))
+        {
+            Breakpoints.Add(new BreakpointListItem(bp.SourcePath, bp.Line));
+        }
+    }
+
+    private async Task RefreshDebugInspectionAsync()
+    {
+        await RefreshStackAsync();
+        await RefreshVariablesAsync();
+    }
+
+    private void UpdateCommandStates()
+    {
+        CanRun = IsConnected && SessionState is ExecutionSessionState.Created or ExecutionSessionState.Loaded or ExecutionSessionState.Stopped;
+        CanStop = IsConnected && SessionState is ExecutionSessionState.Running or ExecutionSessionState.Paused or ExecutionSessionState.Stepping;
+        CanPause = IsConnected && SessionState == ExecutionSessionState.Running;
+        CanStepOver = IsConnected && SessionState == ExecutionSessionState.Paused;
+        CanStepInto = IsConnected && SessionState == ExecutionSessionState.Paused;
+        CanStepOut = IsConnected && SessionState == ExecutionSessionState.Paused;
+        CanContinue = IsConnected && SessionState == ExecutionSessionState.Paused;
     }
 
     public async ValueTask DisposeAsync()
     {
+        if (_breakpoints is not null)
+        {
+            _breakpoints.BreakpointsChanged -= SyncBreakpointList;
+        }
+
         _eventLoopCts?.Cancel();
         _eventLoopCts?.Dispose();
-        if (_client is not null)
+        if (_coordinator is not null)
         {
-            await _client.DisposeAsync();
+            await _coordinator.DisposeAsync();
         }
     }
 }

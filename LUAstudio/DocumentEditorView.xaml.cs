@@ -1,10 +1,12 @@
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
+using LUAstudio.Editor.Debugging;
 using LUAstudio.IDE.Documents;
 using LUAstudio.IDE.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using ICSharpCode.AvalonEdit;
+using ICSharpCode.AvalonEdit.Editing;
 
 namespace LUAstudio;
 
@@ -16,6 +18,10 @@ public partial class DocumentEditorView : UserControl
     private bool _caretHooked;
     private WpfDocumentEditorHost? _languageHost;
     private EditorSettingsCoordinator? _settingsCoordinator;
+    private IBreakpointService? _breakpointService;
+    private EditorNavigationService? _navigationService;
+    private BreakpointRenderer? _breakpointRenderer;
+    private BreakpointClickHandler? _breakpointClickHandler;
 
     public DocumentEditorView()
     {
@@ -58,6 +64,11 @@ public partial class DocumentEditorView : UserControl
     {
         _languageHost ??= App.Services.GetRequiredService<WpfDocumentEditorHost>();
         _settingsCoordinator ??= App.Services.GetRequiredService<EditorSettingsCoordinator>();
+        _breakpointService ??= App.Services.GetRequiredService<IBreakpointService>();
+        _navigationService ??= App.Services.GetRequiredService<EditorNavigationService>();
+
+        EnsureBreakpointMargin();
+        _navigationService.NavigationRequested += OnNavigationRequested;
 
         _settingsCoordinator.Register(Editor);
 
@@ -96,6 +107,43 @@ public partial class DocumentEditorView : UserControl
         {
             _settingsCoordinator?.Unregister(Editor);
         }
+
+        if (_navigationService is not null)
+        {
+            _navigationService.NavigationRequested -= OnNavigationRequested;
+        }
+    }
+
+    private void EnsureBreakpointMargin()
+    {
+        if (_breakpointRenderer is not null || _breakpointService is null || !IsEditorReady)
+        {
+            return;
+        }
+
+        _breakpointRenderer = new BreakpointRenderer(_breakpointService);
+        _breakpointClickHandler = new BreakpointClickHandler(_breakpointService, _breakpointRenderer);
+        Editor.TextArea.TextView.BackgroundRenderers.Add(_breakpointRenderer);
+        _breakpointClickHandler.Attach(Editor);
+    }
+
+    private void OnNavigationRequested()
+    {
+        if (_navigationService is null || _boundDocument?.FilePath is null || !IsEditorReady)
+        {
+            return;
+        }
+
+        if (!string.Equals(_boundDocument.FilePath, _navigationService.SourcePath, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        var line = Math.Max(1, Math.Min(_navigationService.Line, Editor.Document.LineCount));
+        Editor.TextArea.Caret.Line = line - 1;
+        Editor.TextArea.Caret.Column = Math.Max(0, _navigationService.Column - 1);
+        Editor.TextArea.Caret.BringCaretToView();
+        Editor.Focus();
     }
 
     private void RebindDocument(TextDocument? oldDoc, TextDocument? newDoc)
@@ -160,6 +208,11 @@ public partial class DocumentEditorView : UserControl
         doc.PropertyChanged += OnDocumentPropertyChanged;
 
         _languageHost?.Attach(Editor, doc);
+
+        if (_breakpointClickHandler is not null)
+        {
+            _breakpointClickHandler.SetSourcePath(doc.FilePath);
+        }
 
         try
         {

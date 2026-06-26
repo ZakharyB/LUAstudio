@@ -11,6 +11,7 @@ public sealed class ExecutionHostClient : IExecutionHostClient
     private readonly string _pipeName;
     private NamedPipeSandboxTransport? _transport;
     private readonly ConcurrentQueue<SandboxEnvelope> _events = new();
+    private readonly ConcurrentDictionary<string, TaskCompletionSource<SandboxEnvelope>> _pendingRequests = new();
     private readonly TaskCompletionSource _connected = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private CancellationTokenSource? _readerCts;
     private Task? _readerTask;
@@ -62,6 +63,37 @@ public sealed class ExecutionHostClient : IExecutionHostClient
             new SetBreakpointsRequest(sessionId, sourcePath, breakpoints),
             cancellationToken);
 
+    public Task SetWorkspaceModulesAsync(
+        Guid sessionId,
+        IReadOnlyList<WorkspaceModuleEntry> modules,
+        CancellationToken cancellationToken = default) =>
+        SendCommandAsync(
+            SandboxMessageKind.SetWorkspaceModules,
+            sessionId,
+            new SetWorkspaceModulesRequest(sessionId, modules),
+            cancellationToken);
+
+    public Task LoadModuleAsync(
+        Guid sessionId,
+        string path,
+        string source,
+        CancellationToken cancellationToken = default) =>
+        SendCommandAsync(
+            SandboxMessageKind.LoadModule,
+            sessionId,
+            new LoadModuleRequest(sessionId, path, source),
+            cancellationToken);
+
+    public Task ConfigureEnvironmentAsync(
+        Guid sessionId,
+        ConfigureEnvironmentRequest configuration,
+        CancellationToken cancellationToken = default) =>
+        SendCommandAsync(
+            SandboxMessageKind.ConfigureEnvironment,
+            sessionId,
+            configuration,
+            cancellationToken);
+
     public Task ExecuteAsync(Guid sessionId, CancellationToken cancellationToken = default) =>
         SendCommandAsync(SandboxMessageKind.Execute, sessionId, new SessionCommandRequest(sessionId), cancellationToken);
 
@@ -95,7 +127,7 @@ public sealed class ExecutionHostClient : IExecutionHostClient
             new StackTraceRequest(sessionId, frameId),
             cancellationToken).ConfigureAwait(false);
 
-        return SandboxPayload.As<StackTraceResponsePayload>(response?.Payload)?.Frames ?? Array.Empty<StackFrameInfo>();
+        return SandboxPayload.As<StackTraceResponsePayload>(response.Payload)?.Frames ?? Array.Empty<StackFrameInfo>();
     }
 
     public async Task<IReadOnlyList<ScopeInfo>> GetScopesAsync(
@@ -110,7 +142,7 @@ public sealed class ExecutionHostClient : IExecutionHostClient
             new ScopesRequest(sessionId, frameId),
             cancellationToken).ConfigureAwait(false);
 
-        return SandboxPayload.As<ScopesResponsePayload>(response?.Payload)?.Scopes ?? Array.Empty<ScopeInfo>();
+        return SandboxPayload.As<ScopesResponsePayload>(response.Payload)?.Scopes ?? Array.Empty<ScopeInfo>();
     }
 
     public async Task<IReadOnlyList<VariableInfo>> GetVariablesAsync(
@@ -125,7 +157,7 @@ public sealed class ExecutionHostClient : IExecutionHostClient
             new VariablesRequest(sessionId, variablesReference),
             cancellationToken).ConfigureAwait(false);
 
-        return SandboxPayload.As<VariablesResponsePayload>(response?.Payload)?.Variables ?? Array.Empty<VariableInfo>();
+        return SandboxPayload.As<VariablesResponsePayload>(response.Payload)?.Variables ?? Array.Empty<VariableInfo>();
     }
 
     public async Task<string> EvaluateAsync(
@@ -141,7 +173,7 @@ public sealed class ExecutionHostClient : IExecutionHostClient
             new EvaluateExpressionRequest(sessionId, frameId, expression),
             cancellationToken).ConfigureAwait(false);
 
-        var payload = SandboxPayload.As<EvaluateResultPayload>(response?.Payload);
+        var payload = SandboxPayload.As<EvaluateResultPayload>(response.Payload);
         if (!string.IsNullOrWhiteSpace(payload?.Error))
         {
             throw new InvalidOperationException(payload.Error);
@@ -162,7 +194,7 @@ public sealed class ExecutionHostClient : IExecutionHostClient
                 continue;
             }
 
-            await Task.Delay(15, cancellationToken).ConfigureAwait(false);
+            await Task.Delay(5, cancellationToken).ConfigureAwait(false);
         }
     }
 
@@ -177,7 +209,7 @@ public sealed class ExecutionHostClient : IExecutionHostClient
             .ConfigureAwait(false);
     }
 
-    private async Task<SandboxEnvelope?> SendRequestAsync(
+    private async Task<SandboxEnvelope> SendRequestAsync(
         SandboxMessageKind requestKind,
         SandboxMessageKind responseKind,
         Guid sessionId,
@@ -186,47 +218,53 @@ public sealed class ExecutionHostClient : IExecutionHostClient
     {
         await EnsureTransportAsync(cancellationToken).ConfigureAwait(false);
         var requestId = Guid.NewGuid().ToString("N");
-        await _transport!.SendAsync(new SandboxEnvelope(requestKind, sessionId, requestId, payload), cancellationToken)
-            .ConfigureAwait(false);
+        var tcs = new TaskCompletionSource<SandboxEnvelope>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _pendingRequests[requestId] = tcs;
 
-        var deadline = DateTime.UtcNow.AddSeconds(10);
-        while (DateTime.UtcNow < deadline)
+        try
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            foreach (var evt in DrainMatching(requestId, responseKind))
+            await _transport!.SendAsync(new SandboxEnvelope(requestKind, sessionId, requestId, payload), cancellationToken)
+                .ConfigureAwait(false);
+
+            using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            timeout.CancelAfter(TimeSpan.FromSeconds(10));
+            var completed = await Task.WhenAny(tcs.Task, Task.Delay(Timeout.Infinite, timeout.Token)).ConfigureAwait(false);
+            if (completed != tcs.Task)
             {
-                return evt;
+                throw new TimeoutException($"Timed out waiting for {responseKind}.");
             }
 
-            await Task.Delay(20, cancellationToken).ConfigureAwait(false);
-        }
+            var response = await tcs.Task.ConfigureAwait(false);
+            if (response.Kind == SandboxMessageKind.Error)
+            {
+                var errorPayload = SandboxPayload.As<Dictionary<string, object?>>(response.Payload);
+                var message = errorPayload?.TryGetValue("message", out var msg) == true ? msg?.ToString() : "Unknown error";
+                throw new InvalidOperationException(message ?? "Unknown error");
+            }
 
-        throw new TimeoutException($"Timed out waiting for {responseKind}.");
+            if (response.Kind != responseKind && response.Kind != SandboxMessageKind.Ack)
+            {
+                throw new InvalidOperationException($"Unexpected response kind {response.Kind}.");
+            }
+
+            return response;
+        }
+        finally
+        {
+            _pendingRequests.TryRemove(requestId, out _);
+        }
     }
 
-    private IEnumerable<SandboxEnvelope> DrainMatching(string requestId, SandboxMessageKind kind)
+    private void RouteEnvelope(SandboxEnvelope envelope)
     {
-        var remaining = new List<SandboxEnvelope>();
-        while (_events.TryDequeue(out var evt))
+        if (!string.IsNullOrEmpty(envelope.RequestId) &&
+            _pendingRequests.TryRemove(envelope.RequestId, out var tcs))
         {
-            if (string.Equals(evt.RequestId, requestId, StringComparison.Ordinal) && evt.Kind == kind)
-            {
-                foreach (var item in remaining)
-                {
-                    _events.Enqueue(item);
-                }
-
-                yield return evt;
-                yield break;
-            }
-
-            remaining.Add(evt);
+            tcs.TrySetResult(envelope);
+            return;
         }
 
-        foreach (var item in remaining)
-        {
-            _events.Enqueue(item);
-        }
+        _events.Enqueue(envelope);
     }
 
     private async Task ReadLoopAsync(CancellationToken cancellationToken)
@@ -241,7 +279,7 @@ public sealed class ExecutionHostClient : IExecutionHostClient
                     break;
                 }
 
-                _events.Enqueue(envelope);
+                RouteEnvelope(envelope);
             }
             catch (OperationCanceledException)
             {

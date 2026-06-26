@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Type="http://schemas.microsoft.com/packaging/2010/07/manifest" Target="/Luau.Native.nuspec" Id="RB2E96E9FFE1C6FD3" />
+  <Relationship Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="/package/services/metadata/core-properties/73b341c757a942079fe8f588f6ad7525.psmdcp" Id="RC3DE81E988222DBC" />
+</Relationships>

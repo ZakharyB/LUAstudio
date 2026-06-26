@@ -48,4 +48,23 @@
         <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
     </PropertyGroup>
 
+    <Target Name="CopyExecutionHost" AfterTargets="Build">
+        <MSBuild Projects="..\LUAstudio.ExecutionHost\LUAstudio.ExecutionHost.csproj"
+                 Targets="Build"
+                 Properties="Configuration=$(Configuration)" />
+        <ItemGroup>
+            <ExecutionHostFiles Include="..\LUAstudio.ExecutionHost\bin\$(Configuration)\net8.0\**\*.*" />
+        </ItemGroup>
+        <Copy SourceFiles="@(ExecutionHostFiles)"
+              DestinationFolder="$(OutputPath)%(RecursiveDir)"
+              SkipUnchangedFiles="true" />
+    </Target>
+
+    <Target Name="CopyNativeLuauToOutputRoot" AfterTargets="Build">
+        <Copy SourceFiles="$(OutputPath)runtimes\win-x64\native\libluau.dll"
+              DestinationFiles="$(OutputPath)libluau.dll"
+              SkipUnchangedFiles="true"
+              Condition="Exists('$(OutputPath)runtimes\win-x64\native\libluau.dll')" />
+    </Target>
+
 </Project>

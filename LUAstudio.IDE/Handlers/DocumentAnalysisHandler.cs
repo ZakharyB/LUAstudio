@@ -14,6 +14,8 @@ namespace LUAstudio.IDE.Handlers;
 /// </summary>
 public sealed class DocumentAnalysisHandler
 {
+    private const int DebounceMs = 200;
+
     private readonly IDocumentService _documents;
     private readonly IDocumentSnapshotStore _snapshots;
     private readonly IAnalysisOrchestrator _analysis;
@@ -85,7 +87,7 @@ public sealed class DocumentAnalysisHandler
     {
         try
         {
-            await Task.Delay(250, cts.Token).ConfigureAwait(false);
+            await Task.Delay(DebounceMs, cts.Token).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {
@@ -99,7 +101,6 @@ public sealed class DocumentAnalysisHandler
             document.FilePath,
             dialect);
 
-        _moduleResolver.RebuildIndex(_workspace.Roots.Select(r => r.FullPath));
         _analysis.RequestAnalysis(snapshot);
     }
 

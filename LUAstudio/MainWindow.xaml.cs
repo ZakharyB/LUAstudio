@@ -1,8 +1,8 @@
 ﻿using LUAstudio.Abstractions;
 using LUAstudio.Core;
+using LUAstudio.Editor.Debugging;
 using LUAstudio.IDE.ViewModels;
 using LUAstudio.Settings.Views;
-using LUAstudio.Execution;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Windows;
@@ -21,14 +21,26 @@ public partial class MainWindow
     private const int WmGetMinMaxInfoMessage = 0x0024;
     private const uint MonitorDefaultToNearest = 2;
 
+    private readonly DebugSessionCoordinator _debugCoordinator;
+    private readonly IBreakpointService _breakpointService;
+
     public DebugPanelViewModel DebugPanelViewModel { get; }
 
-    public MainWindow(MainViewModel viewModel, DiagnosticsPanelViewModel diagnosticsPanel)
+    public MainWindow(
+        MainViewModel viewModel,
+        DiagnosticsPanelViewModel diagnosticsPanel,
+        DebugPanelViewModel debugPanelViewModel,
+        DebugSessionCoordinator debugCoordinator,
+        IBreakpointService breakpointService,
+        IDebugEditorNavigation debugNavigation)
     {
+        _debugCoordinator = debugCoordinator;
+        _breakpointService = breakpointService;
         InitializeComponent();
         DataContext = viewModel;
         DiagnosticsPanel.DataContext = diagnosticsPanel;
-        DebugPanelViewModel = new DebugPanelViewModel();
+        DebugPanelViewModel = debugPanelViewModel;
+        DebugPanelViewModel.Configure(debugCoordinator, breakpointService, debugNavigation);
         DebugPanel.DataContext = DebugPanelViewModel;
         Loaded += OnLoaded;
         Closing += OnClosing;
@@ -208,12 +220,34 @@ public partial class MainWindow
 
         try
         {
-            var client = new ExecutionHostClient();
+            DebugPanelViewModel.GetActiveEditorLocation = () =>
+            {
+                if (DataContext is not MainViewModel vm || vm.ActiveDocument is null)
+                {
+                    return null;
+                }
+
+                return (vm.ActiveDocument.FilePath, vm.CaretLine > 0 ? vm.CaretLine : 1);
+            };
+
+            DebugPanelViewModel.RunActiveDocumentAsync = async () =>
+            {
+                if (DataContext is not MainViewModel vm || vm.ActiveDocument is null)
+                {
+                    return;
+                }
+
+                await DebugPanelViewModel.RunDocumentAsync(
+                    vm.ActiveDocument.Content ?? string.Empty,
+                    vm.ActiveDocument.FilePath);
+            };
+
+            var client = await _debugCoordinator.EnsureHostRunningAsync();
             await DebugPanelViewModel.InitializeAsync(client);
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Failed to initialize debug panel: {ex.Message}");
+            DebugPanelViewModel.OutputLog.Add($"Failed to initialize debug host: {ex.Message}");
         }
     }
 
@@ -226,14 +260,9 @@ public partial class MainWindow
             explorer.Show();
         }
 
-        var problems = FindAnchorable("Problems");
-        problems?.Show();
-
-        var output = FindAnchorable("Output");
-        output?.Show();
-
-        var debug = FindAnchorable("Debug");
-        debug?.Show();
+        FindAnchorable("Problems")?.Show();
+        FindAnchorable("Output")?.Show();
+        FindAnchorable("Debug")?.Show();
     }
 
     private LayoutAnchorable? FindAnchorable(string contentId)
@@ -273,8 +302,8 @@ public partial class MainWindow
         EnsureDockDefaults();
     }
 
-    private void OnClosing(object? sender, CancelEventArgs e)
+    private async void OnClosing(object? sender, CancelEventArgs e)
     {
-        // Intentionally do not persist AvalonDock XML — it previously broke Explorer bindings.
+        await DebugPanelViewModel.DisposeAsync();
     }
 }
