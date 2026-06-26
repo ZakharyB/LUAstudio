@@ -18,4 +18,11 @@
     <PackageReference Include="Luau.Native" Version="0.1.6" />
   </ItemGroup>
 
+  <Target Name="CopyNativeLuauToOutputRoot" AfterTargets="Build">
+    <Copy SourceFiles="$(OutputPath)runtimes\win-x64\native\libluau.dll"
+          DestinationFiles="$(OutputPath)libluau.dll"
+          SkipUnchangedFiles="true"
+          Condition="Exists('$(OutputPath)runtimes\win-x64\native\libluau.dll')" />
+  </Target>
+
 </Project>

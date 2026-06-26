@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
+  <metadata>
+    <id>Luau</id>
+    <version>0.1.6</version>
+    <authors>nuskey</authors>
+    <license type="expression">MIT</license>
+    <licenseUrl>https://licenses.nuget.org/MIT</licenseUrl>
+    <readme>README.md</readme>
+    <projectUrl>https://github.com/nuskey8/luau-dotnet</projectUrl>
+    <description>High-level Luau bindings for .NET and Unity</description>
+    <copyright>© Yusuke Nakada</copyright>
+    <tags>luau</tags>
+    <repository type="git" url="https://github.com/nuskey8/luau-dotnet" commit="eb627298a00771f4ca91360ba7ebe56104a62c56" />
+    <dependencies>
+      <group targetFramework="net8.0">
+        <dependency id="Luau.Native" version="0.1.6" exclude="Build,Analyzers" />
+      </group>
+      <group targetFramework="net9.0">
+        <dependency id="Luau.Native" version="0.1.6" exclude="Build,Analyzers" />
+      </group>
+      <group targetFramework=".NETStandard2.1">
+        <dependency id="Luau.Native" version="0.1.6" exclude="Build,Analyzers" />
+        <dependency id="System.Runtime.CompilerServices.Unsafe" version="6.0.0" exclude="Build,Analyzers" />
+        <dependency id="System.Text.Json" version="9.0.6" exclude="Build,Analyzers" />
+      </group>
+    </dependencies>
+  </metadata>
+</package>

@@ -29,6 +29,7 @@ public sealed class LuauDebugController
     private TaskCompletionSource<bool>? _pauseGate;
     private string? _mainSourcePath;
     private string? _lastPauseReason;
+    private int _maxStackDepth = 256;
 
     public event Action<int, string?, string>? Paused;
 
@@ -37,6 +38,8 @@ public sealed class LuauDebugController
         _state = state;
         _mainSourcePath = mainSourcePath;
     }
+
+    public void ConfigureLimits(int maxStackDepth) => _maxStackDepth = Math.Max(1, maxStackDepth);
 
     public void ResetExecutionControl()
     {
@@ -136,6 +139,16 @@ public sealed class LuauDebugController
 
             if (status == (int)lua_Status.LUA_BREAK)
             {
+                if (GetStackDepth() > _maxStackDepth)
+                {
+                    throw new SandboxRuntimeException(
+                        $"Stack depth exceeded limit of {_maxStackDepth}.",
+                        _mainSourcePath,
+                        1,
+                        1,
+                        "stack_overflow");
+                }
+
                 RefreshFrames(L);
                 var (line, source) = GetCurrentLocation(L);
                 var reason = DeterminePauseReason(line, source);
@@ -229,7 +242,7 @@ public sealed class LuauDebugController
         try
         {
             var chunk = $"return ({expression})";
-            var results = _state.DoString(Encoding.UTF8.GetBytes(chunk));
+            var results = LuauScriptRunner.DoString(_state, chunk);
             return results.Length == 0 ? "nil" : LuauValueFormatter.Format(results[0]);
         }
         catch (Exception ex)

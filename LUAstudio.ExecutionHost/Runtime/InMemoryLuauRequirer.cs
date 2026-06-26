@@ -22,7 +22,7 @@ public sealed class InMemoryLuauRequirer : LuauRequirer
         Span<byte> chunkNameBytes = stackalloc byte[Encoding.UTF8.GetMaxByteCount(chunkName.Length)];
         var chunkNameLength = Encoding.UTF8.GetBytes(chunkName, chunkNameBytes);
 
-        var results = state.DoString(Encoding.UTF8.GetBytes(source), chunkNameBytes[..chunkNameLength]);
+        var results = LuauScriptRunner.DoString(state, Encoding.UTF8.GetBytes(source), chunkNameBytes[..chunkNameLength]);
         if (results.Length != 1)
         {
             throw new LuauException($"Module '{requireArgument}' must return exactly one value.");

@@ -240,6 +240,19 @@ public sealed class ExecutionSession : IDisposable
             State = ExecutionSessionState.Stopped;
         }
 
+        try
+        {
+            var modules = _modules.Snapshot();
+            var hash = _trace.ComputeModulesHash(modules);
+            var snapshot = _trace.CreateSnapshot(SessionId, hash, Environment.TickCount);
+            var traceDirectory = Path.Combine(Path.GetTempPath(), "LUAstudio", "traces");
+            ExecutionTraceRecorder.SaveSnapshot(snapshot, traceDirectory);
+        }
+        catch
+        {
+            // Trace capture is best-effort and must not affect session teardown.
+        }
+
         PublishStateChanged();
         _publish(new SandboxEnvelope(
             SandboxMessageKind.ExecutionFinished,

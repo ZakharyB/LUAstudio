@@ -1,5 +1,5 @@
-using System.Text;
 using LUAstudio.Execution.Abstractions;
+using System.Text;
 using LUAstudio.ExecutionHost.Debugging;
 using Luau;
 
@@ -26,6 +26,7 @@ public sealed class LuauRuntime : IDisposable
         _debug = debug;
         _modules = modules;
         _configuration = configuration;
+        _debug.ConfigureLimits(configuration.MaxStackDepth);
         _trace = trace ?? new ExecutionTraceRecorder();
         _bootstrap = new LuauSandboxBootstrap(_trace);
     }
@@ -45,7 +46,7 @@ public sealed class LuauRuntime : IDisposable
     {
         EnsureState();
         _sourcePath = sourcePath;
-        _loadedBytecode = LuauCompiler.Compile(Encoding.UTF8.GetBytes(source));
+        _loadedBytecode = LuauBytecodeCompiler.Compile(Encoding.UTF8.GetBytes(source));
     }
 
     public void Execute(CancellationToken cancellationToken)

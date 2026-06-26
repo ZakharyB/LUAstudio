@@ -17,7 +17,7 @@ public sealed class SandboxHostServer
     {
         while (!cancellationToken.IsCancellationRequested)
         {
-            await using var stream = new NamedPipeServerStream(
+            var stream = new NamedPipeServerStream(
                 _pipeName,
                 PipeDirection.InOut,
                 NamedPipeServerStream.MaxAllowedServerInstances,
@@ -55,6 +55,14 @@ public sealed class SandboxHostServer
         finally
         {
             await transport.DisposeAsync().ConfigureAwait(false);
+            if (stream is IAsyncDisposable asyncDisposable)
+            {
+                await asyncDisposable.DisposeAsync().ConfigureAwait(false);
+            }
+            else
+            {
+                stream.Dispose();
+            }
         }
     }
 

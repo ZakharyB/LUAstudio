@@ -28,7 +28,8 @@ public sealed class LuauSandboxBootstrap
         state.OpenDebugLibrary();
 
         RegisterNativeGlobal(state, "__sandbox_print", SandboxNativeBindings.Print);
-        state.DoString(
+        LuauScriptRunner.DoString(
+            state,
             """
             print = function(...)
                 local parts = {...}
@@ -38,7 +39,7 @@ public sealed class LuauSandboxBootstrap
                 end
                 __sandbox_print(table.concat(buffer, "	"))
             end
-            """u8);
+            """);
 
         if (enableRobloxMocks)
         {
@@ -48,39 +49,49 @@ public sealed class LuauSandboxBootstrap
 
     private static unsafe void SeedRobloxMocks(LuauState state)
     {
-        var game = state.CreateTable();
-        game["Name"] = "Game";
-        state["game"] = game;
-
-        var workspace = state.CreateTable();
-        workspace["Name"] = "Workspace";
-        state["workspace"] = workspace;
-
-        var script = state.CreateTable();
-        script["Name"] = "Script";
-        state["script"] = script;
-
         RegisterNativeGlobal(state, "__sandbox_instance_new", SandboxNativeBindings.InstanceNew);
-        state.DoString(
+        LuauScriptRunner.DoString(
+            state,
             """
-            Instance = { new = function(className)
-                return __sandbox_instance_new(className)
-            end }
-            """u8);
+            game = { Name = "Game" }
+            workspace = { Name = "Workspace" }
+            script = { Name = "Script" }
+            Instance = {
+                new = function(className)
+                    return __sandbox_instance_new(className)
+                end
+            }
+            """);
     }
 
     private static unsafe void RegisterNativeGlobal(LuauState state, string name, lua_CFunction callback)
     {
+        var L = state.AsPointer();
         state.PushCFunction(callback);
-        state[name] = state.ToValue(-1);
-        state.Pop(1);
+        var bytes = Encoding.UTF8.GetBytes(name + "\0");
+        fixed (byte* namePtr = bytes)
+        {
+            lua_setglobal(L, namePtr);
+        }
     }
 }
 
 internal static unsafe class SandboxNativeBindings
 {
-    public static Action<string, string>? Output;
-    public static ExecutionTraceRecorder? Trace;
+    [ThreadStatic] private static Action<string, string>? _threadOutput;
+    [ThreadStatic] private static ExecutionTraceRecorder? _threadTrace;
+
+    public static Action<string, string>? Output
+    {
+        get => _threadOutput;
+        set => _threadOutput = value;
+    }
+
+    public static ExecutionTraceRecorder? Trace
+    {
+        get => _threadTrace;
+        set => _threadTrace = value;
+    }
 
     public static int Print(lua_State* L)
     {
