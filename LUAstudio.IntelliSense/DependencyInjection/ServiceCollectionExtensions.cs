@@ -1,3 +1,5 @@
+using LUAstudio.IntelliSense.Diagnostics;
+using LUAstudio.IntelliSense.Diagnostics.Analyzers;
 using LUAstudio.IntelliSense.Analysis;
 using LUAstudio.IntelliSense.Completion;
 using LUAstudio.IntelliSense.Completion.Providers;
@@ -20,8 +22,21 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IDocumentSnapshotStore, DocumentSnapshotStore>();
         services.AddSingleton<ISymbolIndex, SymbolIndex>();
         services.AddSingleton<IModuleResolver, ModuleResolver>();
+        services.AddSingleton<RequireGraphService>();
+        services.AddSingleton<RequireGraphWorkspaceScanner>();
+        services.AddSingleton<RequireGraphCoordinator>();
         services.AddSingleton<IRobloxApiDatabase, RobloxApiDatabase>();
         services.AddSingleton<ExpressionTypeResolver>();
+        services.AddSingleton<SemanticBinder>();
+
+        services.AddSingleton<IDiagnosticAnalyzer, ScopeSymbolAnalyzer>();
+        services.AddSingleton<IDiagnosticAnalyzer, GlobalEnvironmentAnalyzer>();
+        services.AddSingleton<IDiagnosticAnalyzer, ControlFlowAnalyzer>();
+        services.AddSingleton<IDiagnosticAnalyzer, DataFlowAnalyzer>();
+        services.AddSingleton<IDiagnosticAnalyzer, TypeCheckAnalyzer>();
+        services.AddSingleton<IDiagnosticAnalyzer, ModuleDependencyAnalyzer>();
+        services.AddSingleton<IDiagnosticAnalyzer, LintRulesAnalyzer>();
+        services.AddSingleton<DiagnosticEngine>();
         services.AddSingleton<SemanticAnalyzer>();
         services.AddSingleton<IAnalysisOrchestrator, AnalysisOrchestrator>();
 

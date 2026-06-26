@@ -96,7 +96,8 @@ public sealed class SemanticHighlightingClassifier : DocumentColorizingTransform
                         break;
 
                     case IdentifierNameSyntax id
-                        when _roblox.GlobalTypeAliases.ContainsKey(id.Name.Text)
+                        when (_roblox.GlobalTypeAliases.ContainsKey(id.Name.Text) ||
+                              _roblox.TryGetGlobal(id.Name.Text, out _))
                              && (id.Parent is not MemberAccessExpressionSyntax parent || parent.Expression != id):
                         ColorizeSpan(id.Name.Span, HighlightBrushes.Information, line, tokens);
                         break;
@@ -121,7 +122,8 @@ public sealed class SemanticHighlightingClassifier : DocumentColorizingTransform
     {
         if (member.Expression is IdentifierNameSyntax baseId)
         {
-            var baseBrush = _roblox.GlobalTypeAliases.ContainsKey(baseId.Name.Text)
+            var baseBrush = _roblox.GlobalTypeAliases.ContainsKey(baseId.Name.Text) ||
+                            _roblox.TryGetGlobal(baseId.Name.Text, out _)
                 ? HighlightBrushes.Information
                 : HighlightBrushes.Text;
             ColorizeSpan(baseId.Name.Span, baseBrush, line, tokens);
@@ -185,7 +187,8 @@ public sealed class SemanticHighlightingClassifier : DocumentColorizingTransform
                 continue;
             }
 
-            var brush = _roblox.GlobalTypeAliases.ContainsKey(nameGroup.Value)
+            var brush = _roblox.GlobalTypeAliases.ContainsKey(nameGroup.Value) ||
+                        _roblox.TryGetGlobal(nameGroup.Value, out _)
                 ? HighlightBrushes.Information
                 : HighlightBrushes.Text;
             ChangeLinePart(start, end, el => el.TextRunProperties.SetForegroundBrush(brush));

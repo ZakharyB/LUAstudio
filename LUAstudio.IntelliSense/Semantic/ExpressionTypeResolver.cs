@@ -24,8 +24,31 @@ public sealed class ExpressionTypeResolver
             IdentifierNameSyntax id => ResolveIdentifier(id.Name.Text, scope),
             MemberAccessExpressionSyntax member => ResolveMember(member),
             CallExpressionSyntax call => ResolveCall(call),
+            TableExpressionSyntax table => ResolveTable(table),
+            LiteralExpressionSyntax lit => TypeInfo.FromLiteralToken(lit.Token.Text).DisplayName,
             _ => null
         };
+    }
+
+    private static string? ResolveTable(TableExpressionSyntax table)
+    {
+        var shape = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var field in table.Fields)
+        {
+            var key = field.Key switch
+            {
+                IdentifierNameSyntax id => id.Name.Text,
+                LiteralExpressionSyntax lit => lit.Token.Text.Trim('"', '\''),
+                _ => null
+            };
+
+            if (key is not null)
+            {
+                shape[key] = "unknown";
+            }
+        }
+
+        return shape.Count > 0 ? $"{{ {string.Join(", ", shape.Select(kv => $"{kv.Key}: {kv.Value}"))} }}" : "table";
     }
 
     public string? ResolveCompletionTargetType(CompletionContext context)

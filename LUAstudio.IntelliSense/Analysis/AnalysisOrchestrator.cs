@@ -5,6 +5,7 @@ using LUAstudio.Core.Threading;
 using LUAstudio.IntelliSense.Events;
 using LUAstudio.IntelliSense.Semantic;
 using LUAstudio.IntelliSense.Symbols;
+using LUAstudio.IntelliSense.Workspace;
 using LUAstudio.Languages.Parsing;
 using LUAstudio.Languages.Text;
 
@@ -17,21 +18,26 @@ public sealed class AnalysisOrchestrator : IAnalysisOrchestrator
     private readonly ISymbolIndex _symbolIndex;
     private readonly IAnalysisWorkQueue _workQueue;
     private readonly IEventBus _eventBus;
+    private readonly RequireGraphWorkspaceScanner _requireGraphScanner;
     private readonly ConcurrentDictionary<Guid, DocumentAnalysisResult> _latest = new();
     private readonly ConcurrentDictionary<Guid, ParseResult> _previousParse = new();
+    private readonly ConcurrentDictionary<Guid, DateTime> _lastRequestTime = new();
+    private const int DebounceMs = 150;
 
     public AnalysisOrchestrator(
         ILuaParser parser,
         SemanticAnalyzer semanticAnalyzer,
         ISymbolIndex symbolIndex,
         IAnalysisWorkQueue workQueue,
-        IEventBus eventBus)
+        IEventBus eventBus,
+        RequireGraphWorkspaceScanner requireGraphScanner)
     {
         _parser = parser;
         _semanticAnalyzer = semanticAnalyzer;
         _symbolIndex = symbolIndex;
         _workQueue = workQueue;
         _eventBus = eventBus;
+        _requireGraphScanner = requireGraphScanner;
     }
 
     public DocumentAnalysisResult? GetLatestResult(Guid documentId) =>
@@ -40,8 +46,26 @@ public sealed class AnalysisOrchestrator : IAnalysisOrchestrator
     public void RequestAnalysis(SourceSnapshot snapshot, TextSpan? changedSpan = null)
     {
         var key = snapshot.DocumentId.ToString();
+        var now = DateTime.UtcNow;
+        _lastRequestTime[snapshot.DocumentId] = now;
+
         _workQueue.CancelPending(key);
-        _ = _workQueue.EnqueueAsync(key, ct => RunAnalysisAsync(snapshot, changedSpan, ct));
+        _ = _workQueue.EnqueueAsync(key, async ct =>
+        {
+            await Task.Delay(DebounceMs, ct).ConfigureAwait(false);
+            if (ct.IsCancellationRequested)
+            {
+                return;
+            }
+
+            var lastRequest = _lastRequestTime.TryGetValue(snapshot.DocumentId, out var t) ? t : DateTime.MinValue;
+            if (now != lastRequest)
+            {
+                return;
+            }
+
+            await RunAnalysisAsync(snapshot, changedSpan, ct).ConfigureAwait(false);
+        });
     }
 
     public async Task<DocumentAnalysisResult> AnalyzeAsync(
@@ -74,6 +98,7 @@ public sealed class AnalysisOrchestrator : IAnalysisOrchestrator
         _latest[snapshot.DocumentId] = result;
 
         _eventBus.Publish(new DocumentAnalyzedEvent(snapshot.DocumentId, snapshot.Version, result));
+        _requireGraphScanner.PublishUpdated();
         return result;
     }
 }

@@ -24,6 +24,8 @@ public sealed class Symbol
 
     public string Name { get; }
 
+    public string? FilePath { get; }
+    
     public SymbolKind Kind { get; }
 
     public TextSpan DeclarationSpan { get; }

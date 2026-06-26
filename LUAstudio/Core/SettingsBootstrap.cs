@@ -53,6 +53,12 @@ public sealed class SettingsBootstrap
             await LoadValueAsync(SettingKeys.EditorAutoPairBrackets, bool.Parse, cancellationToken).ConfigureAwait(false);
             await LoadValueAsync(SettingKeys.EditorSmartEnter, bool.Parse, cancellationToken).ConfigureAwait(false);
             await LoadValueAsync(SettingKeys.EditorSemanticHighlighting, bool.Parse, cancellationToken).ConfigureAwait(false);
+            await LoadValueAsync(SettingKeys.EditorAutoSwitchOnOpen, bool.Parse, cancellationToken).ConfigureAwait(false);
+
+            await LoadValueAsync(SettingKeys.DiagnosticsEnabled, bool.Parse, cancellationToken).ConfigureAwait(false);
+            await LoadValueAsync(SettingKeys.DiagnosticsEnvironmentProfile, v => v, cancellationToken).ConfigureAwait(false);
+            await LoadValueAsync(SettingKeys.DiagnosticsStrictMode, bool.Parse, cancellationToken).ConfigureAwait(false);
+            await LoadValueAsync(SettingKeys.DiagnosticsShowRequireGraph, bool.Parse, cancellationToken).ConfigureAwait(false);
 
             await LoadValueAsync(SettingKeys.RestoreWorkspaceRoots, bool.Parse, cancellationToken).ConfigureAwait(false);
         }
@@ -98,6 +104,12 @@ public sealed class SettingsBootstrap
         Persist<bool>(SettingKeys.EditorAutoPairBrackets, v => v.ToString());
         Persist<bool>(SettingKeys.EditorSmartEnter, v => v.ToString());
         Persist<bool>(SettingKeys.EditorSemanticHighlighting, v => v.ToString());
+        Persist<bool>(SettingKeys.EditorAutoSwitchOnOpen, v => v.ToString());
+
+        Persist<bool>(SettingKeys.DiagnosticsEnabled, v => v.ToString());
+        Persist<string>(SettingKeys.DiagnosticsEnvironmentProfile, v => v);
+        Persist<bool>(SettingKeys.DiagnosticsStrictMode, v => v.ToString());
+        Persist<bool>(SettingKeys.DiagnosticsShowRequireGraph, v => v.ToString());
 
         Persist<bool>(SettingKeys.RestoreWorkspaceRoots, v => v.ToString());
     }

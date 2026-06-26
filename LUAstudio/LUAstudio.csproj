@@ -8,6 +8,8 @@
       <ProjectReference Include="..\LUAstudio.Settings\LUAstudio.Settings.csproj" />
       <ProjectReference Include="..\LUAstudio.Storage\LUAstudio.Storage.csproj" />
       <ProjectReference Include="..\LUAstudio.Workspace\LUAstudio.Workspace.csproj" />
+      <ProjectReference Include="..\LUAstudio.Execution\LUAstudio.Execution.csproj" />
+      <ProjectReference Include="..\LUAstudio.ExecutionHost\LUAstudio.ExecutionHost.csproj" />
       <ProjectReference Include="..\LUAstudio.Themes\LUAstudio.Themes.csproj" />
       <ProjectReference Include="..\LUAstudio.Tools\LUAstudio.Tools.csproj" />
     </ItemGroup>
@@ -31,6 +33,10 @@
       <Content Include="Assets\Editor\Lua.xshd" Link="Assets\Editor\Lua.xshd">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </Content>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Assets\Fonts\" />
     </ItemGroup>
 
     <PropertyGroup>

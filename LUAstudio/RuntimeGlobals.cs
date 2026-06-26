@@ -41,6 +41,12 @@ public static class RuntimeGlobals
         Register(SettingKeys.EditorAutoPairBrackets, new GlobalValue<bool>(SettingKeys.EditorAutoPairBrackets, true));
         Register(SettingKeys.EditorSmartEnter, new GlobalValue<bool>(SettingKeys.EditorSmartEnter, true));
         Register(SettingKeys.EditorSemanticHighlighting, new GlobalValue<bool>(SettingKeys.EditorSemanticHighlighting, true));
+        Register(SettingKeys.EditorAutoSwitchOnOpen, new GlobalValue<bool>(SettingKeys.EditorAutoSwitchOnOpen, true));
+
+        Register(SettingKeys.DiagnosticsEnabled, new GlobalValue<bool>(SettingKeys.DiagnosticsEnabled, true));
+        Register(SettingKeys.DiagnosticsEnvironmentProfile, new GlobalValue<string>(SettingKeys.DiagnosticsEnvironmentProfile, LuaEnvironmentProfiles.RobloxLua));
+        Register(SettingKeys.DiagnosticsStrictMode, new GlobalValue<bool>(SettingKeys.DiagnosticsStrictMode, false));
+        Register(SettingKeys.DiagnosticsShowRequireGraph, new GlobalValue<bool>(SettingKeys.DiagnosticsShowRequireGraph, true));
 
         Register(SettingKeys.RestoreWorkspaceRoots, new GlobalValue<bool>(SettingKeys.RestoreWorkspaceRoots, true));
     }

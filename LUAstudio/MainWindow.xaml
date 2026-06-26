@@ -34,6 +34,11 @@
         <KeyBinding Key="S" Modifiers="Control" Command="{Binding SaveActiveCommand}" />
    <!--     <KeyBinding Key="S" Modifiers="Control+Shift" Command="{Binding SaveAsActiveCommand}" /> -->
         <KeyBinding Key="W" Modifiers="Control" Command="{Binding CloseActiveCommand}" />
+        <KeyBinding Key="F5" Modifiers="Shift" Command="{Binding ElementName=DebugPanel, Path=DataContext.StopCommand}" />
+        <KeyBinding Key="F6" Command="{Binding ElementName=DebugPanel, Path=DataContext.PauseCommand}" />
+        <KeyBinding Key="F10" Command="{Binding ElementName=DebugPanel, Path=DataContext.StepOverCommand}" />
+        <KeyBinding Key="F11" Command="{Binding ElementName=DebugPanel, Path=DataContext.StepIntoCommand}" />
+        <KeyBinding Key="F11" Modifiers="Shift" Command="{Binding ElementName=DebugPanel, Path=DataContext.StepOutCommand}" />
     </Window.InputBindings>
 
     <Grid Background="{StaticResource BrushBgRoot}">
@@ -79,6 +84,8 @@
                             <Separator />
                             <MenuItem Header="_Save" Command="{Binding SaveActiveCommand}" InputGestureText="Ctrl+S" />
                             <MenuItem Header="Save _as…" Command="{Binding SaveAsActiveCommand}" InputGestureText="Ctrl+Shift+S" />
+                            <Separator />
+                            <MenuItem Header="Run" Click="RunActiveDocument_OnClick" InputGestureText="F5" />
                             <Separator />
                             <MenuItem Header="Settings" Click="OpenSettings_OnClick" />
                             <MenuItem Header="Beta Features"/>
@@ -165,61 +172,79 @@
                         </dock:LayoutAnchorable>
                     </dock:LayoutAnchorablePane>
                     <dock:LayoutPanel Orientation="Vertical">
-                        <dock:LayoutDocumentPane>
-                            <dock:LayoutDocument Title="Editor"
-                                                 ContentId="Editor"
-                                                 CanClose="False">
-                                <Grid Background="{StaticResource BrushBgEditor}">
-                                    <TabControl ItemsSource="{Binding OpenDocuments}"
-                                                SelectedItem="{Binding ActiveDocument, Mode=TwoWay}"
-                                                Visibility="{Binding HasOpenDocuments, Converter={StaticResource BoolToVisibility}}">
-                                        <TabControl.ItemContainerStyle>
-                                            <Style TargetType="TabItem" BasedOn="{StaticResource {x:Type TabItem}}">
-                                                <Setter Property="HeaderTemplate">
-                                                    <Setter.Value>
-                                                        <DataTemplate DataType="{x:Type documents:TextDocument}">
-                                                            <StackPanel Orientation="Horizontal">
-                                                                <TextBlock Foreground="{StaticResource BrushText}"
-                                                                           Text="{Binding DisplayName, Mode=OneWay}" />
-                                                                <TextBlock Margin="4,0,0,0"
-                                                                           Foreground="{StaticResource BrushWarning}"
-                                                                           Text="●"
-                                                                           Visibility="{Binding IsDirty, Converter={StaticResource BoolToVisibility}}" />
-                                                            </StackPanel>
-                                                        </DataTemplate>
-                                                    </Setter.Value>
-                                                </Setter>
-                                            </Style>
-                                        </TabControl.ItemContainerStyle>
-                                        <TabControl.ContentTemplate>
-                                            <DataTemplate DataType="{x:Type documents:TextDocument}">
-                                                <local:DocumentEditorView Document="{Binding}" />
-                                            </DataTemplate>
-                                        </TabControl.ContentTemplate>
-                                    </TabControl>
+                        <dock:LayoutPanel Orientation="Horizontal">
+                            <dock:LayoutDocumentPane>
+                                <dock:LayoutDocument Title="Editor"
+                                                     ContentId="Editor"
+                                                     CanClose="False">
+                                    <Grid Background="{StaticResource BrushBgEditor}">
+                                        <TabControl ItemsSource="{Binding OpenDocuments}"
+                                                    SelectedItem="{Binding ActiveDocument, Mode=TwoWay}"
+                                                    Visibility="{Binding HasOpenDocuments, Converter={StaticResource BoolToVisibility}}">
+                                            <TabControl.ItemContainerStyle>
+                                                <Style TargetType="TabItem" BasedOn="{StaticResource {x:Type TabItem}}">
+                                                    <Setter Property="HeaderTemplate">
+                                                        <Setter.Value>
+                                                            <DataTemplate DataType="{x:Type documents:TextDocument}">
+                                                                <StackPanel Orientation="Horizontal">
+                                                                    <TextBlock Foreground="{StaticResource BrushText}"
+                                                                               Text="{Binding DisplayName, Mode=OneWay}" />
+                                                                    <TextBlock Margin="4,0,0,0"
+                                                                               Foreground="{StaticResource BrushWarning}"
+                                                                               Text="●"
+                                                                               Visibility="{Binding IsDirty, Converter={StaticResource BoolToVisibility}}" />
+                                                                </StackPanel>
+                                                            </DataTemplate>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                </Style>
+                                            </TabControl.ItemContainerStyle>
+                                            <TabControl.ContentTemplate>
+                                                <DataTemplate DataType="{x:Type documents:TextDocument}">
+                                                    <local:DocumentEditorView Document="{Binding}" />
+                                                </DataTemplate>
+                                            </TabControl.ContentTemplate>
+                                        </TabControl>
 
-                                    <Border Visibility="{Binding HasOpenDocuments, Converter={StaticResource InverseBoolToVisibility}}"
-                                            Background="{StaticResource BrushBgEditor}">
-                                        <StackPanel HorizontalAlignment="Center"
-                                                    VerticalAlignment="Center"
-                                                    MaxWidth="400">
-                                            <TextBlock HorizontalAlignment="Center"
-                                                       FontSize="18"
-                                                       FontWeight="SemiBold"
-                                                       Foreground="{StaticResource BrushText}"
-                                                       Text="No file open" />
-                                            <TextBlock Margin="0,8,0,0"
-                                                       HorizontalAlignment="Center"
-                                                       Foreground="{StaticResource BrushTextMuted}"
-                                                       Text="Open a file from the File menu or Explorer."
-                                                       TextAlignment="Center"
-                                                       TextWrapping="Wrap" />
-                                        </StackPanel>
-                                    </Border>
-                                </Grid>
-                            </dock:LayoutDocument>
-                        </dock:LayoutDocumentPane>
-                        <dock:LayoutAnchorablePane DockHeight="150">
+                                        <Border Visibility="{Binding HasOpenDocuments, Converter={StaticResource InverseBoolToVisibility}}"
+                                                Background="{StaticResource BrushBgEditor}">
+                                            <StackPanel HorizontalAlignment="Center"
+                                                        VerticalAlignment="Center"
+                                                        MaxWidth="400">
+                                                <TextBlock HorizontalAlignment="Center"
+                                                           FontSize="18"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="{StaticResource BrushText}"
+                                                           Text="No file open" />
+                                                <TextBlock Margin="0,8,0,0"
+                                                           HorizontalAlignment="Center"
+                                                           Foreground="{StaticResource BrushTextMuted}"
+                                                           Text="Open a file from the File menu or Explorer."
+                                                           TextAlignment="Center"
+                                                           TextWrapping="Wrap" />
+                                            </StackPanel>
+                                        </Border>
+                                    </Grid>
+                                </dock:LayoutDocument>
+                            </dock:LayoutDocumentPane>
+                            <dock:LayoutAnchorablePane DockWidth="320">
+                                <dock:LayoutAnchorable Title="Debug"
+                                                       ContentId="Debug"
+                                                       CanClose="False"
+                                                       CanHide="True"
+                                                       CanAutoHide="True">
+                                    <local:DebugPanelView x:Name="DebugPanel" />
+                                </dock:LayoutAnchorable>
+                            </dock:LayoutAnchorablePane>
+                        </dock:LayoutPanel>
+                        <dock:LayoutAnchorablePane DockHeight="200">
+                            <dock:LayoutAnchorable Title="Problems"
+                                                   ContentId="Problems"
+                                                   CanClose="False"
+                                                   CanHide="True"
+                                                   CanAutoHide="True">
+                                <local:DiagnosticsPanelView x:Name="DiagnosticsPanel" />
+                            </dock:LayoutAnchorable>
                             <dock:LayoutAnchorable Title="Output"
                                                    ContentId="Output"
                                                    CanClose="False"

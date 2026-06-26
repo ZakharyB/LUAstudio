@@ -24,6 +24,7 @@ public partial class ColorSettingRow : UserControl
     public ColorSettingRow()
     {
         InitializeComponent();
+        Loaded += (_, __) => UpdatePreviewBrush(HexValue);
         UpdatePreviewBrush(HexValue);
     }
 
@@ -71,11 +72,17 @@ public partial class ColorSettingRow : UserControl
     
     private void UpdatePreviewBrush(string hex)
     {
+        if (string.IsNullOrWhiteSpace(hex))
+            hex = "#FFFFFF";
+
         var rgb = SettingColorParser.ParseRgb(hex, 0xFFFFFF);
 
-        PreviewBrush = new SolidColorBrush(Color.FromRgb(
+        var brush = new SolidColorBrush(Color.FromRgb(
             (byte)((rgb >> 16) & 0xFF),
             (byte)((rgb >> 8) & 0xFF),
             (byte)(rgb & 0xFF)));
+
+        brush.Freeze();
+        PreviewBrush = brush;
     }
 }
