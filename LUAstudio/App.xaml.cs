@@ -9,6 +9,8 @@ using LUAstudio.IDE.Handlers;
 using LUAstudio.IDE.Services;
 using LUAstudio.IDE.ViewModels;
 using LUAstudio.Workspace.DependencyInjection;
+using LUAstudio.Execution.DependencyInjection;
+using LUAstudio.IntelliSense.Workspace;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace LUAstudio;
@@ -61,12 +63,14 @@ public partial class App : Application
         services.AddLuaStudioWorkspace();
         services.AddLuaStudioEditor();
         services.AddLuaStudioIde();
+        services.AddLuaStudioExecution();
         services.AddSingleton<IMainThread, WpfMainThread>();
         services.AddSingleton<IFileDialogService, WpfFileDialogService>();
         services.AddSingleton<IUserPromptService, WpfUserPromptService>();
         services.AddSingleton<IExplorerShellService, WpfExplorerShellService>();
         services.AddSingleton<MainWindow>();
         services.AddSingleton<WpfDocumentEditorHost>();
+        services.AddSingleton<DiagnosticsPanelViewModel>();
         services.AddSingleton<SettingsBootstrap>();
         services.AddSingleton<EditorSettingsCoordinator>();
 
@@ -80,6 +84,8 @@ public partial class App : Application
         _ = _services.GetRequiredService<DocumentSyncHandler>();
         _ = _services.GetRequiredService<RecentFilesRecordingHandler>();
         _ = _services.GetRequiredService<DocumentAnalysisHandler>();
+        _ = _services.GetRequiredService<DiagnosticsPanelViewModel>();
+        _ = _services.GetRequiredService<RequireGraphCoordinator>();
 
         var mainWindow = _services.GetRequiredService<MainWindow>();
         MainWindow = mainWindow;

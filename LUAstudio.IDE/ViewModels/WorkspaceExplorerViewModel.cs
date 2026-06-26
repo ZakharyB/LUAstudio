@@ -1,6 +1,8 @@
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using LUAstudio.Abstractions;
+using LUAstudio.Core;
 using LUAstudio.Core.Logging;
 using LUAstudio.IDE.Documents;
 using LUAstudio.IDE.Explorer;
@@ -162,7 +164,8 @@ public sealed partial class WorkspaceExplorerViewModel : ObservableObject
 
         try
         {
-            await _documents.OpenFromPathAsync(node.FullPath).ConfigureAwait(true);
+            var autoSwitch = Engine.Globals.Get<bool>(SettingKeys.EditorAutoSwitchOnOpen)?.Value ?? true;
+            await _documents.OpenFromPathAsync(node.FullPath, switchToDocument: autoSwitch).ConfigureAwait(true);
         }
         catch (Exception ex)
         {

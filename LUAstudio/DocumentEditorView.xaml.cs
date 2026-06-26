@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using LUAstudio.IDE.Documents;
 using LUAstudio.IDE.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
+using ICSharpCode.AvalonEdit;
 
 namespace LUAstudio;
 
@@ -19,6 +20,7 @@ public partial class DocumentEditorView : UserControl
     public DocumentEditorView()
     {
         InitializeComponent();
+
         Loaded += OnEditorLoaded;
         Unloaded += OnEditorUnloaded;
     }
@@ -30,7 +32,10 @@ public partial class DocumentEditorView : UserControl
     }
 
     public static readonly DependencyProperty DocumentProperty =
-        DependencyProperty.Register(nameof(Document), typeof(TextDocument), typeof(DocumentEditorView),
+        DependencyProperty.Register(
+            nameof(Document),
+            typeof(TextDocument),
+            typeof(DocumentEditorView),
             new PropertyMetadata(null, OnDocumentChanged));
 
     public TextDocument? Document
@@ -39,18 +44,25 @@ public partial class DocumentEditorView : UserControl
         set => SetValue(DocumentProperty, value);
     }
 
-    private static void OnDocumentChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    private static void OnDocumentChanged(
+        DependencyObject d,
+        DependencyPropertyChangedEventArgs e)
     {
         var view = (DocumentEditorView)d;
-        view.RebindDocument(e.OldValue as TextDocument, e.NewValue as TextDocument);
+        view.RebindDocument(
+            e.OldValue as TextDocument,
+            e.NewValue as TextDocument);
     }
 
     private void OnEditorLoaded(object sender, RoutedEventArgs e)
     {
         _languageHost ??= App.Services.GetRequiredService<WpfDocumentEditorHost>();
         _settingsCoordinator ??= App.Services.GetRequiredService<EditorSettingsCoordinator>();
+
         _settingsCoordinator.Register(Editor);
+
         EnsureCaretHook();
+
         if (_pendingDocument is not null)
         {
             ApplyDocumentToEditor(_pendingDocument);
@@ -62,6 +74,7 @@ public partial class DocumentEditorView : UserControl
         }
 
         Editor.Focus();
+
         ReportCaretPositionSafe();
     }
 
@@ -69,6 +82,7 @@ public partial class DocumentEditorView : UserControl
     {
         if (_caretHooked && Editor?.TextArea?.Caret is not null)
         {
+            Editor.TextChanged -= OnEditorTextChanged;
             Editor.TextArea.Caret.PositionChanged -= OnCaretPositionChanged;
             _caretHooked = false;
         }
@@ -89,6 +103,7 @@ public partial class DocumentEditorView : UserControl
         if (oldDoc is not null)
         {
             oldDoc.PropertyChanged -= OnDocumentPropertyChanged;
+
             if (IsEditorReady)
             {
                 _languageHost?.Detach(Editor, oldDoc);
@@ -117,6 +132,7 @@ public partial class DocumentEditorView : UserControl
         if (doc is null)
         {
             _suppressVmPush = true;
+
             try
             {
                 Editor.Document = new ICSharpCode.AvalonEdit.Document.TextDocument(string.Empty);
@@ -130,6 +146,7 @@ public partial class DocumentEditorView : UserControl
         }
 
         _suppressVmPush = true;
+
         try
         {
             Editor.Document = new ICSharpCode.AvalonEdit.Document.TextDocument(doc.Content ?? string.Empty);
@@ -156,20 +173,29 @@ public partial class DocumentEditorView : UserControl
         ReportCaretPositionSafe();
     }
 
-    private void OnDocumentPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    private void OnDocumentPropertyChanged(
+        object? sender,
+        PropertyChangedEventArgs e)
     {
-        if (e.PropertyName != nameof(TextDocument.Content) || _boundDocument is null || !IsEditorReady)
+        if (e.PropertyName != nameof(TextDocument.Content) ||
+            _boundDocument is null ||
+            !IsEditorReady)
         {
             return;
         }
 
         var text = _boundDocument.Content ?? string.Empty;
-        if (string.Equals(Editor.Document.Text, text, StringComparison.Ordinal))
+
+        if (string.Equals(
+                Editor.Document.Text,
+                text,
+                StringComparison.Ordinal))
         {
             return;
         }
 
         _suppressVmPush = true;
+
         try
         {
             Editor.Document.Text = text;
@@ -180,14 +206,22 @@ public partial class DocumentEditorView : UserControl
         }
     }
 
+    private void OnEditorTextChanged(object? sender, EventArgs e)
+    {
+        PushTextToDocument();
+    }
+
     private void PushTextToDocument()
     {
-        if (_suppressVmPush || _boundDocument is null || !IsEditorReady)
+        if (_suppressVmPush ||
+            _boundDocument is null ||
+            !IsEditorReady)
         {
             return;
         }
 
         _boundDocument.Content = Editor.Document.Text;
+
         _languageHost?.NotifyContentChanged(_boundDocument);
     }
 
@@ -198,8 +232,9 @@ public partial class DocumentEditorView : UserControl
             return;
         }
 
-        Editor.TextChanged += (_, _) => PushTextToDocument();
+        Editor.TextChanged += OnEditorTextChanged;
         Editor.TextArea.Caret.PositionChanged += OnCaretPositionChanged;
+
         _caretHooked = true;
     }
 
@@ -210,15 +245,23 @@ public partial class DocumentEditorView : UserControl
 
     private void ReportCaretPositionSafe()
     {
-        if (!IsEditorReady || Window.GetWindow(this)?.DataContext is not MainViewModel main)
+        if (!IsEditorReady)
+        {
+            return;
+        }
+
+        if (Window.GetWindow(this)?.DataContext is not MainViewModel main)
         {
             return;
         }
 
         var line = Editor.TextArea.Caret.Line + 1;
         var column = Editor.TextArea.Caret.Column + 1;
+
         main.UpdateCaretPosition(line, column);
     }
 
-    private bool IsEditorReady => Editor is not null && Editor.TextArea is not null;
+    private bool IsEditorReady =>
+        Editor is not null &&
+        Editor.TextArea is not null;
 }

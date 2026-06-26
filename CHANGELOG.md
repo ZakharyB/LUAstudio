@@ -19,13 +19,14 @@ All notable changes to this project will be documented in this file.
 ### CHANGED
 
 - Changed Color scheme of highlight
-
+- TODO comments now appear in bold in the editor with proper highlighting
 
 ### ADDED
 
 - Added built in support for TODOs
 - Added various new options in the top drop-downs
 - Added settings for Font Family, Size, Tab Width, Color and much more
+
 
 ---
 

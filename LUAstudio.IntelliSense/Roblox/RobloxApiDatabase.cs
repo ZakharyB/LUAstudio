@@ -71,18 +71,24 @@ public sealed class RobloxApiDatabase : IRobloxApiDatabase
             var bundled = Path.Combine(AppContext.BaseDirectory, "Assets", "Roblox", "api-dump.json");
             var cachePath = Path.Combine(LuaStudioPaths.CacheDirectory, "roblox-api.json");
 
+            string json;
             if (File.Exists(cachePath))
             {
-                Apply(ApiDumpIngestor.Ingest(File.ReadAllText(cachePath)));
+                json = File.ReadAllText(cachePath);
             }
             else if (File.Exists(bundled))
             {
-                Apply(ApiDumpIngestor.Ingest(File.ReadAllText(bundled)));
+                json = File.ReadAllText(bundled);
+                Directory.CreateDirectory(LuaStudioPaths.CacheDirectory);
+                File.WriteAllText(cachePath, json);
             }
             else
             {
                 Apply(ApiDumpIngestor.BuildBuiltInFallback());
+                return;
             }
+
+            Apply(ApiDumpIngestor.Ingest(json));
         }, cancellationToken).ConfigureAwait(false);
     }
 

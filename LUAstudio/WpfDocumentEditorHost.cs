@@ -14,20 +14,25 @@ public sealed class WpfDocumentEditorHost : IDisposable
 {
     private readonly EditorIntelliSenseController _intelliSense;
     private readonly EditorDiagnosticService _diagnostics;
+    private readonly EditorDiagnosticHoverController _diagnosticHover;
     private readonly DocumentAnalysisHandler _analysisHandler;
+    private readonly IEventBus _eventBus;
     private readonly Dictionary<Guid, TextEditor> _editors = new();
     private readonly Dictionary<Guid, EditorFoldingManager> _foldings = new();
 
     public WpfDocumentEditorHost(
         EditorIntelliSenseController intelliSense,
         EditorDiagnosticService diagnostics,
+        EditorDiagnosticHoverController diagnosticHover,
         DocumentAnalysisHandler analysisHandler,
         IEventBus eventBus)
     {
         _intelliSense = intelliSense;
         _diagnostics = diagnostics;
+        _diagnosticHover = diagnosticHover;
         _analysisHandler = analysisHandler;
-        eventBus.Subscribe<DocumentAnalyzedEvent>(OnDocumentAnalyzed);
+        _eventBus = eventBus;
+        _eventBus.Subscribe<DocumentAnalyzedEvent>(OnDocumentAnalyzed);
     }
 
     public void Attach(TextEditor editor, TextDocument document)
@@ -39,6 +44,7 @@ public sealed class WpfDocumentEditorHost : IDisposable
         _editors[document.Id] = editor;
         _diagnostics.Attach(editor, document.Id);
         _diagnostics.RegisterMarkerRenderer(editor);
+        _diagnosticHover.Attach(editor, document.Id);
 
         if (!_foldings.TryGetValue(document.Id, out var folding))
         {
@@ -62,6 +68,7 @@ public sealed class WpfDocumentEditorHost : IDisposable
         }
 
         _intelliSense.DetachIfEditor(editor);
+        _diagnosticHover.Detach();
     }
 
     public void NotifyContentChanged(TextDocument document)
@@ -80,11 +87,12 @@ public sealed class WpfDocumentEditorHost : IDisposable
             return;
         }
 
-        _diagnostics.ApplyDiagnostics(editor, e.Result);
+        editor.Dispatcher.Invoke(() => _diagnostics.ApplyDiagnostics(editor, e.Result));
     }
 
     public void Dispose()
     {
+        _eventBus.Unsubscribe<DocumentAnalyzedEvent>(OnDocumentAnalyzed);
         foreach (var folding in _foldings.Values)
         {
             folding.Dispose();

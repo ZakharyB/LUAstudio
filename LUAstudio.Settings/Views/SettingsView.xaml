@@ -33,6 +33,7 @@
                     <ListBoxItem Content="Editor" />
                     <ListBoxItem Content="Syntax colors" />
                     <ListBoxItem Content="IntelliSense" />
+                    <ListBoxItem Content="Diagnostics" />
                     <ListBoxItem Content="Workspace" />
                 </ListBox>
             </StackPanel>
@@ -65,29 +66,37 @@
                             <ColumnDefinition Width="160" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Style="{StaticResource SettingsLabel}" Text="Font size (pt)" />
-                        <ComboBox Grid.Column="1" Style="{StaticResource SettingsComboBox}"
-                                  IsEditable="True"
-                                  Text="{Binding EditorFontSize, UpdateSourceTrigger=PropertyChanged}" />
+
+                        <TextBlock Grid.Column="0"
+                                   Style="{StaticResource SettingsLabel}"
+                                   Text="Font size (pt)" />
+
+                        <TextBox Grid.Column="1"
+                                 Style="{StaticResource SettingsTextBox}"
+                                 Text="{Binding EditorFontSize, UpdateSourceTrigger=PropertyChanged}" />
                     </Grid>
 
-                    <CheckBox Content="Bold font" IsChecked="{Binding EditorFontBold}" />
-                    <CheckBox Content="Italic font" IsChecked="{Binding EditorFontItalic}" />
-                    <CheckBox Content="Show line numbers" IsChecked="{Binding EditorShowLineNumbers}" />
-                    <CheckBox Content="Word wrap" IsChecked="{Binding EditorWordWrap}" />
-                    <CheckBox Content="Convert tabs to spaces" IsChecked="{Binding EditorConvertTabsToSpaces}" />
+                    <CheckBox  Style="{StaticResource SettingsCheckBox}" Content="Bold font" IsChecked="{Binding EditorFontBold}" />
+                    <CheckBox Style="{StaticResource SettingsCheckBox}" Content="Italic font" IsChecked="{Binding EditorFontItalic}" />
+                    <CheckBox Style="{StaticResource SettingsCheckBox}" Content="Show line numbers" IsChecked="{Binding EditorShowLineNumbers}" />
+                    <CheckBox Style="{StaticResource SettingsCheckBox}" Content="Word wrap" IsChecked="{Binding EditorWordWrap}" />
+                    <CheckBox Style="{StaticResource SettingsCheckBox}" Content="Convert tabs to spaces" IsChecked="{Binding EditorConvertTabsToSpaces}" />
 
                     <Grid Margin="0,8,0,4">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="160" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Style="{StaticResource SettingsLabel}" Text="Tab width" />
-                        <ComboBox Grid.Column="1" Style="{StaticResource SettingsComboBox}"
-                                  IsEditable="True"
-                                  Text="{Binding EditorTabWidth, UpdateSourceTrigger=PropertyChanged}" />
-                    </Grid>
 
+                        <TextBlock Grid.Column="0"
+                                   Style="{StaticResource SettingsLabel}"
+                                   Text="Tab width" />
+
+                        <TextBox Grid.Column="1"
+                                 Style="{StaticResource SettingsTextBox}"
+                                 Text="{Binding EditorTabWidth, UpdateSourceTrigger=PropertyChanged}" />
+                    </Grid>
+                    
                     <TextBlock Text="Editor chrome" Style="{StaticResource SettingsSectionHeader}" />
                     <controls:ColorSettingRow Label="Text color" HexValue="{Binding EditorForeground, UpdateSourceTrigger=PropertyChanged}" />
                     <controls:ColorSettingRow Label="Background" HexValue="{Binding EditorBackground, UpdateSourceTrigger=PropertyChanged}" />
@@ -124,16 +133,40 @@
                                TextWrapping="Wrap"
                                Margin="0,0,0,12" />
 
-                    <CheckBox Content="Enable autocomplete (Ctrl+Space and triggers)" IsChecked="{Binding EditorAutoComplete}" />
-                    <CheckBox Content="Inline ghost completions" IsChecked="{Binding EditorInlineCompletions}" />
-                    <CheckBox Content="Auto-pair brackets and quotes" IsChecked="{Binding EditorAutoPairBrackets}" />
-                    <CheckBox Content="Smart Enter (auto-indent blocks)" IsChecked="{Binding EditorSmartEnter}" />
-                    <CheckBox Content="Semantic highlighting" IsChecked="{Binding EditorSemanticHighlighting}" />
+                    <CheckBox Style="{StaticResource SettingsCheckBox}" Content="Enable autocomplete (Ctrl+Space and triggers)" IsChecked="{Binding EditorAutoComplete}" />
+                    <CheckBox Style="{StaticResource SettingsCheckBox}" Content="Inline ghost completions" IsChecked="{Binding EditorInlineCompletions}" />
+                    <CheckBox Style="{StaticResource SettingsCheckBox}" Content="Auto-pair brackets and quotes" IsChecked="{Binding EditorAutoPairBrackets}" />
+                    <CheckBox Style="{StaticResource SettingsCheckBox}" Content="Smart Enter (auto-indent blocks)" IsChecked="{Binding EditorSmartEnter}" />
+                    <CheckBox Style="{StaticResource SettingsCheckBox}" Content="Semantic highlighting" IsChecked="{Binding EditorSemanticHighlighting}" />
+                    <CheckBox Style="{StaticResource SettingsCheckBox}" Content="Auto-switch to file when opened from explorer" IsChecked="{Binding EditorAutoSwitchOnOpen}" />
+                </StackPanel>
+
+                <StackPanel x:Name="DiagnosticsPage" Visibility="Collapsed">
+                    <TextBlock Text="Diagnostics &amp; Linting" Style="{StaticResource SettingsSectionHeader}" Margin="0,0,0,8" />
+                    <TextBlock Text="Semantic analysis, lint rules, and environment profiles."
+                               Foreground="{StaticResource BrushTextMuted}"
+                               TextWrapping="Wrap"
+                               Margin="0,0,0,12" />
+
+                    <CheckBox Style="{StaticResource SettingsCheckBox}" Content="Enable diagnostics and lint squiggles" IsChecked="{Binding DiagnosticsEnabled}" />
+                    <CheckBox Style="{StaticResource SettingsCheckBox}" Content="Strict type checking mode" IsChecked="{Binding DiagnosticsStrictMode}" />
+                    <CheckBox Style="{StaticResource SettingsCheckBox}" Content="Show require dependency graph panel" IsChecked="{Binding DiagnosticsShowRequireGraph}" />
+
+                    <Grid Margin="0,8,0,4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="160" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Style="{StaticResource SettingsLabel}" Text="Environment profile" />
+                        <ComboBox Grid.Column="1" Style="{StaticResource SettingsComboBox}"
+                                  ItemsSource="{Binding EnvironmentProfileOptions}"
+                                  SelectedItem="{Binding DiagnosticsEnvironmentProfile, UpdateSourceTrigger=PropertyChanged}" />
+                    </Grid>
                 </StackPanel>
 
                 <StackPanel x:Name="WorkspacePage" Visibility="Collapsed">
                     <TextBlock Text="Workspace" Style="{StaticResource SettingsSectionHeader}" Margin="0,0,0,8" />
-                    <CheckBox Content="Restore workspace folders on startup" IsChecked="{Binding RestoreWorkspaceOnStartup}" />
+                    <CheckBox Style="{StaticResource SettingsCheckBox}" Content="Restore workspace folders on startup" IsChecked="{Binding RestoreWorkspaceOnStartup}" />
 
                     <TextBlock Text="Application" Style="{StaticResource SettingsSectionHeader}" />
                     <Grid Margin="0,4">

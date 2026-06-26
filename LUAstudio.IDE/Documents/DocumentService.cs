@@ -42,14 +42,14 @@ public sealed partial class DocumentService : ObservableObject, IDocumentService
         return doc;
     }
 
-    public Task<TextDocument> OpenFromPathAsync(string path, CancellationToken cancellationToken = default)
+    public Task<TextDocument> OpenFromPathAsync(string path, CancellationToken cancellationToken = default, bool switchToDocument = true)
     {
         var fullPath = Path.GetFullPath(path);
 
-        return OpenFromPathCoreAsync(fullPath, cancellationToken);
+        return OpenFromPathCoreAsync(fullPath, cancellationToken, switchToDocument);
     }
 
-    private async Task<TextDocument> OpenFromPathCoreAsync(string fullPath, CancellationToken cancellationToken)
+    private async Task<TextDocument> OpenFromPathCoreAsync(string fullPath, CancellationToken cancellationToken, bool switchToDocument)
     {
         TextDocument? existing = null;
         _mainThread.Send(() =>
@@ -60,7 +60,10 @@ public sealed partial class DocumentService : ObservableObject, IDocumentService
 
         if (existing is not null)
         {
-            _mainThread.Send(() => ActiveDocument = existing);
+            if (switchToDocument)
+            {
+                _mainThread.Send(() => ActiveDocument = existing);
+            }
             return existing;
         }
 
@@ -78,7 +81,10 @@ public sealed partial class DocumentService : ObservableObject, IDocumentService
         _mainThread.Send(() =>
         {
             Documents.Add(doc);
-            ActiveDocument = doc;
+            if (switchToDocument)
+            {
+                ActiveDocument = doc;
+            }
             _eventBus.Publish(new DocumentOpenedEvent(doc));
         });
 

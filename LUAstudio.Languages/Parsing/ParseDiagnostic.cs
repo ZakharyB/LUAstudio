@@ -7,7 +7,8 @@ public enum DiagnosticSeverity
     Hidden,
     Info,
     Warning,
-    Error
+    Error,
+    Hint
 }
 
 public sealed record ParseDiagnostic(

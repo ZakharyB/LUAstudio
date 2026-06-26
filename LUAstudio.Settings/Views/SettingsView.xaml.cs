@@ -12,7 +12,7 @@ public partial class SettingsView : UserControl
     {
         InitializeComponent();
         DataContext = new SettingsViewModel();
-        _pages = [EditorPage, ColorsPage, IntelliSensePage, WorkspacePage];
+        _pages = [EditorPage, ColorsPage, IntelliSensePage, DiagnosticsPage, WorkspacePage];
         CategoryList.SelectionChanged += OnCategoryChanged;
     }
 

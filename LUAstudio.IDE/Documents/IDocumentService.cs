@@ -12,7 +12,7 @@ public interface IDocumentService : INotifyPropertyChanged
 
     TextDocument CreateUntitled();
 
-    Task<TextDocument> OpenFromPathAsync(string path, CancellationToken cancellationToken = default);
+    Task<TextDocument> OpenFromPathAsync(string path, CancellationToken cancellationToken = default, bool switchToDocument = true);
 
     void RemoveDocument(TextDocument document);
 

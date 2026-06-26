@@ -40,6 +40,11 @@ public sealed partial class SettingsViewModel : ObservableObject
         Track<bool>(SettingKeys.EditorAutoPairBrackets, () => OnPropertyChanged(nameof(EditorAutoPairBrackets)));
         Track<bool>(SettingKeys.EditorSmartEnter, () => OnPropertyChanged(nameof(EditorSmartEnter)));
         Track<bool>(SettingKeys.EditorSemanticHighlighting, () => OnPropertyChanged(nameof(EditorSemanticHighlighting)));
+        Track<bool>(SettingKeys.EditorAutoSwitchOnOpen, () => OnPropertyChanged(nameof(EditorAutoSwitchOnOpen)));
+        Track<bool>(SettingKeys.DiagnosticsEnabled, () => OnPropertyChanged(nameof(DiagnosticsEnabled)));
+        Track<string>(SettingKeys.DiagnosticsEnvironmentProfile, () => OnPropertyChanged(nameof(DiagnosticsEnvironmentProfile)));
+        Track<bool>(SettingKeys.DiagnosticsStrictMode, () => OnPropertyChanged(nameof(DiagnosticsStrictMode)));
+        Track<bool>(SettingKeys.DiagnosticsShowRequireGraph, () => OnPropertyChanged(nameof(DiagnosticsShowRequireGraph)));
         Track<bool>(SettingKeys.RestoreWorkspaceRoots, () => OnPropertyChanged(nameof(RestoreWorkspaceOnStartup)));
         Track<int>(SettingKeys.FpsLimit, () => OnPropertyChanged(nameof(FpsLimit)));
     }
@@ -223,6 +228,39 @@ public sealed partial class SettingsViewModel : ObservableObject
         get => Get(SettingKeys.EditorSemanticHighlighting, true);
         set => Set(SettingKeys.EditorSemanticHighlighting, value);
     }
+
+    public bool EditorAutoSwitchOnOpen
+    {
+        get => Get(SettingKeys.EditorAutoSwitchOnOpen, true);
+        set => Set(SettingKeys.EditorAutoSwitchOnOpen, value);
+    }
+
+    public bool DiagnosticsEnabled
+    {
+        get => Get(SettingKeys.DiagnosticsEnabled, true);
+        set => Set(SettingKeys.DiagnosticsEnabled, value);
+    }
+
+    public string DiagnosticsEnvironmentProfile
+    {
+        get => Get(SettingKeys.DiagnosticsEnvironmentProfile, LuaEnvironmentProfiles.RobloxLua);
+        set => Set(SettingKeys.DiagnosticsEnvironmentProfile, value);
+    }
+
+    public bool DiagnosticsStrictMode
+    {
+        get => Get(SettingKeys.DiagnosticsStrictMode, false);
+        set => Set(SettingKeys.DiagnosticsStrictMode, value);
+    }
+
+    public bool DiagnosticsShowRequireGraph
+    {
+        get => Get(SettingKeys.DiagnosticsShowRequireGraph, true);
+        set => Set(SettingKeys.DiagnosticsShowRequireGraph, value);
+    }
+
+    public IReadOnlyList<string> EnvironmentProfileOptions { get; } =
+        [LuaEnvironmentProfiles.StandardLua, LuaEnvironmentProfiles.RobloxLua, LuaEnvironmentProfiles.Custom];
 
     public bool RestoreWorkspaceOnStartup
     {

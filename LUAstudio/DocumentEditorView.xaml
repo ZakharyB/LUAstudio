@@ -5,13 +5,14 @@
              HorizontalAlignment="Stretch"
              VerticalAlignment="Stretch"
              Background="{StaticResource BrushBgEditor}">
+
     <a:TextEditor x:Name="Editor"
                   HorizontalAlignment="Stretch"
                   VerticalAlignment="Stretch"
                   Background="{StaticResource BrushBgEditor}"
                   BorderThickness="0"
                   HorizontalScrollBarVisibility="Hidden"
-                  ShowLineNumbers="True"
                   VerticalScrollBarVisibility="Hidden"
+                  ShowLineNumbers="True"
                   WordWrap="False" />
 </UserControl>

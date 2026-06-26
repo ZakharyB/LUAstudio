@@ -16,6 +16,7 @@
   <ItemGroup>
     <ProjectReference Include="..\LUAstudio.IntelliSense\LUAstudio.IntelliSense.csproj" />
     <ProjectReference Include="..\LUAstudio.Languages\LUAstudio.Languages.csproj" />
+    <ProjectReference Include="..\LUAstudio.ExecutionHost\LUAstudio.ExecutionHost.csproj" />
   </ItemGroup>
 
 </Project>

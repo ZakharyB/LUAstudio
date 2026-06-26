@@ -2,6 +2,7 @@
 using LUAstudio.Core;
 using LUAstudio.IDE.ViewModels;
 using LUAstudio.Settings.Views;
+using LUAstudio.Execution;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Windows;
@@ -20,10 +21,15 @@ public partial class MainWindow
     private const int WmGetMinMaxInfoMessage = 0x0024;
     private const uint MonitorDefaultToNearest = 2;
 
-    public MainWindow(MainViewModel viewModel)
+    public DebugPanelViewModel DebugPanelViewModel { get; }
+
+    public MainWindow(MainViewModel viewModel, DiagnosticsPanelViewModel diagnosticsPanel)
     {
         InitializeComponent();
         DataContext = viewModel;
+        DiagnosticsPanel.DataContext = diagnosticsPanel;
+        DebugPanelViewModel = new DebugPanelViewModel();
+        DebugPanel.DataContext = DebugPanelViewModel;
         Loaded += OnLoaded;
         Closing += OnClosing;
         SourceInitialized += OnSourceInitialized;
@@ -177,6 +183,16 @@ public partial class MainWindow
         window.ShowDialog();
     }
 
+    private async void RunActiveDocument_OnClick(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is not MainViewModel vm || vm.ActiveDocument is null)
+        {
+            return;
+        }
+
+        await DebugPanelViewModel.RunDocumentAsync(vm.ActiveDocument.Content ?? string.Empty, vm.ActiveDocument.FilePath);
+    }
+
     private async void OnLoaded(object sender, RoutedEventArgs e)
     {
         Loaded -= OnLoaded;
@@ -189,6 +205,16 @@ public partial class MainWindow
         DockLayoutStore.DeleteLegacyLayoutFile();
         DockManager.Theme = new Vs2013DarkTheme();
         EnsureDockDefaults();
+
+        try
+        {
+            var client = new ExecutionHostClient();
+            await DebugPanelViewModel.InitializeAsync(client);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Failed to initialize debug panel: {ex.Message}");
+        }
     }
 
     private void EnsureDockDefaults()
@@ -200,8 +226,14 @@ public partial class MainWindow
             explorer.Show();
         }
 
+        var problems = FindAnchorable("Problems");
+        problems?.Show();
+
         var output = FindAnchorable("Output");
         output?.Show();
+
+        var debug = FindAnchorable("Debug");
+        debug?.Show();
     }
 
     private LayoutAnchorable? FindAnchorable(string contentId)

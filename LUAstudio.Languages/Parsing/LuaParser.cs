@@ -62,10 +62,26 @@ internal sealed class LuaParser
         if (MatchKeyword("return"))
         {
             var start = Previous().Span.Start;
-            _ = ParseExpression();
+            var value = ParseExpression();
+            var end = value?.Span.End ?? Previous().Span.End;
+            return value ?? new LiteralExpressionSyntax(TextSpan.FromBounds(start, end), null,
+                new SyntaxToken("return", TextSpan.FromBounds(start, start), null));
+        }
+
+        if (MatchKeyword("break"))
+        {
+            var start = Previous().Span.Start;
             var end = Previous().Span.End;
             return new LiteralExpressionSyntax(TextSpan.FromBounds(start, end), null,
-                new SyntaxToken("return", TextSpan.FromBounds(start, start), null));
+                new SyntaxToken("break", TextSpan.FromBounds(start, start), null));
+        }
+
+        if (MatchKeyword("continue"))
+        {
+            var start = Previous().Span.Start;
+            var end = Previous().Span.End;
+            return new LiteralExpressionSyntax(TextSpan.FromBounds(start, end), null,
+                new SyntaxToken("continue", TextSpan.FromBounds(start, start), null));
         }
 
         if (MatchKeyword("if"))

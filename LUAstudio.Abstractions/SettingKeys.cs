@@ -36,6 +36,12 @@ public static class SettingKeys
     public const string EditorAutoPairBrackets = "editor.auto_pair_brackets";
     public const string EditorSmartEnter = "editor.smart_enter";
     public const string EditorSemanticHighlighting = "editor.semantic_highlighting";
+    public const string EditorAutoSwitchOnOpen = "editor.auto_switch_on_open";
+
+    public const string DiagnosticsEnabled = "diagnostics.enabled";
+    public const string DiagnosticsEnvironmentProfile = "diagnostics.environment_profile";
+    public const string DiagnosticsStrictMode = "diagnostics.strict_mode";
+    public const string DiagnosticsShowRequireGraph = "diagnostics.show_require_graph";
 
     public const string RestoreWorkspaceRoots = "restore_workspace_roots";
 }

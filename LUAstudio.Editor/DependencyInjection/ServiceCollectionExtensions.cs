@@ -14,6 +14,7 @@ public static class ServiceCollectionExtensions
     {
         services.AddLuaStudioIntelliSense();
         services.AddSingleton<EditorDiagnosticService>();
+        services.AddSingleton<EditorDiagnosticHoverController>();
         services.AddSingleton<InlineCompletionService>();
         services.AddSingleton<SmartEnterHandler>();
         services.AddSingleton<AutoPairInsertService>();

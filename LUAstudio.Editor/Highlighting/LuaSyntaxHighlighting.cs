@@ -4,6 +4,7 @@ using ICSharpCode.AvalonEdit.Rendering;
 using LUAstudio.IntelliSense.Roblox;
 using LUAstudio.Languages.Parsing;
 using LUAstudio.Languages.Text;
+using System.Windows;
 
 namespace LUAstudio.Editor.Highlighting;
 
@@ -16,7 +17,7 @@ public sealed class LuaSyntaxHighlighting : DocumentColorizingTransformer
     {
         "print", "require", "pairs", "ipairs", "next", "typeof", "assert", "error", "pcall", "xpcall",
         "tick", "wait", "spawn", "delay", "warn", "rawget", "rawset", "setmetatable", "getmetatable",
-        "select", "unpack", "tonumber", "tostring", "type", "task", "game"
+        "select", "unpack", "tonumber", "tostring", "type", "task", "game",
     };
 
     private readonly IRobloxApiDatabase _roblox;
@@ -73,7 +74,7 @@ public sealed class LuaSyntaxHighlighting : DocumentColorizingTransformer
             var end = start + marker.Length;
             if (end > line.Offset && start < line.EndOffset)
             {
-                ColorizeSpan(TextSpan.FromBounds(start, end), HighlightBrushes.Todo, line);
+                ColorizeSpan(TextSpan.FromBounds(start, end), HighlightBrushes.Todo, line, bold: true);
             }
 
             index = token.Text.IndexOf(marker, index + marker.Length, StringComparison.Ordinal);
@@ -99,6 +100,8 @@ public sealed class LuaSyntaxHighlighting : DocumentColorizingTransformer
 
             LuaTokenKind.Identifier when _roblox.GlobalTypeAliases.ContainsKey(token.Text) => HighlightBrushes.Information,
 
+            LuaTokenKind.Identifier when _roblox.TryGetGlobal(token.Text, out _) => HighlightBrushes.Information,
+
             LuaTokenKind.Identifier when BuiltinFunctions.Contains(token.Text) => HighlightBrushes.Builtin,
 
             LuaTokenKind.Identifier => HighlightBrushes.Text,
@@ -107,7 +110,7 @@ public sealed class LuaSyntaxHighlighting : DocumentColorizingTransformer
         };
     }
 
-    private void ColorizeSpan(TextSpan span, SolidColorBrush brush, DocumentLine line)
+    private void ColorizeSpan(TextSpan span, SolidColorBrush brush, DocumentLine line, bool bold = false)
     {
         var start = Math.Max(span.Start, line.Offset);
         var end = Math.Min(span.End, line.EndOffset);
@@ -120,6 +123,17 @@ public sealed class LuaSyntaxHighlighting : DocumentColorizingTransformer
         ChangeLinePart(
             start,
             end,
-            element => element.TextRunProperties.SetForegroundBrush(brush));
+            element =>
+            {
+                element.TextRunProperties.SetForegroundBrush(brush);
+                if (bold)
+                {
+                    element.TextRunProperties.SetTypeface(new Typeface(
+                        element.TextRunProperties.Typeface.FontFamily,
+                        FontStyles.Normal,
+                        FontWeights.Bold,
+                        FontStretches.Normal));
+                }
+            });
     }
 }
