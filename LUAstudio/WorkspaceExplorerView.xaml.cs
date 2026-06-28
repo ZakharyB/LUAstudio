@@ -139,30 +139,8 @@ public partial class WorkspaceExplorerView : UserControl
 
     private void ExplorerOverflowButton_OnClick(object sender, RoutedEventArgs e)
     {
-        if (Vm is null)
-        {
-            return;
-        }
-
-        var menu = new ContextMenu
-        {
-            PlacementTarget = ExplorerOverflowButton,
-            Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom,
-        };
-
-        menu.Items.Add(new MenuItem
-        {
-            Header = "Open folder…",
-            Command = Vm.AddWorkspaceRootCommand,
-        });
-        menu.Items.Add(new Separator());
-        menu.Items.Add(new MenuItem
-        {
-            Header = "Refresh tree",
-            Command = Vm.RefreshWorkspaceTreeCommand,
-        });
-
-        menu.IsOpen = true;
+        ExplorerOverflowButton.ContextMenu.DataContext = DataContext;
+        ExplorerOverflowButton.ContextMenu.IsOpen = true;
     }
 
     private void WorkspaceTree_OnPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -210,10 +188,9 @@ public partial class WorkspaceExplorerView : UserControl
     private ContextMenu BuildContextMenu(FileSystemEntryNode? node)
     {
         var menu = new ContextMenu();
-        if (Vm is null)
-        {
-            return menu;
-        }
+        menu.Resources.Add(typeof(MenuItem), (Style)FindResource("NoIconMenuItemStyle"));
+
+        if (Vm is null) return menu;
 
         if (node is null)
         {

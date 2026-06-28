@@ -4,6 +4,20 @@
 
 All notable changes to this project will be documented in this file.
 
+
+## [1.0.2] - 2026-06-27
+
+### FIXED
+
+- Explorer Actions had white overlapping left margin gutter
+### CHANGED
+
+- Changed RestoreWorkspace Check box to match the rest of the styling
+
+### ADDED
+
+---
+
 ## [1.0.1] - 2026-06-08
 
 ### FIXED

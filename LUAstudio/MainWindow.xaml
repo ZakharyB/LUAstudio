@@ -285,7 +285,7 @@
             </StatusBarItem>
             <Separator />
             <StatusBarItem>
-                <CheckBox Content="Restore workspace on startup"
+                <CheckBox Style="{StaticResource SettingsCheckBox}" Content="Restore workspace on startup"
                           IsChecked="{Binding RestoreWorkspaceOnStartup, Mode=TwoWay}" />
             </StatusBarItem>
             <StatusBarItem HorizontalAlignment="Right">

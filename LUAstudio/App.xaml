@@ -166,6 +166,120 @@
                     </Setter.Value>
                 </Setter>
             </Style>
+            
+                    <!-- Add to Window.Resources or a shared dictionary -->
+        <Style x:Key="DropDownMenuItemStyle" TargetType="{x:Type MenuItem}">
+            <Setter Property="Background" Value="{StaticResource BrushBgToolbar}"/>
+            <Setter Property="Foreground" Value="{StaticResource BrushText}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BrushBorder}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <!-- Sub‑menu popup styling -->
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type MenuItem}">
+                        <Border Name="Border"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" SharedSizeGroup="Icon"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto" SharedSizeGroup="Shortcut"/>
+                                    <ColumnDefinition Width="13"/>
+                                </Grid.ColumnDefinitions>
+                                <!-- Icon (left) -->
+                                <ContentPresenter Name="Icon"
+                                                  Margin="6,0,6,0"
+                                                  VerticalAlignment="Center"
+                                                  ContentSource="Icon"
+                                                  SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                                <!-- Header -->
+                                <ContentPresenter Name="HeaderHost"
+                                                  Grid.Column="1"
+                                                  ContentSource="Header"
+                                                  RecognizesAccessKey="True"
+                                                  VerticalAlignment="Center"
+                                                  Margin="0,2,0,2"/>
+                                <!-- Input gesture text -->
+                                <TextBlock Grid.Column="2"
+                                           Text="{TemplateBinding InputGestureText}"
+                                           Margin="12,2,4,2"
+                                           VerticalAlignment="Center"
+                                           Foreground="{StaticResource BrushTextMuted}"/>
+                                <!-- Popup arrow (hidden for now) -->
+                                <Path Grid.Column="3"
+                                      VerticalAlignment="Center"
+                                      Margin="4,0,0,0"
+                                      Fill="{StaticResource BrushTextMuted}"
+                                      Data="M 0 0 L 4 4 L 0 8 Z"
+                                      Visibility="Collapsed"/>
+                                <!-- Sub‑menu popup -->
+                                <Popup Name="Popup"
+                                       Placement="Right"
+                                       HorizontalOffset="-1"
+                                       IsOpen="{TemplateBinding IsSubmenuOpen}"
+                                       AllowsTransparency="True"
+                                       Focusable="False"
+                                       PopupAnimation="{DynamicResource {x:Static SystemParameters.MenuPopupAnimationKey}}">
+                                    <Border Name="SubMenuBorder"
+                                            Background="{StaticResource BrushBgToolbar}"
+                                            BorderBrush="{StaticResource BrushBorder}"
+                                            BorderThickness="1">
+                                        <ScrollViewer Name="SubMenuScrollViewer"
+                                                      CanContentScroll="True"
+                                                      Style="{DynamicResource {ComponentResourceKey ResourceId=MenuScrollViewer, TypeInTargetAssembly={x:Type FrameworkElement}}}">
+                                            <Grid>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="*"/>
+                                                </Grid.RowDefinitions>
+                                                <!-- Use a StackPanel to layout the items -->
+                                                <StackPanel IsItemsHost="True"
+                                                            KeyboardNavigation.DirectionalNavigation="Cycle"/>
+                                            </Grid>
+                                        </ScrollViewer>
+                                    </Border>
+                                </Popup>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <!-- Highlight when mouse is over -->
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Border"
+                                        Property="Background"
+                                        Value="{StaticResource BrushAccent}"/>
+                                <Setter TargetName="HeaderHost"
+                                        Property="TextElement.Foreground"
+                                        Value="{StaticResource BrushTextOnAccent}"/>
+                            </Trigger>
+                            <!-- Separator -->
+                            <Trigger Property="IsSeparator" Value="True">
+                                <Setter TargetName="Border"
+                                        Property="Background"
+                                        Value="Transparent"/>
+                                <Setter TargetName="Border"
+                                        Property="BorderBrush"
+                                        Value="{StaticResource BrushBorder}"/>
+                                <Setter TargetName="Border"
+                                        Property="Height"
+                                        Value="1"/>
+                            </Trigger>
+                            <!-- Disabled state -->
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Foreground"
+                                        Value="{StaticResource BrushTextDisabled}"/>
+                            </Trigger>
+                            <!-- Hide arrow when no submenu -->
+                            <Trigger Property="HasItems" Value="False">
+                                <Setter TargetName="Popup" Property="IsOpen" Value="False"/>
+                                <Setter TargetName="PopupArrow" Property="Visibility" Value="Collapsed"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
 
         </ResourceDictionary>
     </Application.Resources>
