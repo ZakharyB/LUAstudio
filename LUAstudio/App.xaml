@@ -207,8 +207,8 @@
                                            Margin="12,2,4,2"
                                            VerticalAlignment="Center"
                                            Foreground="{StaticResource BrushTextMuted}"/>
-                                <!-- Popup arrow (hidden for now) -->
-                                <Path Grid.Column="3"
+                                <Path x:Name="PopupArrow"
+                                      Grid.Column="3"
                                       VerticalAlignment="Center"
                                       Margin="4,0,0,0"
                                       Fill="{StaticResource BrushTextMuted}"
@@ -254,17 +254,11 @@
                                         Value="{StaticResource BrushTextOnAccent}"/>
                             </Trigger>
                             <!-- Separator -->
-                            <Trigger Property="IsSeparator" Value="True">
-                                <Setter TargetName="Border"
-                                        Property="Background"
-                                        Value="Transparent"/>
-                                <Setter TargetName="Border"
-                                        Property="BorderBrush"
-                                        Value="{StaticResource BrushBorder}"/>
-                                <Setter TargetName="Border"
-                                        Property="Height"
-                                        Value="1"/>
-                            </Trigger>
+                            <DataTrigger Binding="{Binding IsSeparator, RelativeSource={RelativeSource Self}}" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="Transparent"/>
+                                <Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource BrushBorder}"/>
+                                <Setter TargetName="Border" Property="Height" Value="1"/>
+                            </DataTrigger>
                             <!-- Disabled state -->
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter Property="Foreground"

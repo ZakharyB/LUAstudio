@@ -137,11 +137,7 @@ public partial class WorkspaceExplorerView : UserControl
         return null;
     }
 
-    private void ExplorerOverflowButton_OnClick(object sender, RoutedEventArgs e)
-    {
-        ExplorerOverflowButton.ContextMenu.DataContext = DataContext;
-        ExplorerOverflowButton.ContextMenu.IsOpen = true;
-    }
+
 
     private void WorkspaceTree_OnPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
@@ -187,8 +183,8 @@ public partial class WorkspaceExplorerView : UserControl
 
     private ContextMenu BuildContextMenu(FileSystemEntryNode? node)
     {
-        var menu = new ContextMenu();
-        menu.Resources.Add(typeof(MenuItem), (Style)FindResource("NoIconMenuItemStyle"));
+        var menu = new ContextMenu();   // The ContextMenu style from resources will apply
+        // No Resources added – MenuItems use the global implicit style
 
         if (Vm is null) return menu;
 
