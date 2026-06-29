@@ -8,6 +8,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\LUAstudio.Abstractions\LUAstudio.Abstractions.csproj" />
+    <PackageReference Include="AutoStudio.AvalonEdit" Version="1.0.2026.606" />
+    <PackageReference Include="AvalonEdit" Version="6.3.1.120" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.8" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.8" />
   </ItemGroup>

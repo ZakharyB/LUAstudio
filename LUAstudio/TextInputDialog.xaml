@@ -8,6 +8,71 @@
         ShowInTaskbar="False"
         MinWidth="360"
         Background="{StaticResource BrushBgPanel}">
+        <Window.Resources>
+
+        <Style x:Key="ActionButton" TargetType="Button">
+            <Setter Property="Background" Value="#2A2D31"/>
+            <Setter Property="Foreground" Value="#E6E6E6"/>
+            <Setter Property="BorderBrush" Value="#3A3D42"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Padding" Value="10,0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="TextBox">
+            <Setter Property="Foreground" Value="#E6E6E6"/>
+            <Setter Property="Background" Value="#252526"/>
+            <Setter Property="BorderBrush" Value="#3C3C3C"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="8,0"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Height" Value="34"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6">
+                            <ScrollViewer x:Name="PART_ContentHost"/>
+                        </Border>
+
+                        <ControlTemplate.Triggers>
+
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#2D5BFF"/>
+                                <Setter TargetName="Bd" Property="BorderThickness" Value="2"/>
+                            </Trigger>
+
+                            <Trigger Property="Tag" Value="Invalid">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#FF3B30"/>
+                                <Setter TargetName="Bd" Property="BorderThickness" Value="2"/>
+                            </Trigger>
+
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+    </Window.Resources>
     <Border Padding="16" BorderBrush="{StaticResource BrushBorder}" BorderThickness="0">
         <StackPanel>
             <TextBlock x:Name="MessageText"
@@ -17,13 +82,27 @@
             <TextBox x:Name="InputBox"
                      Margin="0,0,0,12"
                      Padding="8,6"
+                     TextAlignment="Left"
                      Background="{StaticResource BrushBgEditor}"
                      Foreground="{StaticResource BrushText}"
                      BorderBrush="{StaticResource BrushBorder}"
                      CaretBrush="{StaticResource BrushText}" />
             <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
-                <Button MinWidth="80" Margin="0,0,8,0" Padding="12,6" IsDefault="True" Click="Ok_Click">OK</Button>
-                <Button MinWidth="80" Padding="12,6" IsCancel="True">Cancel</Button>
+                <Button Content="OK"
+                        MinWidth="80"
+                        Margin="0,0,8,0"
+                        Padding="12, 6"
+                        IsDefault="True"
+                        Background="#2D5BFF"
+                        BorderBrush="#2D5BFF"
+                        Foreground="White"
+                        Style="{StaticResource ActionButton}"
+                        Click="Ok_Click"/>
+                <Button Content="Cancel"
+                        MinWidth="80"
+                        Padding="12,6"
+                        IsCancel="True"
+                        Style="{StaticResource ActionButton}"/>
             </StackPanel>
         </StackPanel>
     </Border>

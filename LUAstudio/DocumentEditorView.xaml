@@ -1,31 +1,43 @@
 <UserControl x:Class="LUAstudio.DocumentEditorView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:a="http://icsharpcode.net/sharpdevelop/avalonedit"
+             xmlns:a="clr-namespace:ICSharpCode.AvalonEdit;assembly=ICSharpCode.AvalonEdit"
              HorizontalAlignment="Stretch"
              VerticalAlignment="Stretch"
-             Background="{StaticResource BrushBgEditor}">
+             Background="{StaticResource BrushBgEditor}"
+             AllowDrop="True"
+             Drop="OnDrop">
+    <UserControl.Resources>
+        <ContextMenu x:Key="EditorContextMenu">
+            <MenuItem Command="{x:Static ApplicationCommands.Cut}" />
+            <MenuItem Command="{x:Static ApplicationCommands.Copy}" />
+            <MenuItem Command="{x:Static ApplicationCommands.Paste}" />
+            <Separator />
+            <MenuItem Command="{x:Static ApplicationCommands.SelectAll}" />
+            <Separator />
+            <MenuItem Header="Toggle Breakpoint"
+                      Click="ToggleBreakpoint_Click" />
+            <MenuItem Header="Go to Line..."
+                      Click="GoToLine_Click" />
+            <MenuItem Header="Find"
+                      InputGestureText="Ctrl+F"
+                      Click="Find_Click" />
+        </ContextMenu>
+    </UserControl.Resources>
 
     <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="16" />
-            <ColumnDefinition Width="*" />
-        </Grid.ColumnDefinitions>
-
-        <Border Grid.Column="0"
-                Background="{StaticResource BrushBgEditor}"
-                BorderBrush="{StaticResource BrushBorder}"
-                BorderThickness="0,0,1,0" />
-
         <a:TextEditor x:Name="Editor"
-                      Grid.Column="1"
                       HorizontalAlignment="Stretch"
                       VerticalAlignment="Stretch"
                       Background="{StaticResource BrushBgEditor}"
                       BorderThickness="0"
-                      HorizontalScrollBarVisibility="Hidden"
-                      VerticalScrollBarVisibility="Hidden"
+                      HorizontalScrollBarVisibility="Auto"
+                      VerticalScrollBarVisibility="Auto"
                       ShowLineNumbers="True"
-                      WordWrap="False" />
+                      WordWrap="{Binding WordWrap, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                      FontFamily="{Binding FontFamily, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                      FontSize="{Binding FontSize, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                      ContextMenu="{StaticResource EditorContextMenu}"
+                      Loaded="Editor_Loaded" />
     </Grid>
 </UserControl>

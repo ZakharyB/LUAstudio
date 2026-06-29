@@ -15,4 +15,6 @@ public interface IBreakpointService
     void ClearBreakpoints(string? sourcePath);
 
     IReadOnlyList<(string? SourcePath, IReadOnlyList<Execution.Abstractions.BreakpointSpec> Breakpoints)> GetBreakpointGroups();
+
+    IEnumerable<BreakpointKey> GetBreakpointsForFile(string filePath);
 }
