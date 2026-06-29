@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using LUAstudio.Execution.Abstractions;
 
 namespace LUAstudio.Editor.Debugging;
@@ -55,6 +58,12 @@ public sealed class BreakpointService : IBreakpointService
                     .Select(k => new BreakpointSpec(k.Line))
                     .ToList()))
             .ToList();
+    }
+
+    public IEnumerable<BreakpointKey> GetBreakpointsForFile(string filePath)
+    {
+        var normalized = NormalizePath(filePath);
+        return _breakpoints.Where(k => string.Equals(NormalizePath(k.SourcePath), normalized, StringComparison.OrdinalIgnoreCase));
     }
 
     private static BreakpointKey Normalize(string? sourcePath, int line) =>

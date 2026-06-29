@@ -1,320 +1,722 @@
+using System;
 using System.ComponentModel;
+using System.Diagnostics;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Threading;
+using ICSharpCode.AvalonEdit;
+using ICSharpCode.AvalonEdit.Document;
+using ICSharpCode.AvalonEdit.Editing;
+using ICSharpCode.AvalonEdit.Highlighting;
+using ICSharpCode.AvalonEdit.Rendering;
+using ICSharpCode.AvalonEdit.Search;
 using LUAstudio.Editor.Debugging;
 using LUAstudio.IDE.Documents;
 using LUAstudio.IDE.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
-using ICSharpCode.AvalonEdit;
-using ICSharpCode.AvalonEdit.Editing;
+
+// Type aliases to resolve ambiguity
+using AvalonDocument = ICSharpCode.AvalonEdit.Document.TextDocument;
+using CustomDocument = LUAstudio.IDE.Documents.TextDocument;
 
 namespace LUAstudio;
 
-public partial class DocumentEditorView : UserControl
+public partial class DocumentEditorView : UserControl, IDisposable
 {
-    private TextDocument? _boundDocument;
-    private TextDocument? _pendingDocument;
-    private bool _suppressVmPush;
+    #region Dependency Properties (Exposed Settings)
+
+    public static readonly DependencyProperty DocumentProperty =
+        DependencyProperty.Register(nameof(Document), typeof(CustomDocument), typeof(DocumentEditorView),
+            new PropertyMetadata(null, OnDocumentChanged));
+
+    public CustomDocument? Document
+    {
+        get => (CustomDocument?)GetValue(DocumentProperty);
+        set => SetValue(DocumentProperty, value);
+    }
+
+    public static readonly DependencyProperty WordWrapProperty =
+        DependencyProperty.Register(nameof(WordWrap), typeof(bool), typeof(DocumentEditorView),
+            new PropertyMetadata(false, (d, e) => ((DocumentEditorView)d).Editor.WordWrap = (bool)e.NewValue));
+
+    public bool WordWrap
+    {
+        get => (bool)GetValue(WordWrapProperty);
+        set => SetValue(WordWrapProperty, value);
+    }
+
+    public static readonly DependencyProperty FontFamilyProperty =
+        DependencyProperty.Register(nameof(FontFamily), typeof(FontFamily), typeof(DocumentEditorView),
+            new PropertyMetadata(new FontFamily("Consolas"), (d, e) => ((DocumentEditorView)d).Editor.FontFamily = (FontFamily)e.NewValue));
+
+    public FontFamily FontFamily
+    {
+        get => (FontFamily)GetValue(FontFamilyProperty);
+        set => SetValue(FontFamilyProperty, value);
+    }
+
+    public static readonly DependencyProperty FontSizeProperty =
+        DependencyProperty.Register(nameof(FontSize), typeof(double), typeof(DocumentEditorView),
+            new PropertyMetadata(12.0, (d, e) => ((DocumentEditorView)d).Editor.FontSize = (double)e.NewValue));
+
+    public double FontSize
+    {
+        get => (double)GetValue(FontSizeProperty);
+        set => SetValue(FontSizeProperty, value);
+    }
+
+    public static readonly DependencyProperty TabSizeProperty =
+        DependencyProperty.Register(nameof(TabSize), typeof(int), typeof(DocumentEditorView),
+            new PropertyMetadata(4, (d, e) => ((DocumentEditorView)d).Editor.Options.IndentationSize = (int)e.NewValue));
+
+    public int TabSize
+    {
+        get => (int)GetValue(TabSizeProperty);
+        set => SetValue(TabSizeProperty, value);
+    }
+
+    // Caret reporting (bound to ViewModel)
+    public static readonly DependencyProperty CaretLineProperty =
+        DependencyProperty.Register(nameof(CaretLine), typeof(int), typeof(DocumentEditorView),
+            new PropertyMetadata(0));
+
+    public int CaretLine
+    {
+        get => (int)GetValue(CaretLineProperty);
+        set => SetValue(CaretLineProperty, value);
+    }
+
+    public static readonly DependencyProperty CaretColumnProperty =
+        DependencyProperty.Register(nameof(CaretColumn), typeof(int), typeof(DocumentEditorView),
+            new PropertyMetadata(0));
+
+    public int CaretColumn
+    {
+        get => (int)GetValue(CaretColumnProperty);
+        set => SetValue(CaretColumnProperty, value);
+    }
+
+    #endregion
+
+    #region Fields
+
+    private readonly IServiceProvider _services;
+    private AvalonDocument? _currentAvalonDocument;
+    private CustomDocument? _boundCustomDocument;
+    private bool _isUpdatingFromViewModel;
+    private bool _isUpdatingFromEditor;
     private bool _caretHooked;
+    private bool _isLoaded;
+
     private WpfDocumentEditorHost? _languageHost;
     private EditorSettingsCoordinator? _settingsCoordinator;
     private IBreakpointService? _breakpointService;
     private EditorNavigationService? _navigationService;
-    private BreakpointRenderer? _breakpointRenderer;
-    private BreakpointClickHandler? _breakpointClickHandler;
+    private BreakpointMargin? _breakpointMargin;
+    private LineHighlighter? _lineHighlighter;
+    private SearchPanel? _searchPanel;
+    private bool _disposed;
+
+    #endregion
 
     public DocumentEditorView()
     {
         InitializeComponent();
 
+        _services = App.Services;
+
         Loaded += OnEditorLoaded;
         Unloaded += OnEditorUnloaded;
     }
 
-    public WpfDocumentEditorHost? LanguageHost
-    {
-        get => _languageHost;
-        set => _languageHost = value;
-    }
-
-    public static readonly DependencyProperty DocumentProperty =
-        DependencyProperty.Register(
-            nameof(Document),
-            typeof(TextDocument),
-            typeof(DocumentEditorView),
-            new PropertyMetadata(null, OnDocumentChanged));
-
-    public TextDocument? Document
-    {
-        get => (TextDocument?)GetValue(DocumentProperty);
-        set => SetValue(DocumentProperty, value);
-    }
-
-    private static void OnDocumentChanged(
-        DependencyObject d,
-        DependencyPropertyChangedEventArgs e)
-    {
-        var view = (DocumentEditorView)d;
-        view.RebindDocument(
-            e.OldValue as TextDocument,
-            e.NewValue as TextDocument);
-    }
+    #region Load / Unload
 
     private void OnEditorLoaded(object sender, RoutedEventArgs e)
     {
-        _languageHost ??= App.Services.GetRequiredService<WpfDocumentEditorHost>();
-        _settingsCoordinator ??= App.Services.GetRequiredService<EditorSettingsCoordinator>();
-        _breakpointService ??= App.Services.GetRequiredService<IBreakpointService>();
-        _navigationService ??= App.Services.GetRequiredService<EditorNavigationService>();
-
-        EnsureBreakpointMargin();
-        _navigationService.NavigationRequested += OnNavigationRequested;
-
-        _settingsCoordinator.Register(Editor);
-
-        EnsureCaretHook();
-
-        if (_pendingDocument is not null)
+        try
         {
-            ApplyDocumentToEditor(_pendingDocument);
-            _pendingDocument = null;
+            _isLoaded = true;
+            _languageHost = _services.GetRequiredService<WpfDocumentEditorHost>();
+            _settingsCoordinator = _services.GetRequiredService<EditorSettingsCoordinator>();
+            _breakpointService = _services.GetRequiredService<IBreakpointService>();
+            _navigationService = _services.GetRequiredService<EditorNavigationService>();
+
+            // Setup margins
+            EnsureBreakpointMargin();
+            EnsureLineHighlighter();
+
+            // Settings
+            _settingsCoordinator.Register(Editor);
+            ApplySettings();
+
+            // Navigation
+            if (_navigationService != null)
+                _navigationService.NavigationRequested += OnNavigationRequested;
+
+            // Search panel – explicitly cast to disambiguate overloads
+            _searchPanel = SearchPanel.Install((TextEditor)Editor);
+            _searchPanel.UseRegex = false;
+            _searchPanel.MatchCase = false;
+
+            // Hook caret
+            EnsureCaretHook();
+
+            // Bind initial document
+            if (Document != null)
+                ApplyDocument(Document, true);
+            else if (_boundCustomDocument != null)
+                ApplyDocument(_boundCustomDocument, true);
+
+            // Focus
+            Editor.Focus();
+
+            // Drop
+            AllowDrop = true;
         }
-        else if (_boundDocument is not null)
+        catch (Exception ex)
         {
-            ApplyDocumentToEditor(_boundDocument);
+            Debug.WriteLine($"Error during editor load: {ex}");
         }
-
-        Editor.Focus();
-
-        ReportCaretPositionSafe();
     }
 
     private void OnEditorUnloaded(object sender, RoutedEventArgs e)
     {
-        if (_caretHooked && Editor?.TextArea?.Caret is not null)
+        try
         {
-            Editor.TextChanged -= OnEditorTextChanged;
-            Editor.TextArea.Caret.PositionChanged -= OnCaretPositionChanged;
-            _caretHooked = false;
-        }
+            _isLoaded = false;
 
-        if (_boundDocument is not null && IsEditorReady)
-        {
-            _languageHost?.Detach(Editor, _boundDocument);
-        }
+            if (_caretHooked && Editor?.TextArea?.Caret != null)
+            {
+                Editor.TextChanged -= OnEditorTextChanged;
+                Editor.TextArea.Caret.PositionChanged -= OnCaretPositionChanged;
+                _caretHooked = false;
+            }
 
-        if (IsEditorReady)
-        {
+            if (_boundCustomDocument != null)
+            {
+                _boundCustomDocument.PropertyChanged -= OnCustomDocumentPropertyChanged;
+                _languageHost?.Detach(Editor, _boundCustomDocument);
+            }
+
             _settingsCoordinator?.Unregister(Editor);
-        }
 
-        if (_navigationService is not null)
+            if (_navigationService != null)
+                _navigationService.NavigationRequested -= OnNavigationRequested;
+
+            if (_breakpointMargin != null)
+            {
+                Editor.TextArea.LeftMargins.Remove(_breakpointMargin);
+                _breakpointMargin = null;
+            }
+
+            _lineHighlighter?.Dispose();
+            _lineHighlighter = null;
+
+            _searchPanel?.Uninstall();
+            _searchPanel = null;
+        }
+        catch (Exception ex)
         {
-            _navigationService.NavigationRequested -= OnNavigationRequested;
+            Debug.WriteLine($"Error during editor unload: {ex}");
         }
     }
 
-    private void EnsureBreakpointMargin()
-    {
-        if (_breakpointRenderer is not null || _breakpointService is null || !IsEditorReady)
-        {
-            return;
-        }
+    #endregion
 
-        _breakpointRenderer = new BreakpointRenderer(_breakpointService);
-        _breakpointClickHandler = new BreakpointClickHandler(_breakpointService, _breakpointRenderer);
-        Editor.TextArea.TextView.BackgroundRenderers.Add(_breakpointRenderer);
-        _breakpointClickHandler.Attach(Editor);
+    #region Document Binding (Preserving Undo)
+
+    private static void OnDocumentChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        var view = (DocumentEditorView)d;
+        view.DocumentChanged(e.OldValue as CustomDocument, e.NewValue as CustomDocument);
     }
 
-    private void OnNavigationRequested()
+    private void DocumentChanged(CustomDocument? oldCustomDoc, CustomDocument? newCustomDoc)
     {
-        if (_navigationService is null || _boundDocument?.FilePath is null || !IsEditorReady)
+        // Unsubscribe from old custom document
+        if (oldCustomDoc != null)
         {
-            return;
-        }
-
-        if (!string.Equals(_boundDocument.FilePath, _navigationService.SourcePath, StringComparison.OrdinalIgnoreCase))
-        {
-            return;
-        }
-
-        var line = Math.Max(1, Math.Min(_navigationService.Line, Editor.Document.LineCount));
-        Editor.TextArea.Caret.Line = line - 1;
-        Editor.TextArea.Caret.Column = Math.Max(0, _navigationService.Column - 1);
-        Editor.TextArea.Caret.BringCaretToView();
-        Editor.Focus();
-    }
-
-    private void RebindDocument(TextDocument? oldDoc, TextDocument? newDoc)
-    {
-        if (oldDoc is not null)
-        {
-            oldDoc.PropertyChanged -= OnDocumentPropertyChanged;
-
+            oldCustomDoc.PropertyChanged -= OnCustomDocumentPropertyChanged;
             if (IsEditorReady)
-            {
-                _languageHost?.Detach(Editor, oldDoc);
-            }
+                _languageHost?.Detach(Editor, oldCustomDoc);
         }
 
-        _boundDocument = newDoc;
-        _pendingDocument = newDoc;
+        _boundCustomDocument = newCustomDoc;
 
-        if (!IsLoaded)
+        if (newCustomDoc != null)
         {
-            return;
+            newCustomDoc.PropertyChanged += OnCustomDocumentPropertyChanged;
         }
 
-        ApplyDocumentToEditor(newDoc);
-        _pendingDocument = null;
+        // Apply if loaded
+        if (_isLoaded && IsEditorReady)
+            ApplyDocument(newCustomDoc, false);
     }
 
-    private void ApplyDocumentToEditor(TextDocument? doc)
+    private void ApplyDocument(CustomDocument? customDoc, bool forceNew)
     {
-        if (!IsEditorReady)
+        if (!IsEditorReady) return;
+
+        // If the custom document is the same as the one already bound, just update text if needed.
+        if (!forceNew && customDoc == _boundCustomDocument && _currentAvalonDocument != null)
         {
+            var newContent = customDoc?.Content ?? string.Empty;
+            if (_currentAvalonDocument.Text != newContent)
+            {
+                _isUpdatingFromViewModel = true;
+                try
+                {
+                    _currentAvalonDocument.Text = newContent;
+                }
+                finally
+                {
+                    _isUpdatingFromViewModel = false;
+                }
+            }
             return;
         }
 
-        if (doc is null)
+        // Different document: create new AvalonEdit document
+        if (customDoc == null)
         {
-            _suppressVmPush = true;
-
-            try
+            Editor.Document = new AvalonDocument(string.Empty);
+            _currentAvalonDocument = Editor.Document;
+        }
+        else
+        {
+            var content = customDoc.Content ?? string.Empty;
+            // Load asynchronously for large files
+            Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
             {
-                Editor.Document = new ICSharpCode.AvalonEdit.Document.TextDocument(string.Empty);
-            }
-            finally
-            {
-                _suppressVmPush = false;
-            }
+                try
+                {
+                    _isUpdatingFromViewModel = true;
+                    var newDoc = new AvalonDocument(content);
+                    Editor.Document = newDoc;
+                    _currentAvalonDocument = newDoc;
+                    _languageHost?.Attach(Editor, customDoc);
+                    _breakpointMargin?.SetDocument(customDoc);
 
-            return;
+                    // Set source path for breakpoint margin
+                    if (_breakpointMargin != null && !string.IsNullOrEmpty(customDoc.FilePath))
+                        _breakpointMargin.SourcePath = customDoc.FilePath;
+
+                    // Update syntax highlighting based on file extension
+                    if (!string.IsNullOrEmpty(customDoc.FilePath))
+                    {
+                        var ext = Path.GetExtension(customDoc.FilePath);
+                        if (!string.IsNullOrEmpty(ext))
+                        {
+                            ext = ext.TrimStart('.');
+                            var highlighting = HighlightingManager.Instance.GetDefinitionByExtension("." + ext);
+                            if (highlighting != null)
+                                Editor.SyntaxHighlighting = highlighting;
+                        }
+                    }
+
+                    Editor.Focus();
+                }
+                finally
+                {
+                    _isUpdatingFromViewModel = false;
+                }
+            }));
         }
-
-        _suppressVmPush = true;
-
-        try
-        {
-            Editor.Document = new ICSharpCode.AvalonEdit.Document.TextDocument(doc.Content ?? string.Empty);
-        }
-        finally
-        {
-            _suppressVmPush = false;
-        }
-
-        doc.PropertyChanged -= OnDocumentPropertyChanged;
-        doc.PropertyChanged += OnDocumentPropertyChanged;
-
-        _languageHost?.Attach(Editor, doc);
-
-        if (_breakpointClickHandler is not null)
-        {
-            _breakpointClickHandler.SetSourcePath(doc.FilePath);
-        }
-
-        try
-        {
-            Editor.TextArea.Caret.BringCaretToView();
-        }
-        catch
-        {
-            // Layout may not be ready yet on first open.
-        }
-
-        ReportCaretPositionSafe();
     }
 
-    private void OnDocumentPropertyChanged(
-        object? sender,
-        PropertyChangedEventArgs e)
+    private void OnCustomDocumentPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName != nameof(TextDocument.Content) ||
-            _boundDocument is null ||
-            !IsEditorReady)
+        if (e.PropertyName == nameof(CustomDocument.Content) && !_isUpdatingFromEditor)
         {
-            return;
-        }
-
-        var text = _boundDocument.Content ?? string.Empty;
-
-        if (string.Equals(
-                Editor.Document.Text,
-                text,
-                StringComparison.Ordinal))
-        {
-            return;
-        }
-
-        _suppressVmPush = true;
-
-        try
-        {
-            Editor.Document.Text = text;
-        }
-        finally
-        {
-            _suppressVmPush = false;
+            var customDoc = sender as CustomDocument;
+            if (customDoc != null && _currentAvalonDocument != null && IsEditorReady)
+            {
+                var newContent = customDoc.Content ?? string.Empty;
+                if (_currentAvalonDocument.Text != newContent)
+                {
+                    _isUpdatingFromViewModel = true;
+                    try
+                    {
+                        _currentAvalonDocument.Text = newContent;
+                    }
+                    finally
+                    {
+                        _isUpdatingFromViewModel = false;
+                    }
+                }
+            }
         }
     }
 
     private void OnEditorTextChanged(object? sender, EventArgs e)
     {
-        PushTextToDocument();
-    }
-
-    private void PushTextToDocument()
-    {
-        if (_suppressVmPush ||
-            _boundDocument is null ||
-            !IsEditorReady)
+        if (_isUpdatingFromViewModel || _boundCustomDocument == null) return;
+        _isUpdatingFromEditor = true;
+        try
         {
-            return;
+            _boundCustomDocument.Content = Editor.Document.Text;
+            _languageHost?.NotifyContentChanged(_boundCustomDocument);
         }
-
-        _boundDocument.Content = Editor.Document.Text;
-
-        _languageHost?.NotifyContentChanged(_boundDocument);
+        finally
+        {
+            _isUpdatingFromEditor = false;
+        }
     }
+
+    #endregion
+
+    #region Caret & Navigation
 
     private void EnsureCaretHook()
     {
-        if (_caretHooked || !IsEditorReady)
-        {
-            return;
-        }
-
+        if (_caretHooked || !IsEditorReady) return;
         Editor.TextChanged += OnEditorTextChanged;
         Editor.TextArea.Caret.PositionChanged += OnCaretPositionChanged;
-
         _caretHooked = true;
     }
 
     private void OnCaretPositionChanged(object? sender, EventArgs e)
     {
-        ReportCaretPositionSafe();
+        ReportCaretPosition();
     }
 
-    private void ReportCaretPositionSafe()
+    private void ReportCaretPosition()
     {
-        if (!IsEditorReady)
-        {
+        if (!IsEditorReady) return;
+        CaretLine = Editor.TextArea.Caret.Line + 1;
+        CaretColumn = Editor.TextArea.Caret.Column + 1;
+    }
+
+    private void OnNavigationRequested()
+    {
+        if (_navigationService == null || _boundCustomDocument?.FilePath == null || !IsEditorReady)
             return;
+
+        if (!string.Equals(_boundCustomDocument.FilePath, _navigationService.SourcePath, StringComparison.OrdinalIgnoreCase))
+            return;
+
+        // Explicit casts to int for ALL Math.Min/Max arguments to avoid overload ambiguity
+        int line = Math.Max(1, Math.Min((int)_navigationService.Line, (int)Editor.Document.LineCount));
+        var lineObj = Editor.Document.GetLineByNumber(line);
+        int col = Math.Max(1, Math.Min((int)_navigationService.Column, (int)(lineObj.Length + 1)));
+
+        Editor.TextArea.Caret.Line = line - 1;
+        Editor.TextArea.Caret.Column = col - 1;
+        Editor.TextArea.Caret.BringCaretToView();
+
+        // Highlight the line
+        if (_lineHighlighter != null)
+        {
+            _lineHighlighter.HighlightLine(line);
         }
 
-        if (Window.GetWindow(this)?.DataContext is not MainViewModel main)
-        {
+        Editor.Focus();
+    }
+
+    #endregion
+
+    #region Breakpoint Margin (using AbstractMargin)
+
+    private void EnsureBreakpointMargin()
+    {
+        if (_breakpointMargin != null || _breakpointService == null || !IsEditorReady)
             return;
+
+        _breakpointMargin = new BreakpointMargin(_breakpointService);
+        if (_boundCustomDocument?.FilePath != null)
+            _breakpointMargin.SourcePath = _boundCustomDocument.FilePath;
+
+        Editor.TextArea.LeftMargins.Add(_breakpointMargin);
+    }
+
+    #endregion
+
+    #region Line Highlighter (for navigation)
+
+    private void EnsureLineHighlighter()
+    {
+        if (_lineHighlighter == null && IsEditorReady)
+        {
+            _lineHighlighter = new LineHighlighter(Editor.TextArea.TextView);
         }
+    }
+
+    #endregion
+
+    #region Context Menu Commands
+
+    private void ToggleBreakpoint_Click(object sender, RoutedEventArgs e)
+    {
+        if (_breakpointService == null || _boundCustomDocument?.FilePath == null)
+            return;
 
         var line = Editor.TextArea.Caret.Line + 1;
-        var column = Editor.TextArea.Caret.Column + 1;
-
-        main.UpdateCaretPosition(line, column);
+        _breakpointService.ToggleBreakpoint(_boundCustomDocument.FilePath, line);
     }
 
-    private bool IsEditorReady =>
-        Editor is not null &&
-        Editor.TextArea is not null;
+    private void GoToLine_Click(object sender, RoutedEventArgs e)
+    {
+        var input = new InputDialog("Go to Line", "Enter line number:");
+        if (input.ShowDialog() == true && int.TryParse(input.Result, out int line))
+        {
+            line = Math.Max(1, Math.Min((int)line, (int)Editor.Document.LineCount));
+            Editor.TextArea.Caret.Line = line - 1;
+            Editor.TextArea.Caret.BringCaretToView();
+            if (_lineHighlighter != null)
+                _lineHighlighter.HighlightLine(line);
+        }
+    }
+
+    private void Find_Click(object sender, RoutedEventArgs e)
+    {
+        if (_searchPanel != null)
+        {
+            _searchPanel.Open();
+            _searchPanel.Focus();
+        }
+    }
+
+    #endregion
+
+    #region Drag & Drop
+
+    private void OnDrop(object sender, DragEventArgs e)
+    {
+        if (e.Data.GetDataPresent(DataFormats.FileDrop))
+        {
+            var files = (string[])e.Data.GetData(DataFormats.FileDrop);
+            if (files.Length > 0)
+            {
+                if (DataContext is MainViewModel mainVm)
+                    mainVm.OpenDocumentCommand?.Execute(files[0]);
+            }
+        }
+    }
+
+    #endregion
+
+    #region Settings & Other
+
+    private void ApplySettings()
+    {
+        Editor.Options.IndentationSize = TabSize;
+        Editor.Options.ConvertTabsToSpaces = true;
+    }
+
+    private void Editor_Loaded(object sender, RoutedEventArgs e)
+    {
+        Editor.Focus();
+    }
+
+    private bool IsEditorReady => Editor != null && Editor.TextArea != null;
+
+    #endregion
+
+    #region IDisposable
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (_disposed) return;
+        if (disposing)
+        {
+            _lineHighlighter?.Dispose();
+            _searchPanel?.Uninstall();
+            if (_boundCustomDocument != null)
+                _languageHost?.Detach(Editor, _boundCustomDocument);
+        }
+        _disposed = true;
+    }
+
+    #endregion
+}
+
+// ========================================
+// Helper classes (fully corrected)
+// ========================================
+
+public class LineHighlighter : IDisposable
+{
+    private readonly TextView _textView;
+    private readonly DispatcherTimer _timer;
+    private int _highlightedLine;
+    private readonly LineHighlightTransformer _transformer;
+
+    public LineHighlighter(TextView textView)
+    {
+        _textView = textView;
+        _transformer = new LineHighlightTransformer(this);
+        _timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
+        _timer.Tick += (s, e) =>
+        {
+            _timer.Stop();
+            _highlightedLine = 0;
+            _textView.InvalidateVisual();
+        };
+        _textView.LineTransformers.Add(_transformer);
+    }
+
+    public void HighlightLine(int line)
+    {
+        _highlightedLine = line;
+        _textView.InvalidateVisual();
+        _timer.Stop();
+        _timer.Start();
+    }
+
+    public void Dispose()
+    {
+        _timer.Stop();
+        _textView.LineTransformers.Remove(_transformer);
+    }
+
+    private class LineHighlightTransformer : IVisualLineTransformer
+    {
+        private readonly LineHighlighter _owner;
+        public LineHighlightTransformer(LineHighlighter owner) => _owner = owner;
+
+        public void Transform(ITextRunConstructionContext context, IList<VisualLineElement> elements)
+        {
+            if (_owner._highlightedLine == 0 || context.VisualLine.FirstDocumentLine.LineNumber != _owner._highlightedLine)
+                return;
+
+            foreach (var element in elements)
+            {
+                element.TextRunProperties.SetBackgroundBrush(Brushes.LightYellow);
+            }
+        }
+    }
+}
+
+public class BreakpointMargin : AbstractMargin
+{
+    private readonly IBreakpointService _breakpointService;
+    private string? _sourcePath;
+
+    public BreakpointMargin(IBreakpointService service)
+    {
+        _breakpointService = service;
+        Width = 20;
+    }
+
+    public string? SourcePath
+    {
+        get => _sourcePath;
+        set => _sourcePath = value;
+    }
+
+    public void SetDocument(CustomDocument? doc) { } // compatibility
+
+    protected override void OnRender(DrawingContext drawingContext)
+    {
+        base.OnRender(drawingContext);
+        if (_sourcePath == null || TextView?.Document == null) return;
+
+        // Get breakpoints - now using BreakpointKey
+        var breakpoints = _breakpointService.GetBreakpointsForFile(_sourcePath);
+        if (breakpoints == null) return;
+
+        foreach (var bp in breakpoints)  // bp is BreakpointKey
+        {
+            var line = bp.Line;
+            var document = TextView.Document;
+            if (line > document.LineCount) continue;
+
+            // Use the 3‑parameter constructor to avoid ambiguity
+            var yPos = TextView.GetVisualPosition(
+                new TextViewPosition(line, 1, 0),
+                VisualYPosition.LineBottom).Y;
+
+            var radius = 6.0;
+            var center = new Point(Width / 2, yPos - radius / 2);
+            drawingContext.DrawEllipse(Brushes.Red, new Pen(Brushes.DarkRed, 1), center, radius, radius);
+        }
+    }
+
+    protected override void OnTextViewChanged(TextView oldTextView, TextView newTextView)
+    {
+        if (oldTextView != null)
+            oldTextView.VisualLinesChanged -= OnVisualLinesChanged;
+        if (newTextView != null)
+            newTextView.VisualLinesChanged += OnVisualLinesChanged;
+        InvalidateVisual();
+    }
+
+    private void OnVisualLinesChanged(object? sender, EventArgs e) => InvalidateVisual();
+
+    protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
+    {
+        base.OnMouseLeftButtonDown(e);
+        if (_sourcePath == null || TextView == null) return;
+
+        var pos = e.GetPosition(this);
+        var line = GetLineFromY(pos.Y);
+        if (line.HasValue)
+        {
+            _breakpointService.ToggleBreakpoint(_sourcePath, line.Value);
+        }
+    }
+
+    private int? GetLineFromY(double y)
+    {
+        if (TextView == null) return null;
+        foreach (var vl in TextView.VisualLines)
+        {
+            // Use line number directly; no need for GetLocation()
+            var top = TextView.GetVisualPosition(
+                new TextViewPosition(vl.FirstDocumentLine.LineNumber, 1, 0),
+                VisualYPosition.LineTop).Y;
+            var bottom = TextView.GetVisualPosition(
+                new TextViewPosition(vl.FirstDocumentLine.LineNumber, 1, 0),
+                VisualYPosition.LineBottom).Y;
+            if (y >= top && y <= bottom)
+                return vl.FirstDocumentLine.LineNumber;
+        }
+        return null;
+    }
+
+    protected override Size MeasureOverride(Size availableSize)
+    {
+        return new Size(20, availableSize.Height);
+    }
+}
+
+// Simple input dialog
+public class InputDialog : Window
+{
+    public string? Result { get; private set; }
+
+    public InputDialog(string title, string prompt)
+    {
+        Title = title;
+        Width = 300;
+        Height = 150;
+        var txtInput = new TextBox { Name = "txtInput", Margin = new Thickness(10) };
+        var okButton = new Button { Content = "OK", Width = 75, Margin = new Thickness(5), IsDefault = true };
+        var cancelButton = new Button { Content = "Cancel", Width = 75, Margin = new Thickness(5), IsCancel = true };
+
+        okButton.Click += (s, e) => { Result = txtInput.Text; DialogResult = true; };
+        cancelButton.Click += (s, e) => DialogResult = false;
+
+        Content = new StackPanel
+        {
+            Children =
+            {
+                new Label { Content = prompt },
+                txtInput,
+                new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center,
+                    Children = { okButton, cancelButton } }
+            }
+        };
+
+        Loaded += (s, e) => txtInput.Focus();
+    }
 }
