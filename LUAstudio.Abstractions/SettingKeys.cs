@@ -14,6 +14,12 @@ public static class SettingKeys
     public const string EditorConvertTabsToSpaces = "editor.convert_tabs_to_spaces";
     public const string EditorForeground = "editor.foreground";
     public const string EditorBackground = "editor.background";
+    
+    public const string EditorBreakpointMarginWidth = "Editor.BreakpointMarginWidth";
+    public const string EditorHighlightDurationSeconds = "Editor.HighlightDurationSeconds";
+    public const string EditorShowRelativeLineNumbers = "Editor.ShowRelativeLineNumbers";
+    public const string EditorHighlightCurrentLine = "Editor.HighlightCurrentLine";
+    public const string EditorShowBracketHighlighting = "Editor.ShowBracketHighlighting";
 
     public const string EditorColorKeyword = "editor.color.keyword";
     public const string EditorColorString = "editor.color.string";

@@ -47,6 +47,11 @@ public sealed partial class SettingsViewModel : ObservableObject
         Track<bool>(SettingKeys.DiagnosticsShowRequireGraph, () => OnPropertyChanged(nameof(DiagnosticsShowRequireGraph)));
         Track<bool>(SettingKeys.RestoreWorkspaceRoots, () => OnPropertyChanged(nameof(RestoreWorkspaceOnStartup)));
         Track<int>(SettingKeys.FpsLimit, () => OnPropertyChanged(nameof(FpsLimit)));
+        Track<double>(SettingKeys.EditorBreakpointMarginWidth, () => OnPropertyChanged(nameof(EditorBreakpointMarginWidth)));
+        Track<double>(SettingKeys.EditorHighlightDurationSeconds, () => OnPropertyChanged(nameof(EditorHighlightDurationSeconds)));
+        Track<bool>(SettingKeys.EditorShowRelativeLineNumbers, () => OnPropertyChanged(nameof(EditorShowRelativeLineNumbers)));
+        Track<bool>(SettingKeys.EditorHighlightCurrentLine, () => OnPropertyChanged(nameof(EditorHighlightCurrentLine)));
+        Track<bool>(SettingKeys.EditorShowBracketHighlighting, () => OnPropertyChanged(nameof(EditorShowBracketHighlighting)));
     }
 
     public string EditorFontFamily
@@ -274,6 +279,36 @@ public sealed partial class SettingsViewModel : ObservableObject
         set => Set(SettingKeys.FpsLimit, Math.Clamp(value, 15, 360));
     }
 
+    public double EditorBreakpointMarginWidth
+    {
+        get => Get(SettingKeys.EditorBreakpointMarginWidth, 20d);
+        set => Set(SettingKeys.EditorBreakpointMarginWidth, value);
+    }
+
+    public double EditorHighlightDurationSeconds
+    {
+        get => Get(SettingKeys.EditorHighlightDurationSeconds, 2d);
+        set => Set(SettingKeys.EditorHighlightDurationSeconds, value);
+    }
+
+    public bool EditorShowRelativeLineNumbers
+    {
+        get => Get(SettingKeys.EditorShowRelativeLineNumbers, false);
+        set => Set(SettingKeys.EditorShowRelativeLineNumbers, value);
+    }
+
+    public bool EditorHighlightCurrentLine
+    {
+        get => Get(SettingKeys.EditorHighlightCurrentLine, true);
+        set => Set(SettingKeys.EditorHighlightCurrentLine, value);
+    }
+
+    public bool EditorShowBracketHighlighting
+    {
+        get => Get(SettingKeys.EditorShowBracketHighlighting, true);
+        set => Set(SettingKeys.EditorShowBracketHighlighting, value);
+    }
+    
     public IReadOnlyList<string> FontSizeOptions { get; } =
         ["10", "11", "12", "13", "14", "15", "16", "18", "20", "22", "24"];
 

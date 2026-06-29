@@ -1,5 +1,7 @@
 ﻿using LUAstudio.Abstractions;
 using LUAstudio.Core;
+using LUAstudio.Plugins;
+using LUAstudio.Plugins.Views;
 using LUAstudio.Editor.Debugging;
 using LUAstudio.IDE.ViewModels;
 using LUAstudio.Settings.Views;
@@ -192,6 +194,12 @@ public partial class MainWindow
     private void OpenSettings_OnClick(object sender, RoutedEventArgs e)
     {
         var window = new SettingsWindow { Owner = this };
+        window.ShowDialog();
+    }
+    
+    private void OpenPlugins_OnClick(object sender, RoutedEventArgs e)
+    {
+        var window = new PluginsWindow { Owner = this };
         window.ShowDialog();
     }
 

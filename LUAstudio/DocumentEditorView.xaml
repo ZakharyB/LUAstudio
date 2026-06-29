@@ -2,6 +2,8 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:a="clr-namespace:ICSharpCode.AvalonEdit;assembly=ICSharpCode.AvalonEdit"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:LUAstudio"
              HorizontalAlignment="Stretch"
              VerticalAlignment="Stretch"
              Background="{StaticResource BrushBgEditor}"
@@ -26,7 +28,15 @@
     </UserControl.Resources>
 
     <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <local:CustomSearchPanel x:Name="SearchPanelControl" Grid.Row="0"/>
+
+        
         <a:TextEditor x:Name="Editor"
+                      Grid.Row="1"
                       HorizontalAlignment="Stretch"
                       VerticalAlignment="Stretch"
                       Background="{StaticResource BrushBgEditor}"
