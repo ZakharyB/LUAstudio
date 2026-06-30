@@ -16,6 +16,7 @@
         ResizeMode="CanResize"
         Background="{StaticResource BrushBgRoot}"
         StateChanged="Window_StateChanged">
+
     <WindowChrome.WindowChrome>
         <WindowChrome CaptionHeight="36"
                       CornerRadius="0"
@@ -81,17 +82,17 @@
                         <MenuItem Header="_File">
                             <MenuItem Header="_New" Command="{Binding NewDocumentCommand}" InputGestureText="Ctrl+N" />
                             <MenuItem Header="_Open file…" Command="{Binding OpenDocumentCommand}" InputGestureText="Ctrl+O" />
-                            <MenuItem Header="Open _folder…" Command="{Binding Explorer.AddWorkspaceRootCommand}" />
-                            <MenuItem Header="Recent"/>
+                            <MenuItem Header="_Open folder…" Command="{Binding Explorer.AddWorkspaceRootCommand}" />
+                            <MenuItem Header="_Recent"/>
                             <Separator />
                             <MenuItem Header="_Save" Command="{Binding SaveActiveCommand}" InputGestureText="Ctrl+S" />
-                            <MenuItem Header="Save _as…" Command="{Binding SaveAsActiveCommand}" InputGestureText="Ctrl+Shift+S" />
+                            <MenuItem Header="_Save as…" Command="{Binding SaveAsActiveCommand}" InputGestureText="Ctrl+Shift+S" />
                             <Separator />
-                            <MenuItem Header="Run" Click="RunActiveDocument_OnClick" InputGestureText="F5" />
+                            <MenuItem Header="_Run" Click="RunActiveDocument_OnClick" InputGestureText="F5" />
                             <Separator />
-                            <MenuItem Header="Settings" Click="OpenSettings_OnClick" />
-                            <MenuItem Header="Plugins" Click="OpenPlugins_OnClick" />
-                            <MenuItem Header="Beta Features"/>
+                            <MenuItem Header="_Settings" Click="OpenSettings_OnClick" />
+                            <MenuItem Header="_Plugins" Click="OpenPlugins_OnClick" />
+                            <MenuItem Header="_Beta Features"/>
                             <Separator />
                             <MenuItem Header="_Close" Command="{Binding CloseActiveCommand}" InputGestureText="Ctrl+W" />
                         </MenuItem>
@@ -103,13 +104,13 @@
                             <MenuItem Header="_Copy" InputGestureText="Ctrl+C"/>
                             <MenuItem Header="_Paste" InputGestureText="Ctrl+V"/>
                             <Separator />
-                            <MenuItem Header="_Find" InputGestureText="Ctrl+F"/>
+                            <MenuItem Header="_Find" Click="Find_Click" InputGestureText="Ctrl+F"/>
                         </MenuItem>
 
                         <MenuItem Header="_View">
-                            <MenuItem Header="Reset tool window layout" Click="ResetDockLayout_OnClick" />
-                            <MenuItem Header="Explorer" IsEnabled="False" />
-                            <MenuItem Header="Output" IsEnabled="False" />
+                            <MenuItem Header="_Reset tool window layout" Click="ResetDockLayout_OnClick" />
+                            <MenuItem Header="_Explorer" IsEnabled="False" />
+                            <MenuItem Header="_Output" IsEnabled="False" />
                         </MenuItem>
                         <MenuItem Header="_Selection">
                             <MenuItem Header="Select _All" IsEnabled="False" InputGestureText="Ctrl+A" />
@@ -192,7 +193,8 @@
                                                      ContentId="Editor"
                                                      CanClose="False">
                                     <Grid Background="{StaticResource BrushBgEditor}">
-                                        <TabControl ItemsSource="{Binding OpenDocuments}"
+                                        <TabControl x:Name="MainTabControl"
+                                                    ItemsSource="{Binding OpenDocuments}"
                                                     SelectedItem="{Binding ActiveDocument, Mode=TwoWay}"
                                                     Visibility="{Binding HasOpenDocuments, Converter={StaticResource BoolToVisibility}}">
                                             <TabControl.ItemContainerStyle>

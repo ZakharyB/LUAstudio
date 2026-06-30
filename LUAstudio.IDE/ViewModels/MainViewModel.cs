@@ -138,7 +138,7 @@ public sealed partial class MainViewModel : ObservableObject, IFileSystemActivit
 
     [RelayCommand]
     private void NewDocument() => _documents.CreateUntitled();
-
+    
     [RelayCommand]
     private async Task OpenDocumentAsync()
     {

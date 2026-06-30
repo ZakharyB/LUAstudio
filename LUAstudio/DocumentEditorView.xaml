@@ -3,6 +3,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:a="clr-namespace:ICSharpCode.AvalonEdit;assembly=ICSharpCode.AvalonEdit"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:conv="clr-namespace:LUAstudio.Converters"
+             xmlns:ctrl="clr-namespace:LUAstudio.Controls"
              xmlns:local="clr-namespace:LUAstudio"
              HorizontalAlignment="Stretch"
              VerticalAlignment="Stretch"
@@ -10,6 +12,43 @@
              AllowDrop="True"
              Drop="OnDrop">
     <UserControl.Resources>
+        <conv:CountToVisibilityConverter x:Key="EmptyRootsVisible" Invert="True" />
+        <conv:CountToVisibilityConverter x:Key="HasRootsVisible" />
+        <conv:StringNullOrEmptyToVisibilityConverter x:Key="StringToVisibility" />
+        <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
+        <conv:InverseBooleanToVisibilityConverter x:Key="InverseBoolToVisibility" />
+        <local:ExplorerNodeIconConverter x:Key="NodeIconConverter" />
+        <Style TargetType="ScrollBar" BasedOn="{StaticResource ExplorerScrollBar}" />
+
+        <Style TargetType="ContextMenu">
+            <Setter Property="Background" Value="{StaticResource BrushBgMenuPopup}" />
+            <Setter Property="BorderBrush" Value="{StaticResource BrushBorder}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="4" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ContextMenu">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6"
+                                Padding="{TemplateBinding Padding}">
+                            <StackPanel IsItemsHost="True"
+                                        KeyboardNavigation.DirectionalNavigation="Cycle" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="Separator">
+            <Setter Property="Background" Value="{StaticResource BrushBorder}" />
+            <Setter Property="BorderBrush" Value="{StaticResource BrushBorder}" />
+            <Setter Property="BorderThickness" Value="0,1,0,0" />
+            <Setter Property="Margin" Value="4,2" />
+            <Setter Property="Height" Value="1" />
+        </Style>
+            
         <ContextMenu x:Key="EditorContextMenu">
             <MenuItem Command="{x:Static ApplicationCommands.Cut}" />
             <MenuItem Command="{x:Static ApplicationCommands.Copy}" />

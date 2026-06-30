@@ -69,6 +69,14 @@ public partial class MainWindow
         return IntPtr.Zero;
     }
 
+    private void Find_Click(object sender, RoutedEventArgs e)
+    {
+        if (MainTabControl.SelectedContent is DocumentEditorView editor)
+        {
+            editor.OpenSearch();
+        }
+    }
+    
     private static void ApplyMaximizedWorkArea(IntPtr hwnd, IntPtr lParam)
     {
         var mmi = Marshal.PtrToStructure<MinMaxInfo>(lParam);

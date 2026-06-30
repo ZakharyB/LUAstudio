@@ -176,6 +176,7 @@ public partial class DocumentEditorView : UserControl, IDisposable
 
         _services = App.Services;
 
+        
         Loaded += OnEditorLoaded;
         Unloaded += OnEditorUnloaded;
     }
@@ -687,6 +688,11 @@ public partial class DocumentEditorView : UserControl, IDisposable
         }
     }
 
+    public void OpenSearch()
+    {
+        _searchPanelControl?.Open();
+    }
+    
     private void Find_Click(object sender, RoutedEventArgs e)
     {
         _searchPanelControl?.Open();

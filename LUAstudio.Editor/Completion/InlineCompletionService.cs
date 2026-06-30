@@ -101,7 +101,7 @@ public sealed class InlineCompletionService : IDisposable
         var caret = _editor.CaretOffset;
         var prefix = GetIdentifierPrefix(_editor.Document.Text, caret);
         _currentItem = item;
-        _renderer.SetGhostText(caret, prefix, item.DisplayText);
+        _renderer.SetGhostText(_editor.Document, caret, prefix, item.DisplayText);
         _editor.TextArea.TextView.InvalidateLayer(_renderer.Layer);
     }
 
@@ -184,7 +184,7 @@ public sealed class InlineCompletionService : IDisposable
         var index = Math.Clamp(selectedIndex, 0, filtered.Length - 1);
         var match = filtered[index];
         _currentItem = match;
-        _renderer.SetGhostText(caret, prefix, match.DisplayText);
+        _renderer.SetGhostText(_editor.Document, caret, prefix, match.DisplayText);
         _editor.TextArea.TextView.InvalidateLayer(_renderer.Layer);
     }
 
