@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Windows.Input;                  
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -11,15 +12,13 @@ using System.Windows.Media;
 using System.Windows.Threading;
 using ICSharpCode.AvalonEdit;
 using ICSharpCode.AvalonEdit.Document;
-using ICSharpCode.AvalonEdit.Editing;
 using ICSharpCode.AvalonEdit.Highlighting;
 using ICSharpCode.AvalonEdit.Rendering;
 using LUAstudio.Editor.Debugging;
 using LUAstudio.IDE.Documents;
 using LUAstudio.IDE.ViewModels;
+using ICSharpCode.AvalonEdit.Editing;
 using Microsoft.Extensions.DependencyInjection;
-
-// Type aliases to resolve ambiguity
 using AvalonDocument = ICSharpCode.AvalonEdit.Document.TextDocument;
 using CustomDocument = LUAstudio.IDE.Documents.TextDocument;
 
@@ -27,8 +26,6 @@ namespace LUAstudio;
 
 public partial class DocumentEditorView : UserControl, IDisposable
 {
-    #region Dependency Properties (Exposed Settings)
-
     public static readonly DependencyProperty DocumentProperty =
         DependencyProperty.Register(nameof(Document), typeof(CustomDocument), typeof(DocumentEditorView),
             new PropertyMetadata(null, OnDocumentChanged));
@@ -118,7 +115,6 @@ public partial class DocumentEditorView : UserControl, IDisposable
         set => SetValue(BreakpointMarginWidthProperty, value);
     }
 
-    // Caret reporting (bound to ViewModel)
     public static readonly DependencyProperty CaretLineProperty =
         DependencyProperty.Register(nameof(CaretLine), typeof(int), typeof(DocumentEditorView),
             new PropertyMetadata(0));
@@ -139,10 +135,6 @@ public partial class DocumentEditorView : UserControl, IDisposable
         set => SetValue(CaretColumnProperty, value);
     }
 
-    #endregion
-
-    #region Fields
-
     private readonly IServiceProvider _services;
     private AvalonDocument? _currentAvalonDocument;
     private CustomDocument? _boundCustomDocument;
@@ -160,64 +152,62 @@ public partial class DocumentEditorView : UserControl, IDisposable
     private RelativeLineNumberMargin? _relativeLineNumberMargin;
     private CustomSearchPanel? _searchPanelControl;
 
-    // Throttling for rapid content changes
     private DispatcherTimer? _throttleTimer;
     private string? _pendingContent;
 
-    // External file watcher
     private FileSystemWatcher? _fileWatcher;
     private bool _disposed;
-
-    #endregion
+    private ErrorSquiggleRenderer? _errorSquiggleRenderer;
 
     public DocumentEditorView()
     {
         InitializeComponent();
-
         _services = App.Services;
-
-        
         Loaded += OnEditorLoaded;
         Unloaded += OnEditorUnloaded;
     }
 
-    #region Load / Unload
-
+    private void OnDiagnosticsUpdated(object? sender, DiagnosticsUpdatedEventArgs e)
+    {
+        var errors = new List<(int Offset, int Length)>();
+        foreach (var diag in e.Diagnostics)
+        {
+            errors.Add((diag.Offset, diag.Length));
+        }
+        _errorSquiggleRenderer?.SetErrors(errors);
+    }
+    
     private void OnEditorLoaded(object sender, RoutedEventArgs e)
     {
         try
         {
             _isLoaded = true;
             _languageHost = _services.GetRequiredService<WpfDocumentEditorHost>();
+            _errorSquiggleRenderer = new ErrorSquiggleRenderer(Editor.TextArea.TextView);
+            Editor.TextArea.TextView.BackgroundRenderers.Add(_errorSquiggleRenderer);
             _settingsCoordinator = _services.GetRequiredService<EditorSettingsCoordinator>();
             _breakpointService = _services.GetRequiredService<IBreakpointService>();
             _navigationService = _services.GetRequiredService<EditorNavigationService>();
+            _languageHost.DiagnosticsUpdated += OnDiagnosticsUpdated;
 
-            // Setup margins
             EnsureBreakpointMargin();
             EnsureLineHighlighter();
             ApplyRelativeLineNumbers(ShowRelativeLineNumbers);
 
-            // Settings
             _settingsCoordinator.Register(Editor);
             ApplySettings();
 
-            // Navigation
             if (_navigationService != null)
                 _navigationService.NavigationRequested += OnNavigationRequested;
 
-            // Search panel
             _searchPanelControl = SearchPanelControl;
             _searchPanelControl.Attach(Editor);
             Editor.PreviewKeyDown += Editor_PreviewKeyDown;
 
-            // Caret
             EnsureCaretHook();
 
-            // Zoom
             Editor.PreviewMouseWheel += Editor_PreviewMouseWheel;
 
-            // Initial document
             if (Document != null)
                 ApplyDocument(Document, true);
             else if (_boundCustomDocument != null)
@@ -287,10 +277,6 @@ public partial class DocumentEditorView : UserControl, IDisposable
         }
     }
 
-    #endregion
-
-    #region Document Binding (Preserving Undo & Throttling)
-
     private static void OnDocumentChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         var view = (DocumentEditorView)d;
@@ -309,9 +295,7 @@ public partial class DocumentEditorView : UserControl, IDisposable
         _boundCustomDocument = newCustomDoc;
 
         if (newCustomDoc != null)
-        {
             newCustomDoc.PropertyChanged += OnCustomDocumentPropertyChanged;
-        }
 
         if (_isLoaded && IsEditorReady)
             ApplyDocument(newCustomDoc, false);
@@ -321,7 +305,6 @@ public partial class DocumentEditorView : UserControl, IDisposable
     {
         if (!IsEditorReady) return;
 
-        // Same document, just ensure content matches
         if (!forceNew && customDoc == _boundCustomDocument && _currentAvalonDocument != null)
         {
             var newContent = customDoc?.Content ?? string.Empty;
@@ -340,7 +323,6 @@ public partial class DocumentEditorView : UserControl, IDisposable
             return;
         }
 
-        // Different document: create new AvalonEdit document
         if (customDoc == null)
         {
             Editor.Document = new AvalonDocument(string.Empty);
@@ -392,8 +374,6 @@ public partial class DocumentEditorView : UserControl, IDisposable
         if (_currentAvalonDocument == null) return;
         var oldText = _currentAvalonDocument.Text;
         if (oldText == newContent) return;
-
-        // Use a single Replace operation to preserve undo stack (one undo step)
         _currentAvalonDocument.Replace(0, oldText.Length, newContent);
     }
 
@@ -410,7 +390,6 @@ public partial class DocumentEditorView : UserControl, IDisposable
         if (_currentAvalonDocument.Text == newContent)
             return;
 
-        // Throttle updates (live‑update scenarios)
         _pendingContent = newContent;
         if (_throttleTimer == null)
         {
@@ -454,10 +433,6 @@ public partial class DocumentEditorView : UserControl, IDisposable
         }
     }
 
-    #endregion
-
-    #region External File Watcher
-
     private void StartFileWatcher(string? filePath)
     {
         StopFileWatcher();
@@ -488,7 +463,6 @@ public partial class DocumentEditorView : UserControl, IDisposable
 
     private void OnFileWatcherChanged(object sender, FileSystemEventArgs e)
     {
-        // Guard against multiple rapid events
         _fileWatcher!.EnableRaisingEvents = false;
         Application.Current.Dispatcher.BeginInvoke(new Action(() =>
         {
@@ -503,22 +477,18 @@ public partial class DocumentEditorView : UserControl, IDisposable
                 try
                 {
                     var content = File.ReadAllText(e.FullPath);
-                    _boundCustomDocument!.Content = content; // triggers property changed
+                    _boundCustomDocument!.Content = content;
                 }
                 catch (Exception ex)
                 {
                     Debug.WriteLine($"Error reloading file: {ex.Message}");
                 }
             }
-            // Re‑enable watcher
+
             if (_fileWatcher != null)
                 _fileWatcher.EnableRaisingEvents = true;
         }));
     }
-
-    #endregion
-
-    #region Caret & Navigation
 
     private void EnsureCaretHook()
     {
@@ -531,7 +501,6 @@ public partial class DocumentEditorView : UserControl, IDisposable
     private void OnCaretPositionChanged(object? sender, EventArgs e)
     {
         ReportCaretPosition();
-        // Clear navigation highlights when caret moves
         _lineHighlighter?.ClearHighlights();
         _relativeLineNumberMargin?.InvalidateVisual();
     }
@@ -558,17 +527,11 @@ public partial class DocumentEditorView : UserControl, IDisposable
         Editor.TextArea.Caret.Line = line - 1;
         Editor.TextArea.Caret.Column = col - 1;
         Editor.TextArea.Caret.BringCaretToView();
-     //   Editor.ScrollToLine(line);
         Editor.TextArea.Caret.BringCaretToView();
-
 
         _lineHighlighter?.HighlightLine(line);
         Editor.Focus();
     }
-
-    #endregion
-
-    #region Custom Search Panel Keyboard Shortcut
 
     private void Editor_PreviewKeyDown(object sender, KeyEventArgs e)
     {
@@ -578,10 +541,6 @@ public partial class DocumentEditorView : UserControl, IDisposable
             e.Handled = true;
         }
     }
-
-    #endregion
-
-    #region Zoom (Ctrl+MouseWheel)
 
     private void Editor_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
     {
@@ -593,10 +552,6 @@ public partial class DocumentEditorView : UserControl, IDisposable
             e.Handled = true;
         }
     }
-
-    #endregion
-
-    #region Breakpoint Margin (Enhanced)
 
     private void EnsureBreakpointMargin()
     {
@@ -611,10 +566,6 @@ public partial class DocumentEditorView : UserControl, IDisposable
         Editor.TextArea.LeftMargins.Add(_breakpointMargin);
     }
 
-    #endregion
-
-    #region Line Highlighter (Enhanced)
-
     private void EnsureLineHighlighter()
     {
         if (_lineHighlighter == null && IsEditorReady)
@@ -624,10 +575,6 @@ public partial class DocumentEditorView : UserControl, IDisposable
         }
     }
 
-    #endregion
-
-    #region Relative Line Numbers
-
     private void OnShowRelativeLineNumbersChanged(bool show)
     {
         if (!IsEditorReady) return;
@@ -636,7 +583,6 @@ public partial class DocumentEditorView : UserControl, IDisposable
 
     private void ApplyRelativeLineNumbers(bool show)
     {
-        // Remove default line number margin (if present) and optionally add our custom one
         var existingNumberMargin = Editor.TextArea.LeftMargins
             .OfType<LineNumberMargin>().FirstOrDefault();
         if (show)
@@ -656,15 +602,9 @@ public partial class DocumentEditorView : UserControl, IDisposable
                 Editor.TextArea.LeftMargins.Remove(_relativeLineNumberMargin);
                 _relativeLineNumberMargin = null;
             }
-            // Restore default line numbers (ShowLineNumbers property controls that)
-            // The built‑in margin is automatically managed; we just ensure ShowLineNumbers is true
             Editor.ShowLineNumbers = true;
         }
     }
-
-    #endregion
-
-    #region Context Menu Commands
 
     private void ToggleBreakpoint_Click(object sender, RoutedEventArgs e)
     {
@@ -692,15 +632,11 @@ public partial class DocumentEditorView : UserControl, IDisposable
     {
         _searchPanelControl?.Open();
     }
-    
+
     private void Find_Click(object sender, RoutedEventArgs e)
     {
         _searchPanelControl?.Open();
     }
-
-    #endregion
-
-    #region Drag & Drop
 
     private void OnDrop(object sender, DragEventArgs e)
     {
@@ -715,22 +651,13 @@ public partial class DocumentEditorView : UserControl, IDisposable
         }
     }
 
-    #endregion
-
-    #region Settings & Visual Indicators
-
     private void ApplySettings()
     {
         Editor.Options.IndentationSize = TabSize;
         Editor.Options.ConvertTabsToSpaces = true;
-
-        // Visual indicators: current line highlight and matching brace
         Editor.Options.HighlightCurrentLine = true;
         Editor.TextArea.TextView.CurrentLineBackground = new SolidColorBrush(Color.FromArgb(40, 0, 0, 0));
         Editor.TextArea.TextView.CurrentLineBorder = new Pen(Brushes.Transparent, 0);
-
-        // Bracket highlighting (property name may vary; adjust to your AvalonEdit version)
-       // Editor.Options.ShowBracketHighlighting = true;
     }
 
     private void Editor_Loaded(object sender, RoutedEventArgs e)
@@ -739,10 +666,6 @@ public partial class DocumentEditorView : UserControl, IDisposable
     }
 
     private bool IsEditorReady => Editor != null && Editor.TextArea != null;
-
-    #endregion
-
-    #region IDisposable
 
     public void Dispose()
     {
@@ -762,349 +685,5 @@ public partial class DocumentEditorView : UserControl, IDisposable
                 _languageHost?.Detach(Editor, _boundCustomDocument);
         }
         _disposed = true;
-    }
-
-    #endregion
-}
-
-// ============================================
-// Enhanced Helper Classes
-// ============================================
-
-// LineHighlighter with multiple lines, configurable duration
-public class LineHighlighter : IDisposable
-{
-    private readonly TextView _textView;
-    private DispatcherTimer? _timer;
-    private TimeSpan? _highlightDuration = TimeSpan.FromSeconds(2);
-    private readonly HashSet<int> _highlightedLines = new HashSet<int>();
-    private readonly LineHighlightTransformer _transformer;
-
-    public LineHighlighter(TextView textView)
-    {
-        _textView = textView;
-        _transformer = new LineHighlightTransformer(this);
-        _textView.LineTransformers.Add(_transformer);
-    }
-
-    public void SetHighlightDuration(TimeSpan? duration)
-    {
-        _highlightDuration = duration;
-        if (_timer != null)
-        {
-            _timer.Interval = duration ?? TimeSpan.Zero;
-        }
-    }
-
-    public void HighlightLine(int line)
-    {
-        if (line <= 0) return;
-        _highlightedLines.Add(line);
-        _textView.InvalidateVisual();
-
-        if (_highlightDuration.HasValue && _highlightDuration.Value > TimeSpan.Zero)
-        {
-            if (_timer == null)
-            {
-                _timer = new DispatcherTimer { Interval = _highlightDuration.Value };
-                _timer.Tick += OnTimerTick;
-            }
-            _timer.Stop();
-            _timer.Start();
-        }
-    }
-
-    public void ClearHighlights()
-    {
-        if (_highlightedLines.Count == 0) return;
-        _highlightedLines.Clear();
-        _textView.InvalidateVisual();
-        _timer?.Stop();
-    }
-
-    private void OnTimerTick(object? sender, EventArgs e)
-    {
-        _timer?.Stop();
-        ClearHighlights();
-    }
-
-    public void Dispose()
-    {
-        _timer?.Stop();
-        _textView.LineTransformers.Remove(_transformer);
-    }
-
-    private class LineHighlightTransformer : IVisualLineTransformer
-    {
-        private readonly LineHighlighter _owner;
-        public LineHighlightTransformer(LineHighlighter owner) => _owner = owner;
-
-        public void Transform(ITextRunConstructionContext context, IList<VisualLineElement> elements)
-        {
-            if (_owner._highlightedLines.Count == 0) return;
-            int line = context.VisualLine.FirstDocumentLine.LineNumber;
-            if (!_owner._highlightedLines.Contains(line)) return;
-
-            foreach (var element in elements)
-            {
-                element.TextRunProperties.SetBackgroundBrush(Brushes.LightYellow);
-            }
-        }
-    }
-}
-
-// BreakpointMargin with caching, event subscription, state‑aware rendering, configurable width
-public class BreakpointMargin : AbstractMargin, IDisposable
-{
-    private readonly IBreakpointService _breakpointService;
-    private string? _sourcePath;
-    private double _marginWidth = 20;
-    private List<CachedBreakpointVisual> _cachedVisuals = new List<CachedBreakpointVisual>();
-
-    public string? SourcePath
-    {
-        get => _sourcePath;
-        set
-        {
-            if (_sourcePath != value)
-            {
-                UnsubscribeBreakpointEvents();
-                _sourcePath = value;
-                SubscribeBreakpointEvents();
-                InvalidateCache();
-                InvalidateVisual();
-            }
-        }
-    }
-
-    public double MarginWidth
-    {
-        get => _marginWidth;
-        set
-        {
-            if (Math.Abs(_marginWidth - value) > 0.01)
-            {
-                _marginWidth = value;
-                Width = value;
-                InvalidateVisual();
-            }
-        }
-    }
-
-    public BreakpointMargin(IBreakpointService service)
-    {
-        _breakpointService = service;
-        Width = _marginWidth;
-        SubscribeBreakpointEvents();
-    }
-
-    public void SetDocument(CustomDocument? doc) { /* no‑op */ }
-
-    private void SubscribeBreakpointEvents()
-    {
-        if (_breakpointService != null)
-            _breakpointService.BreakpointsChanged += OnBreakpointsChanged;
-    }
-
-    private void UnsubscribeBreakpointEvents()
-    {
-        if (_breakpointService != null)
-            _breakpointService.BreakpointsChanged -= OnBreakpointsChanged;
-    }
-
-    // Signature matches Action
-    private void OnBreakpointsChanged()
-    {
-        InvalidateCache();
-        Dispatcher.InvokeAsync(InvalidateVisual, DispatcherPriority.Background);
-    }
-
-    protected override void OnRender(DrawingContext drawingContext)
-    {
-        base.OnRender(drawingContext);
-        if (_sourcePath == null || TextView?.Document == null) return;
-
-        foreach (var bpVisual in _cachedVisuals)
-        {
-            var yPos = bpVisual.YPosition;
-            var radius = bpVisual.Radius;
-            var center = new Point(Width / 2, yPos - radius / 2);
-            drawingContext.DrawEllipse(bpVisual.Fill, bpVisual.Stroke, center, radius, radius);
-        }
-    }
-
-    protected override void OnTextViewChanged(TextView oldTextView, TextView newTextView)
-    {
-        if (oldTextView != null)
-            oldTextView.VisualLinesChanged -= OnVisualLinesChanged;
-        if (newTextView != null)
-            newTextView.VisualLinesChanged += OnVisualLinesChanged;
-        InvalidateCache();
-        InvalidateVisual();
-    }
-
-    private void OnVisualLinesChanged(object? sender, EventArgs e)
-    {
-        InvalidateCache();
-        InvalidateVisual();
-    }
-
-    private void InvalidateCache()
-    {
-        _cachedVisuals.Clear();
-        if (_sourcePath == null || TextView?.Document == null) return;
-
-        var breakpoints = _breakpointService.GetBreakpointsForFile(_sourcePath);
-        if (breakpoints == null) return;
-
-        // NOTE: BreakpointKey does not currently expose a State property.
-        // To show different colors for disabled/error breakpoints, extend the
-        // BreakpointKey record with a State enum and adjust the logic below.
-        foreach (var bp in breakpoints)
-        {
-            var line = bp.Line;
-            if (line > TextView.Document.LineCount) continue;
-
-            var yPos = TextView.GetVisualPosition(
-                new TextViewPosition(line, 1, 0),
-                VisualYPosition.LineBottom).Y;
-
-            Brush fill = Brushes.Red;
-            Pen stroke = new Pen(Brushes.DarkRed, 1);
-
-            _cachedVisuals.Add(new CachedBreakpointVisual
-            {
-                YPosition = yPos,
-                Radius = 6.0,
-                Fill = fill,
-                Stroke = stroke
-            });
-        }
-    }
-
-    protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
-    {
-        base.OnMouseLeftButtonDown(e);
-        if (_sourcePath == null || TextView == null) return;
-
-        var pos = e.GetPosition(this);
-        var line = GetLineFromY(pos.Y);
-        if (line.HasValue)
-        {
-            _breakpointService.ToggleBreakpoint(_sourcePath, line.Value);
-        }
-    }
-
-    private int? GetLineFromY(double y)
-    {
-        if (TextView == null) return null;
-        foreach (var vl in TextView.VisualLines)
-        {
-            var top = TextView.GetVisualPosition(
-                new TextViewPosition(vl.FirstDocumentLine.LineNumber, 1, 0),
-                VisualYPosition.LineTop).Y;
-            var bottom = TextView.GetVisualPosition(
-                new TextViewPosition(vl.FirstDocumentLine.LineNumber, 1, 0),
-                VisualYPosition.LineBottom).Y;
-            if (y >= top && y <= bottom)
-                return vl.FirstDocumentLine.LineNumber;
-        }
-        return null;
-    }
-
-    protected override Size MeasureOverride(Size availableSize)
-    {
-        return new Size(_marginWidth, availableSize.Height);
-    }
-
-    public void Dispose()
-    {
-        UnsubscribeBreakpointEvents();
-    }
-
-    private class CachedBreakpointVisual
-    {
-        public double YPosition;
-        public double Radius;
-        public Brush Fill;
-        public Pen Stroke;
-    }
-}
-
-// Custom margin for relative line numbers
-public class RelativeLineNumberMargin : AbstractMargin
-{
-    private readonly TextEditor _editor;
-
-    public RelativeLineNumberMargin(TextEditor editor)
-    {
-        _editor = editor;
-        Width = 40;
-    }
-
-    protected override void OnRender(DrawingContext drawingContext)
-    {
-        base.OnRender(drawingContext);
-        if (_editor.Document == null) return;
-
-        var caretLine = _editor.TextArea.Caret.Line;
-        var typeface = new Typeface(_editor.FontFamily, _editor.FontStyle, _editor.FontWeight, _editor.FontStretch);
-        var foreground = _editor.LineNumbersForeground ?? Brushes.Gray;
-        var fontSize = _editor.FontSize;
-        var format = new FormattedText("0", System.Globalization.CultureInfo.CurrentCulture,
-            FlowDirection.LeftToRight, typeface, fontSize, foreground, VisualTreeHelper.GetDpi(this).PixelsPerDip);
-
-        foreach (var visualLine in TextView.VisualLines)
-        {
-            int lineNum = visualLine.FirstDocumentLine.LineNumber;
-            int relative = lineNum - caretLine;
-            string text = relative == 0 ? ">" : relative.ToString();
-            double y = visualLine.GetTextLineVisualYPosition(visualLine.TextLines[0], VisualYPosition.TextTop);
-            drawingContext.DrawText(new FormattedText(text,
-                System.Globalization.CultureInfo.CurrentCulture,
-                FlowDirection.LeftToRight,
-                typeface,
-                fontSize,
-                foreground,
-                VisualTreeHelper.GetDpi(this).PixelsPerDip),
-                new Point(Width - 5 - 10, y));
-        }
-    }
-
-    protected override Size MeasureOverride(Size availableSize)
-    {
-        return new Size(40, availableSize.Height);
-    }
-}
-
-// Simple input dialog (unchanged)
-public class InputDialog : Window
-{
-    public string? Result { get; private set; }
-
-    public InputDialog(string title, string prompt)
-    {
-        Title = title;
-        Width = 300;
-        Height = 150;
-        var txtInput = new TextBox { Name = "txtInput", Margin = new Thickness(10) };
-        var okButton = new Button { Content = "OK", Width = 75, Margin = new Thickness(5), IsDefault = true };
-        var cancelButton = new Button { Content = "Cancel", Width = 75, Margin = new Thickness(5), IsCancel = true };
-
-        okButton.Click += (s, e) => { Result = txtInput.Text; DialogResult = true; };
-        cancelButton.Click += (s, e) => DialogResult = false;
-
-        Content = new StackPanel
-        {
-            Children =
-            {
-                new Label { Content = prompt },
-                txtInput,
-                new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center,
-                    Children = { okButton, cancelButton } }
-            }
-        };
-
-        Loaded += (s, e) => txtInput.Focus();
     }
 }

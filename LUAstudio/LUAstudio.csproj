@@ -40,6 +40,18 @@
       <Folder Include="Assets\Fonts\" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Compile Update="EditorHelpers.cs">
+        <DependentUpon>DocumentEditorView.xaml</DependentUpon>
+      </Compile>
+      <Compile Update="InputDialog.cs">
+        <DependentUpon>DocumentEditorView.xaml</DependentUpon>
+      </Compile>
+      <Compile Update="ErrorSquiggleRenderer.cs">
+        <DependentUpon>DocumentEditorView.xaml</DependentUpon>
+      </Compile>
+    </ItemGroup>
+
     <PropertyGroup>
         <OutputType>WinExe</OutputType>
         <TargetFramework>net8.0-windows</TargetFramework>
