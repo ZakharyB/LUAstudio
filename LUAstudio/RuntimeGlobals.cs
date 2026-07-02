@@ -20,6 +20,12 @@ public static class RuntimeGlobals
         Register(SettingKeys.EditorForeground, new GlobalValue<string>(SettingKeys.EditorForeground, "#BCBEC8"));
         Register(SettingKeys.EditorBackground, new GlobalValue<string>(SettingKeys.EditorBackground, "#0E0F11"));
 
+        Register(SettingKeys.EditorBreakpointMarginWidth, new GlobalValue<double>(SettingKeys.EditorBreakpointMarginWidth, 20d));
+        Register(SettingKeys.EditorHighlightDurationSeconds, new GlobalValue<double>(SettingKeys.EditorHighlightDurationSeconds, 2d));
+        Register(SettingKeys.EditorShowRelativeLineNumbers, new GlobalValue<bool>(SettingKeys.EditorShowRelativeLineNumbers, false));
+        Register(SettingKeys.EditorHighlightCurrentLine, new GlobalValue<bool>(SettingKeys.EditorHighlightCurrentLine, true));
+        Register(SettingKeys.EditorShowBracketHighlighting, new GlobalValue<bool>(SettingKeys.EditorShowBracketHighlighting, true));
+        
         Register(SettingKeys.EditorColorKeyword, new GlobalValue<string>(SettingKeys.EditorColorKeyword, "#C586C8"));
         Register(SettingKeys.EditorColorString, new GlobalValue<string>(SettingKeys.EditorColorString, "#CE9178"));
         Register(SettingKeys.EditorColorNumber, new GlobalValue<string>(SettingKeys.EditorColorNumber, "#B5CEA8"));

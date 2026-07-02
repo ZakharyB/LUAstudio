@@ -574,6 +574,51 @@
         <Setter Property="MinHeight" Value="28" />
     </Style>
 
+    <Style x:Key="SettingsToggleButton" TargetType="ToggleButton">
+        <Setter Property="Background" Value="{StaticResource BrushBgTab}" />
+        <Setter Property="Foreground" Value="{StaticResource BrushText}" />
+        <Setter Property="BorderBrush" Value="{StaticResource BrushBorder}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="14,6" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToggleButton">
+                    <Border x:Name="Bd"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{StaticResource RadiusSmall}"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="Center"
+                                          VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <!-- Hover -->
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background"
+                                    Value="{StaticResource BrushBgHover}" />
+                        </Trigger>
+                        <!-- Pressed / Checked – use accent colour -->
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Bd" Property="Background"
+                                    Value="{StaticResource BrushAccent}" />
+                            <Setter Property="Foreground"
+                                    Value="{StaticResource BrushTextOnAccent}" />
+                        </Trigger>
+                        <!-- Also keep the press effect when mouse is down -->
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Bd" Property="Background"
+                                    Value="{StaticResource BrushAccent}" />
+                            <Setter Property="Foreground"
+                                    Value="{StaticResource BrushTextOnAccent}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    
     <Style x:Key="SettingsButton" TargetType="Button">
         <Setter Property="Background" Value="{StaticResource BrushBgTab}" />
         <Setter Property="Foreground" Value="{StaticResource BrushText}" />

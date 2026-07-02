@@ -1,5 +1,7 @@
 ﻿using LUAstudio.Abstractions;
 using LUAstudio.Core;
+using LUAstudio.Plugins;
+using LUAstudio.Plugins.Views;
 using LUAstudio.Editor.Debugging;
 using LUAstudio.IDE.ViewModels;
 using LUAstudio.Settings.Views;
@@ -67,6 +69,14 @@ public partial class MainWindow
         return IntPtr.Zero;
     }
 
+    private void Find_Click(object sender, RoutedEventArgs e)
+    {
+        if (MainTabControl.SelectedContent is DocumentEditorView editor)
+        {
+            editor.OpenSearch();
+        }
+    }
+    
     private static void ApplyMaximizedWorkArea(IntPtr hwnd, IntPtr lParam)
     {
         var mmi = Marshal.PtrToStructure<MinMaxInfo>(lParam);
@@ -192,6 +202,12 @@ public partial class MainWindow
     private void OpenSettings_OnClick(object sender, RoutedEventArgs e)
     {
         var window = new SettingsWindow { Owner = this };
+        window.ShowDialog();
+    }
+    
+    private void OpenPlugins_OnClick(object sender, RoutedEventArgs e)
+    {
+        var window = new PluginsWindow { Owner = this };
         window.ShowDialog();
     }
 

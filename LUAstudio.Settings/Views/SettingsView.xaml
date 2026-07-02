@@ -82,6 +82,34 @@
                     <CheckBox Style="{StaticResource SettingsCheckBox}" Content="Word wrap" IsChecked="{Binding EditorWordWrap}" />
                     <CheckBox Style="{StaticResource SettingsCheckBox}" Content="Convert tabs to spaces" IsChecked="{Binding EditorConvertTabsToSpaces}" />
 
+                    <TextBlock Text="Breakpoints &amp; Navigation"
+                               Style="{StaticResource SettingsSectionHeader}"
+                               Margin="0,16,0,8" />
+
+                    <Grid Margin="0,4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="160" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Style="{StaticResource SettingsLabel}" Text="Breakpoint margin width (px)" />
+                        <TextBox Grid.Column="1" Style="{StaticResource SettingsTextBox}"
+                                 Text="{Binding EditorBreakpointMarginWidth, UpdateSourceTrigger=PropertyChanged}" />
+                    </Grid>
+
+                    <Grid Margin="0,4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="160" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Style="{StaticResource SettingsLabel}" Text="Line highlight duration (sec)" />
+                        <TextBox Grid.Column="1" Style="{StaticResource SettingsTextBox}"
+                                 Text="{Binding EditorHighlightDurationSeconds, UpdateSourceTrigger=PropertyChanged}" />
+                    </Grid>
+
+                    <CheckBox Style="{StaticResource SettingsCheckBox}" Content="Show relative line numbers" IsChecked="{Binding EditorShowRelativeLineNumbers}" />
+                    <CheckBox Style="{StaticResource SettingsCheckBox}" Content="Highlight current line" IsChecked="{Binding EditorHighlightCurrentLine}" />
+                    <CheckBox Style="{StaticResource SettingsCheckBox}" Content="Show bracket highlighting" IsChecked="{Binding EditorShowBracketHighlighting}" />
+                    
                     <Grid Margin="0,8,0,4">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="160" />
