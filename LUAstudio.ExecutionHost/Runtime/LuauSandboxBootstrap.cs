@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Collections.Concurrent;
 using Luau;
 using Luau.Native;
 using static Luau.Native.NativeMethods;
@@ -14,8 +15,7 @@ public sealed class LuauSandboxBootstrap
 
     public unsafe void Configure(LuauState state, bool enableRobloxMocks, Action<string, string>? output)
     {
-        SandboxNativeBindings.Output = output;
-        SandboxNativeBindings.Trace = _trace;
+        SandboxNativeBindings.Register(state.AsPointer(), output, _trace);
         state.OpenBaseLibrary();
         state.OpenMathLibrary();
         state.OpenTableLibrary();
@@ -85,20 +85,13 @@ public sealed class LuauSandboxBootstrap
 
 internal static unsafe class SandboxNativeBindings
 {
-    [ThreadStatic] private static Action<string, string>? _threadOutput;
-    [ThreadStatic] private static ExecutionTraceRecorder? _threadTrace;
+    private sealed record StateBindings(Action<string, string>? Output, ExecutionTraceRecorder? Trace);
+    private static readonly ConcurrentDictionary<nint, StateBindings> Bindings = new();
 
-    public static Action<string, string>? Output
-    {
-        get => _threadOutput;
-        set => _threadOutput = value;
-    }
+    public static void Register(lua_State* state, Action<string, string>? output, ExecutionTraceRecorder? trace) =>
+        Bindings[(nint)state] = new StateBindings(output, trace);
 
-    public static ExecutionTraceRecorder? Trace
-    {
-        get => _threadTrace;
-        set => _threadTrace = value;
-    }
+    public static void Unregister(lua_State* state) => Bindings.TryRemove((nint)state, out _);
 
     public static int Print(lua_State* L)
     {
@@ -110,7 +103,10 @@ internal static unsafe class SandboxNativeBindings
             parts.Add(valuePtr == null ? "nil" : Marshal.PtrToStringUTF8((IntPtr)valuePtr) ?? "nil");
         }
 
-        Output?.Invoke("stdout", string.Join('\t', parts));
+        if (Bindings.TryGetValue((nint)L, out var bindings))
+        {
+            bindings.Output?.Invoke("stdout", string.Join('\t', parts));
+        }
         return 0;
     }
 
@@ -118,7 +114,10 @@ internal static unsafe class SandboxNativeBindings
     {
         var classNamePtr = lua_tostring(L, 1);
         var className = classNamePtr == null ? "Part" : Marshal.PtrToStringUTF8((IntPtr)classNamePtr) ?? "Part";
-        Trace?.RecordMockCall("Instance.new", className);
+        if (Bindings.TryGetValue((nint)L, out var bindings))
+        {
+            bindings.Trace?.RecordMockCall("Instance.new", className);
+        }
 
         lua_newtable(L);
         PushLiteral(L, "ClassName");

@@ -7,12 +7,12 @@ using LUAstudio.IDE.Handlers;
 using LUAstudio.IntelliSense.Events;
 using LUAstudio.Core.Events;
 using LUAstudio.Languages.Text;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace LUAstudio;
 
 public sealed class WpfDocumentEditorHost : IDisposable
 {
-    private readonly EditorIntelliSenseController _intelliSense;
     private readonly EditorDiagnosticService _diagnostics;
     private readonly DocumentAnalysisHandler _analysisHandler;
     private readonly IEventBus _eventBus;
@@ -21,15 +21,15 @@ public sealed class WpfDocumentEditorHost : IDisposable
     private readonly Dictionary<Guid, EditorDiagnosticHoverController> _diagnosticHovers = new();
 
     public WpfDocumentEditorHost(
-        EditorIntelliSenseController intelliSense,
         EditorDiagnosticService diagnostics,
         DocumentAnalysisHandler analysisHandler,
-        IEventBus eventBus)
+        IEventBus eventBus,
+        IServiceProvider services)
     {
-        _intelliSense = intelliSense;
         _diagnostics = diagnostics;
         _analysisHandler = analysisHandler;
         _eventBus = eventBus;
+        _services = services;
         _eventBus.Subscribe<DocumentAnalyzedEvent>(OnDocumentAnalyzed);
     }
 
@@ -58,13 +58,22 @@ public sealed class WpfDocumentEditorHost : IDisposable
         }
 
         folding.Attach(editor);
-        _intelliSense.Attach(editor, document.Id, document.FilePath, dialect);
+        if (_intelliSenseControllers.Remove(document.Id, out var previousController))
+        {
+            previousController.Dispose();
+        }
+
+        var controller = _services.GetRequiredService<EditorIntelliSenseController>();
+        controller.Attach(editor, document.Id, document.FilePath, dialect);
+        _intelliSenseControllers[document.Id] = controller;
     }
 
     public void Detach(TextEditor editor, TextDocument document)
     {
         _editors.Remove(document.Id);
-        _diagnostics.ClearMarkers(editor, document.Id);
+        // AvalonDock unloads tab content while switching documents. Keep the
+        // document's latest markers so the squiggles are immediately available
+        // when that tab is shown again instead of disappearing until re-analysis.
 
         if (_foldings.Remove(document.Id, out var folding))
         {
@@ -85,7 +94,10 @@ public sealed class WpfDocumentEditorHost : IDisposable
         var dialect = document.FilePath?.EndsWith(".luau", StringComparison.OrdinalIgnoreCase) == true
             ? LuaDialect.Luau
             : LuaDialect.Lua;
-        _intelliSense.OnTextChanged(document.Content, document.FilePath, dialect);
+        if (_intelliSenseControllers.TryGetValue(document.Id, out var controller))
+        {
+            controller.OnTextChanged(document.Content, document.FilePath, dialect);
+        }
     }
 
     private void OnDocumentAnalyzed(DocumentAnalyzedEvent e)
