@@ -14,22 +14,20 @@ public sealed class WpfDocumentEditorHost : IDisposable
 {
     private readonly EditorIntelliSenseController _intelliSense;
     private readonly EditorDiagnosticService _diagnostics;
-    private readonly EditorDiagnosticHoverController _diagnosticHover;
     private readonly DocumentAnalysisHandler _analysisHandler;
     private readonly IEventBus _eventBus;
     private readonly Dictionary<Guid, TextEditor> _editors = new();
     private readonly Dictionary<Guid, EditorFoldingManager> _foldings = new();
+    private readonly Dictionary<Guid, EditorDiagnosticHoverController> _diagnosticHovers = new();
 
     public WpfDocumentEditorHost(
         EditorIntelliSenseController intelliSense,
         EditorDiagnosticService diagnostics,
-        EditorDiagnosticHoverController diagnosticHover,
         DocumentAnalysisHandler analysisHandler,
         IEventBus eventBus)
     {
         _intelliSense = intelliSense;
         _diagnostics = diagnostics;
-        _diagnosticHover = diagnosticHover;
         _analysisHandler = analysisHandler;
         _eventBus = eventBus;
         _eventBus.Subscribe<DocumentAnalyzedEvent>(OnDocumentAnalyzed);
@@ -44,7 +42,14 @@ public sealed class WpfDocumentEditorHost : IDisposable
         _editors[document.Id] = editor;
         _diagnostics.Attach(editor, document.Id);
         _diagnostics.RegisterMarkerRenderer(editor);
-        _diagnosticHover.Attach(editor, document.Id);
+        if (_diagnosticHovers.Remove(document.Id, out var previousHover))
+        {
+            previousHover.Detach();
+        }
+
+        var hover = new EditorDiagnosticHoverController(_diagnostics);
+        hover.Attach(editor, document.Id);
+        _diagnosticHovers[document.Id] = hover;
 
         if (!_foldings.TryGetValue(document.Id, out var folding))
         {
@@ -68,7 +73,10 @@ public sealed class WpfDocumentEditorHost : IDisposable
         }
 
         _intelliSense.DetachIfEditor(editor);
-        _diagnosticHover.Detach();
+        if (_diagnosticHovers.Remove(document.Id, out var hover))
+        {
+            hover.Detach();
+        }
     }
 
     public void NotifyContentChanged(TextDocument document)
@@ -99,6 +107,12 @@ public sealed class WpfDocumentEditorHost : IDisposable
         }
 
         _foldings.Clear();
+        foreach (var hover in _diagnosticHovers.Values)
+        {
+            hover.Detach();
+        }
+
+        _diagnosticHovers.Clear();
         _intelliSense.Dispose();
     }
 }
