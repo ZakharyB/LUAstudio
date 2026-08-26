@@ -83,14 +83,6 @@ public sealed class LuauRuntime : IDisposable
 
     private void DisposeState()
     {
-        if (_state is not null)
-        {
-            unsafe
-            {
-                SandboxNativeBindings.Unregister(_state.AsPointer());
-            }
-        }
-
         _state?.Dispose();
         _state = null;
         _requirer = null;

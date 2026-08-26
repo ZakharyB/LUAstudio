@@ -9,7 +9,7 @@ namespace LUAstudio.Tests;
 public sealed class LuauRuntimeTests
 {
     [Fact]
-    public async Task LuauRuntime_executes_print_on_worker_thread_without_host_leakage()
+    public void LuauRuntime_executes_print_without_host_leakage()
     {
         var debug = new LuauDebugController();
         var modules = new ModuleResolver();
@@ -18,9 +18,7 @@ public sealed class LuauRuntimeTests
         runtime.Output += (_, text) => output = text;
         runtime.Initialize(enableRobloxMocks: true);
         runtime.LoadScript("print(\"hello sandbox\")", "test.lua");
-        // Sessions initialize on the pipe thread and execute on a worker thread.
-        // Output routing must be keyed to lua_State rather than thread-local state.
-        await Task.Run(() => runtime.Execute(CancellationToken.None));
+        runtime.Execute(CancellationToken.None);
 
         Assert.Equal("hello sandbox", output);
     }

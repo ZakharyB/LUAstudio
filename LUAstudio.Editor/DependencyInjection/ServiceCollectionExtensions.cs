@@ -15,14 +15,12 @@ public static class ServiceCollectionExtensions
     {
         services.AddLuaStudioIntelliSense();
         services.AddSingleton<EditorDiagnosticService>();
+        services.AddSingleton<EditorDiagnosticHoverController>();
         services.AddSingleton<IBreakpointService, BreakpointService>();
-        // These types hold editor-specific event handlers and renderer state.  They
-        // must never be shared: attaching a singleton to a second tab detaches the
-        // first tab and removes its highlighting/completion handlers.
-        services.AddTransient<InlineCompletionService>();
-        services.AddTransient<SmartEnterHandler>();
-        services.AddTransient<AutoPairInsertService>();
-        services.AddTransient<EditorIntelliSenseController>();
+        services.AddSingleton<InlineCompletionService>();
+        services.AddSingleton<SmartEnterHandler>();
+        services.AddSingleton<AutoPairInsertService>();
+        services.AddSingleton<EditorIntelliSenseController>();
         return services;
     }
 }
