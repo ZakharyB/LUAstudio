@@ -261,7 +261,7 @@
                                                    CanAutoHide="True">
                                 <local:DiagnosticsPanelView x:Name="DiagnosticsPanel" />
                             </dock:LayoutAnchorable>
-                            <dock:LayoutAnchorable Title="Output"
+                            <dock:LayoutAnchorable Title="Terminal / Run OUTPUT"
                                                    ContentId="Output"
                                                    CanClose="False"
                                                    CanHide="True"
@@ -270,6 +270,7 @@
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto" />
                                         <RowDefinition Height="*" />
+                                        <RowDefinition Height="Auto" />
                                     </Grid.RowDefinitions>
                                     <DockPanel Grid.Row="0" Margin="8,6">
                                         <Button DockPanel.Dock="Right"
@@ -301,6 +302,28 @@
                                             </Style>
                                         </ListBox.ItemContainerStyle>
                                     </ListBox>
+                                    <DockPanel Grid.Row="2"
+                                               Margin="8,4,8,8"
+                                               LastChildFill="True">
+                                        <TextBlock DockPanel.Dock="Left"
+                                                   Margin="0,0,6,0"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="{StaticResource BrushTextMuted}"
+                                                   FontFamily="Cascadia Mono, Consolas"
+                                                   Text="&gt;" />
+                                        <TextBox Text="{Binding ElementName=DebugPanel, Path=DataContext.TerminalCommand, UpdateSourceTrigger=PropertyChanged}"
+                                                 Background="{StaticResource BrushBgPanel}"
+                                                 Foreground="{StaticResource BrushText}"
+                                                 BorderBrush="{StaticResource BrushBorder}"
+                                                 FontFamily="Cascadia Mono, Consolas"
+                                                 Padding="6,4"
+                                                 ToolTip="Run a Microsoft Command Prompt command (for example: cd, cls, dir)">
+                                            <TextBox.InputBindings>
+                                                <KeyBinding Key="Enter"
+                                                            Command="{Binding ElementName=DebugPanel, Path=DataContext.ExecuteTerminalCommandCommand}" />
+                                            </TextBox.InputBindings>
+                                        </TextBox>
+                                    </DockPanel>
                                 </Grid>
                             </dock:LayoutAnchorable>
                         </dock:LayoutAnchorablePane>
