@@ -126,27 +126,27 @@ public sealed class SandboxHostServer
 
                 case SandboxMessageKind.Execute:
                     _sessions.Get(Required<SessionCommandRequest>(envelope).SessionId).Execute();
-                    return null;
+                    return Ack(envelope, null);
 
                 case SandboxMessageKind.Continue:
                     _sessions.Get(Required<SessionCommandRequest>(envelope).SessionId).Continue();
-                    return null;
+                    return Ack(envelope, null);
 
                 case SandboxMessageKind.Pause:
                     _sessions.Get(Required<SessionCommandRequest>(envelope).SessionId).Pause();
-                    return null;
+                    return Ack(envelope, null);
 
                 case SandboxMessageKind.StepOver:
                     _sessions.Get(Required<SessionCommandRequest>(envelope).SessionId).StepOver();
-                    return null;
+                    return Ack(envelope, null);
 
                 case SandboxMessageKind.StepInto:
                     _sessions.Get(Required<SessionCommandRequest>(envelope).SessionId).StepInto();
-                    return null;
+                    return Ack(envelope, null);
 
                 case SandboxMessageKind.StepOut:
                     _sessions.Get(Required<SessionCommandRequest>(envelope).SessionId).StepOut();
-                    return null;
+                    return Ack(envelope, null);
 
                 case SandboxMessageKind.Stop:
                     _sessions.Stop(Required<SessionCommandRequest>(envelope).SessionId);

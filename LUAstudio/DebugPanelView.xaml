@@ -98,12 +98,14 @@
                     </Button>
                     <Button Style="{StaticResource DebugButtonStyle}"
                             Command="{Binding StepIntoCommand}"
+                            IsEnabled="{Binding CanStepInto}"
                             ToolTip="Step Into (F11)"
                             Margin="0,0,4,0">
                         <TextBlock Text="&#xE76D;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
                     </Button>
                     <Button Style="{StaticResource DebugButtonStyle}"
                             Command="{Binding StepOutCommand}"
+                            IsEnabled="{Binding CanStepOut}"
                             ToolTip="Step Out (Shift+F11)"
                             Margin="0,0,4,0">
                         <TextBlock Text="&#xE768;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
@@ -111,6 +113,7 @@
                     <Separator Width="1" Background="{StaticResource BrushBorder}" Margin="8,0"/>
                     <Button Style="{StaticResource DebugButtonStyle}"
                             Command="{Binding ContinueCommand}"
+                            IsEnabled="{Binding CanContinue}"
                             ToolTip="Continue (F5)"
                             Margin="0,0,4,0">
                         <TextBlock Text="&#xE768;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
@@ -138,13 +141,21 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
-                        <Button Grid.Row="0"
-                                Content="Refresh"
-                                Command="{Binding RefreshVariablesCommand}"
-                                Style="{StaticResource DebugButtonStyle}"
-                                HorizontalAlignment="Right"
-                                Margin="8,6"
-                                Padding="12,4"/>
+                        <Grid Grid.Row="0" Margin="8,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0" Text="{Binding WatchExpression, UpdateSourceTrigger=PropertyChanged}"
+                                     Background="{StaticResource BrushBgEditor}" Foreground="{StaticResource BrushText}"
+                                     BorderBrush="{StaticResource BrushBorder}" Padding="7,4"
+                                     ToolTip="Evaluate an expression in the selected stack frame"/>
+                            <Button Grid.Column="1" Content="Evaluate" Command="{Binding EvaluateWatchCommand}"
+                                    Style="{StaticResource DebugButtonStyle}" Margin="6,0"/>
+                            <Button Grid.Column="2" Content="Refresh" Command="{Binding RefreshVariablesCommand}"
+                                    Style="{StaticResource DebugButtonStyle}"/>
+                        </Grid>
                         <ListView Grid.Row="1"
                                   ItemsSource="{Binding Variables}"
                                   Background="Transparent"
@@ -177,6 +188,7 @@
                                 Padding="12,4"/>
                         <ListView Grid.Row="1"
                                   ItemsSource="{Binding StackFrames}"
+                                  SelectedItem="{Binding SelectedStackFrame}"
                                   Background="Transparent"
                                   BorderThickness="0"
                                   ItemContainerStyle="{StaticResource ToolWindowItemStyle}">
@@ -210,15 +222,24 @@
 
                 <!-- Output Tab -->
                 <TabItem Header="Output">
-                    <ListBox ItemsSource="{Binding OutputLog}"
-                             Background="Transparent"
-                             BorderThickness="0"
-                             Foreground="{StaticResource BrushTextMuted}"
-                             FontFamily="Consolas"
-                             FontSize="12"
-                             Margin="8"
-                             ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                             ScrollViewer.VerticalScrollBarVisibility="Auto"/>
+                    <Grid Background="{StaticResource BrushBgEditor}">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <DockPanel Grid.Row="0" Margin="8,6">
+                            <Button DockPanel.Dock="Right" Content="Clear" Command="{Binding ClearOutputCommand}"
+                                    Style="{StaticResource DebugButtonStyle}"/>
+                            <TextBlock Text="DEBUG CONSOLE" Foreground="{StaticResource BrushTextMuted}"
+                                       FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        </DockPanel>
+                        <ListBox Grid.Row="1" ItemsSource="{Binding OutputLog}"
+                                 Background="Transparent" BorderThickness="0"
+                                 Foreground="{StaticResource BrushText}" FontFamily="Cascadia Mono, Consolas"
+                                 FontSize="12" Padding="8,4"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                 ScrollViewer.VerticalScrollBarVisibility="Auto"/>
+                    </Grid>
                 </TabItem>
             </TabControl>
         </Grid>

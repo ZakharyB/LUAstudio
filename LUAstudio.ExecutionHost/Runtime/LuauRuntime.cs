@@ -59,7 +59,8 @@ public sealed class LuauRuntime : IDisposable
 
         _debug.Attach(_state!, _sourcePath);
         _state!.SetTop(0);
-        _state.Load(_loadedBytecode);
+        var chunkName = string.IsNullOrWhiteSpace(_sourcePath) ? "=main" : $"@{_sourcePath}";
+        _state.Load(_loadedBytecode, Encoding.UTF8.GetBytes(chunkName));
         _debug.ExecuteFunction(_state, cancellationToken);
     }
 
