@@ -19,8 +19,6 @@ public sealed class WpfDocumentEditorHost : IDisposable
     private readonly Dictionary<Guid, TextEditor> _editors = new();
     private readonly Dictionary<Guid, EditorFoldingManager> _foldings = new();
     private readonly Dictionary<Guid, EditorDiagnosticHoverController> _diagnosticHovers = new();
-    private readonly Dictionary<Guid, EditorIntelliSenseController> _intelliSenseControllers = new();
-    private readonly IServiceProvider _services;
 
     public WpfDocumentEditorHost(
         EditorDiagnosticService diagnostics,
@@ -44,7 +42,6 @@ public sealed class WpfDocumentEditorHost : IDisposable
         _editors[document.Id] = editor;
         _diagnostics.Attach(editor, document.Id);
         _diagnostics.RegisterMarkerRenderer(editor);
-        editor.TextArea.TextView.Redraw();
         if (_diagnosticHovers.Remove(document.Id, out var previousHover))
         {
             previousHover.Detach();
@@ -84,10 +81,7 @@ public sealed class WpfDocumentEditorHost : IDisposable
             folding.Dispose();
         }
 
-        if (_intelliSenseControllers.Remove(document.Id, out var controller))
-        {
-            controller.Dispose();
-        }
+        _intelliSense.DetachIfEditor(editor);
         if (_diagnosticHovers.Remove(document.Id, out var hover))
         {
             hover.Detach();
@@ -131,11 +125,6 @@ public sealed class WpfDocumentEditorHost : IDisposable
         }
 
         _diagnosticHovers.Clear();
-        foreach (var controller in _intelliSenseControllers.Values)
-        {
-            controller.Dispose();
-        }
-
-        _intelliSenseControllers.Clear();
+        _intelliSense.Dispose();
     }
 }
