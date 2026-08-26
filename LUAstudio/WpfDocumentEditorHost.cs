@@ -7,31 +7,31 @@ using LUAstudio.IDE.Handlers;
 using LUAstudio.IntelliSense.Events;
 using LUAstudio.Core.Events;
 using LUAstudio.Languages.Text;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace LUAstudio;
 
 public sealed class WpfDocumentEditorHost : IDisposable
 {
-    private readonly EditorIntelliSenseController _intelliSense;
     private readonly EditorDiagnosticService _diagnostics;
-    private readonly EditorDiagnosticHoverController _diagnosticHover;
     private readonly DocumentAnalysisHandler _analysisHandler;
     private readonly IEventBus _eventBus;
     private readonly Dictionary<Guid, TextEditor> _editors = new();
     private readonly Dictionary<Guid, EditorFoldingManager> _foldings = new();
+    private readonly Dictionary<Guid, EditorDiagnosticHoverController> _diagnosticHovers = new();
+    private readonly Dictionary<Guid, EditorIntelliSenseController> _intelliSenseControllers = new();
+    private readonly IServiceProvider _services;
 
     public WpfDocumentEditorHost(
-        EditorIntelliSenseController intelliSense,
         EditorDiagnosticService diagnostics,
-        EditorDiagnosticHoverController diagnosticHover,
         DocumentAnalysisHandler analysisHandler,
-        IEventBus eventBus)
+        IEventBus eventBus,
+        IServiceProvider services)
     {
-        _intelliSense = intelliSense;
         _diagnostics = diagnostics;
-        _diagnosticHover = diagnosticHover;
         _analysisHandler = analysisHandler;
         _eventBus = eventBus;
+        _services = services;
         _eventBus.Subscribe<DocumentAnalyzedEvent>(OnDocumentAnalyzed);
     }
 
@@ -44,7 +44,15 @@ public sealed class WpfDocumentEditorHost : IDisposable
         _editors[document.Id] = editor;
         _diagnostics.Attach(editor, document.Id);
         _diagnostics.RegisterMarkerRenderer(editor);
-        _diagnosticHover.Attach(editor, document.Id);
+        editor.TextArea.TextView.Redraw();
+        if (_diagnosticHovers.Remove(document.Id, out var previousHover))
+        {
+            previousHover.Detach();
+        }
+
+        var hover = new EditorDiagnosticHoverController(_diagnostics);
+        hover.Attach(editor, document.Id);
+        _diagnosticHovers[document.Id] = hover;
 
         if (!_foldings.TryGetValue(document.Id, out var folding))
         {
@@ -53,13 +61,22 @@ public sealed class WpfDocumentEditorHost : IDisposable
         }
 
         folding.Attach(editor);
-        _intelliSense.Attach(editor, document.Id, document.FilePath, dialect);
+        if (_intelliSenseControllers.Remove(document.Id, out var previousController))
+        {
+            previousController.Dispose();
+        }
+
+        var controller = _services.GetRequiredService<EditorIntelliSenseController>();
+        controller.Attach(editor, document.Id, document.FilePath, dialect);
+        _intelliSenseControllers[document.Id] = controller;
     }
 
     public void Detach(TextEditor editor, TextDocument document)
     {
         _editors.Remove(document.Id);
-        _diagnostics.ClearMarkers(editor, document.Id);
+        // AvalonDock unloads tab content while switching documents. Keep the
+        // document's latest markers so the squiggles are immediately available
+        // when that tab is shown again instead of disappearing until re-analysis.
 
         if (_foldings.Remove(document.Id, out var folding))
         {
@@ -67,8 +84,14 @@ public sealed class WpfDocumentEditorHost : IDisposable
             folding.Dispose();
         }
 
-        _intelliSense.DetachIfEditor(editor);
-        _diagnosticHover.Detach();
+        if (_intelliSenseControllers.Remove(document.Id, out var controller))
+        {
+            controller.Dispose();
+        }
+        if (_diagnosticHovers.Remove(document.Id, out var hover))
+        {
+            hover.Detach();
+        }
     }
 
     public void NotifyContentChanged(TextDocument document)
@@ -77,7 +100,10 @@ public sealed class WpfDocumentEditorHost : IDisposable
         var dialect = document.FilePath?.EndsWith(".luau", StringComparison.OrdinalIgnoreCase) == true
             ? LuaDialect.Luau
             : LuaDialect.Lua;
-        _intelliSense.OnTextChanged(document.Content, document.FilePath, dialect);
+        if (_intelliSenseControllers.TryGetValue(document.Id, out var controller))
+        {
+            controller.OnTextChanged(document.Content, document.FilePath, dialect);
+        }
     }
 
     private void OnDocumentAnalyzed(DocumentAnalyzedEvent e)
@@ -99,6 +125,17 @@ public sealed class WpfDocumentEditorHost : IDisposable
         }
 
         _foldings.Clear();
-        _intelliSense.Dispose();
+        foreach (var hover in _diagnosticHovers.Values)
+        {
+            hover.Detach();
+        }
+
+        _diagnosticHovers.Clear();
+        foreach (var controller in _intelliSenseControllers.Values)
+        {
+            controller.Dispose();
+        }
+
+        _intelliSenseControllers.Clear();
     }
 }

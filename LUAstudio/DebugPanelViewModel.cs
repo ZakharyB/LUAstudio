@@ -1,5 +1,7 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
+using System.IO;
 using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -47,6 +49,12 @@ public sealed partial class DebugPanelViewModel : ObservableObject
 
     [ObservableProperty]
     private string _watchExpression = string.Empty;
+
+    [ObservableProperty]
+    private string _terminalCommand = string.Empty;
+
+    [ObservableProperty]
+    private string _terminalWorkingDirectory = Environment.CurrentDirectory;
 
     [ObservableProperty]
     private StackFrameInfo? _selectedStackFrame;
@@ -429,6 +437,99 @@ public sealed partial class DebugPanelViewModel : ObservableObject
 
     [RelayCommand]
     private void ClearOutput() => OutputLog.Clear();
+
+    [RelayCommand]
+    private async Task ExecuteTerminalCommandAsync()
+    {
+        var command = TerminalCommand.Trim();
+        if (command.Length == 0)
+        {
+            return;
+        }
+
+        TerminalCommand = string.Empty;
+        OutputLog.Add($"{TerminalWorkingDirectory}> {command}");
+
+        if (string.Equals(command, "cls", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(command, "clear", StringComparison.OrdinalIgnoreCase))
+        {
+            OutputLog.Clear();
+            return;
+        }
+
+        if (TryChangeDirectory(command))
+        {
+            return;
+        }
+
+        try
+        {
+            var isWindows = OperatingSystem.IsWindows();
+            using var process = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = isWindows ? "cmd.exe" : "/bin/bash",
+                    Arguments = isWindows ? $"/d /s /c \"{command}\"" : $"-lc {QuoteBash(command)}",
+                    WorkingDirectory = TerminalWorkingDirectory,
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true
+                }
+            };
+
+            process.Start();
+            var stdoutTask = process.StandardOutput.ReadToEndAsync();
+            var stderrTask = process.StandardError.ReadToEndAsync();
+            await process.WaitForExitAsync();
+            AppendTerminalText(await stdoutTask);
+            AppendTerminalText(await stderrTask);
+            if (process.ExitCode != 0)
+            {
+                OutputLog.Add($"[process exited with code {process.ExitCode}]");
+            }
+        }
+        catch (Exception ex)
+        {
+            OutputLog.Add($"Terminal error: {ex.Message}");
+        }
+    }
+
+    private bool TryChangeDirectory(string command)
+    {
+        if (!command.StartsWith("cd", StringComparison.OrdinalIgnoreCase) ||
+            (command.Length > 2 && !char.IsWhiteSpace(command[2])))
+        {
+            return false;
+        }
+
+        var requested = command.Length == 2
+            ? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)
+            : command[2..].Trim().Trim('"');
+        var path = Path.GetFullPath(requested, TerminalWorkingDirectory);
+        if (!Directory.Exists(path))
+        {
+            OutputLog.Add($"The system cannot find the path specified: {path}");
+            return true;
+        }
+
+        TerminalWorkingDirectory = path;
+        return true;
+    }
+
+    private void AppendTerminalText(string text)
+    {
+        foreach (var line in text.Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n'))
+        {
+            if (line.Length > 0)
+            {
+                OutputLog.Add(line);
+            }
+        }
+    }
+
+    private static string QuoteBash(string command) => $"'{command.Replace("'", "'\\''", StringComparison.Ordinal)}'";
 
     public Func<(string? SourcePath, int Line)?>? GetActiveEditorLocation { get; set; }
 
