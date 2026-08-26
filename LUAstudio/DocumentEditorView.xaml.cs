@@ -188,7 +188,6 @@ public partial class DocumentEditorView : UserControl, IDisposable
             _settingsCoordinator = _services.GetRequiredService<EditorSettingsCoordinator>();
             _breakpointService = _services.GetRequiredService<IBreakpointService>();
             _navigationService = _services.GetRequiredService<EditorNavigationService>();
-            _languageHost.DiagnosticsUpdated += OnDiagnosticsUpdated;
 
             EnsureBreakpointMargin();
             EnsureLineHighlighter();

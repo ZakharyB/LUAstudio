@@ -30,6 +30,10 @@ public sealed class EditorDiagnosticService
     {
         editor.Tag = documentId;
     }
+    
+    
+    
+    
 
     public void ApplyDiagnostics(TextEditor editor, DocumentAnalysisResult result)
     {
