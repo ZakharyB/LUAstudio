@@ -61,7 +61,15 @@ public sealed class LuauDebugController
     {
         lock (_sync)
         {
-            _breakpoints.Clear();
+            // Replace only this document's breakpoints. The IDE sends one group per
+            // source file; clearing the entire map here made only the last file work.
+            foreach (var key in _breakpoints.Keys.Where(key =>
+                         string.Equals(key.Path, sourcePath, StringComparison.OrdinalIgnoreCase)).ToArray())
+            {
+                _breakpoints.Remove(key);
+                _hitCounts.Remove(key);
+            }
+
             foreach (var bp in breakpoints)
             {
                 _breakpoints[(sourcePath, bp.Line)] = bp;
@@ -79,7 +87,13 @@ public sealed class LuauDebugController
         }
     }
 
-    public void RequestPause() => _pauseRequested = true;
+    public void RequestPause()
+    {
+        _pauseRequested = true;
+        // A flag alone is never observed by a running VM. Force the interpreter to
+        // yield at its next safe instruction so Pause works without a breakpoint.
+        Interrupt();
+    }
 
     public void RequestStop() => _stopRequested = true;
 
@@ -466,7 +480,9 @@ public sealed class LuauDebugController
         unsafe
         {
             var L = _state.AsPointer();
-            var level = Math.Max(0, frameId);
+            // Protocol frame ids are one-based stable identifiers, whereas the
+            // native debug API addresses frames by a zero-based stack level.
+            var level = frameId <= 0 ? 0 : frameId - 1;
             for (var index = 1; ; index++)
             {
                 var namePtr = lua_getlocal(L, level, index);

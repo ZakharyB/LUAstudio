@@ -204,9 +204,15 @@ public sealed class ExecutionHostClient : IExecutionHostClient
         object payload,
         CancellationToken cancellationToken)
     {
-        await EnsureTransportAsync(cancellationToken).ConfigureAwait(false);
-        await _transport!.SendAsync(new SandboxEnvelope(kind, sessionId, Guid.NewGuid().ToString("N"), payload), cancellationToken)
-            .ConfigureAwait(false);
+        // Commands are ordered on the pipe, but writing to the pipe does not mean the
+        // host accepted the command. Waiting for the acknowledgement also propagates
+        // protocol/transition errors instead of silently putting the UI out of sync.
+        await SendRequestAsync(
+            kind,
+            SandboxMessageKind.Ack,
+            sessionId,
+            payload,
+            cancellationToken).ConfigureAwait(false);
     }
 
     private async Task<SandboxEnvelope> SendRequestAsync(

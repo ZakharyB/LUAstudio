@@ -48,6 +48,9 @@ public sealed partial class DebugPanelViewModel : ObservableObject
     [ObservableProperty]
     private string _watchExpression = string.Empty;
 
+    [ObservableProperty]
+    private StackFrameInfo? _selectedStackFrame;
+
     public ObservableCollection<StackFrameInfo> StackFrames { get; } = new();
 
     public ObservableCollection<VariableInfo> Variables { get; } = new();
@@ -59,6 +62,17 @@ public sealed partial class DebugPanelViewModel : ObservableObject
     partial void OnSessionStateChanged(ExecutionSessionState value) => UpdateCommandStates();
 
     partial void OnIsConnectedChanged(bool value) => UpdateCommandStates();
+
+    partial void OnSelectedStackFrameChanged(StackFrameInfo? value)
+    {
+        if (value is null)
+        {
+            return;
+        }
+
+        _navigation?.NavigateTo(value.SourcePath, value.Line);
+        _ = RefreshVariablesAsync(value.Id);
+    }
 
     public void Configure(
         DebugSessionCoordinator coordinator,
@@ -74,6 +88,13 @@ public sealed partial class DebugPanelViewModel : ObservableObject
 
     public async Task InitializeAsync(IExecutionHostClient client)
     {
+        if (ReferenceEquals(_client, client) && IsConnected)
+        {
+            return;
+        }
+
+        _eventLoopCts?.Cancel();
+        _eventLoopCts?.Dispose();
         _client = client;
         await _client.ConnectAsync();
         IsConnected = true;
@@ -88,9 +109,16 @@ public sealed partial class DebugPanelViewModel : ObservableObject
             return;
         }
 
-        await foreach (var evt in _client.WatchEventsAsync(cancellationToken))
+        try
         {
-            await Application.Current.Dispatcher.InvokeAsync(() => HandleEvent(evt));
+            await foreach (var evt in _client.WatchEventsAsync(cancellationToken))
+            {
+                await Application.Current.Dispatcher.InvokeAsync(() => HandleEvent(evt));
+            }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            // Normal when reconnecting or closing the window.
         }
     }
 
@@ -181,6 +209,9 @@ public sealed partial class DebugPanelViewModel : ObservableObject
 
         try
         {
+            StackFrames.Clear();
+            Variables.Clear();
+            OutputLog.Add($"> run {sourcePath ?? "<untitled>"}");
             var client = await _coordinator.EnsureHostRunningAsync();
             if (_client != client)
             {
@@ -188,7 +219,6 @@ public sealed partial class DebugPanelViewModel : ObservableObject
             }
 
             _sessionId = await _coordinator.RunAsync(source, sourcePath);
-            SessionState = ExecutionSessionState.Running;
         }
         catch (Exception ex)
         {
@@ -340,6 +370,8 @@ public sealed partial class DebugPanelViewModel : ObservableObject
             {
                 StackFrames.Add(frame);
             }
+
+            SelectedStackFrame = StackFrames.FirstOrDefault();
         }
         catch (Exception ex)
         {
@@ -385,7 +417,8 @@ public sealed partial class DebugPanelViewModel : ObservableObject
 
         try
         {
-            var result = await _client.EvaluateAsync(_sessionId, 0, WatchExpression);
+            var frameId = SelectedStackFrame?.Id ?? 0;
+            var result = await _client.EvaluateAsync(_sessionId, frameId, WatchExpression);
             OutputLog.Add($"Watch: {WatchExpression} = {result}");
         }
         catch (Exception ex)
@@ -393,6 +426,9 @@ public sealed partial class DebugPanelViewModel : ObservableObject
             OutputLog.Add($"Watch error: {ex.Message}");
         }
     }
+
+    [RelayCommand]
+    private void ClearOutput() => OutputLog.Clear();
 
     public Func<(string? SourcePath, int Line)?>? GetActiveEditorLocation { get; set; }
 
@@ -435,7 +471,7 @@ public sealed partial class DebugPanelViewModel : ObservableObject
 
     private void UpdateCommandStates()
     {
-        CanRun = IsConnected && SessionState is ExecutionSessionState.Created or ExecutionSessionState.Loaded or ExecutionSessionState.Stopped;
+        CanRun = IsConnected && SessionState is ExecutionSessionState.Created or ExecutionSessionState.Loaded or ExecutionSessionState.Stopped or ExecutionSessionState.Paused;
         CanStop = IsConnected && SessionState is ExecutionSessionState.Running or ExecutionSessionState.Paused or ExecutionSessionState.Stepping;
         CanPause = IsConnected && SessionState == ExecutionSessionState.Running;
         CanStepOver = IsConnected && SessionState == ExecutionSessionState.Paused;

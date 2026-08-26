@@ -25,12 +25,19 @@ public sealed class LuauSandboxBootstrap
         state.OpenUtf8Library();
         state.OpenBufferLibrary();
         state.OpenVectorLibrary();
-        state.OpenDebugLibrary();
+        // Deliberately do not expose the debug library. Debugging is implemented by
+        // the host through the native API; guest code must not inspect or mutate the
+        // host-managed execution state.
 
         RegisterNativeGlobal(state, "__sandbox_print", SandboxNativeBindings.Print);
         LuauScriptRunner.DoString(
             state,
             """
+            -- Remove dynamic-code and environment escape hatches from guest code.
+            loadstring = nil
+            getfenv = nil
+            setfenv = nil
+
             print = function(...)
                 local parts = {...}
                 local buffer = {}

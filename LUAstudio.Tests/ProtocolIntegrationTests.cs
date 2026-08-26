@@ -20,6 +20,20 @@ public sealed class ProtocolIntegrationTests
         var sessionId = await client.CreateSessionAsync(new SessionConfiguration());
         await client.LoadScriptAsync(sessionId, "print(\"protocol\")", "protocol.lua");
     }
+
+    [Fact]
+    public async Task Host_commands_surface_invalid_session_transitions()
+    {
+        await using var host = await InProcessExecutionHost.StartAsync();
+        await using var client = new ExecutionHostClient(host.PipeName);
+        using var connectCts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        await client.ConnectAsync(connectCts.Token);
+
+        var sessionId = await client.CreateSessionAsync(new SessionConfiguration());
+
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(() => client.ExecuteAsync(sessionId));
+        Assert.Contains("LoadScript", error.Message);
+    }
 }
 
 [Collection("ExecutionHost")]
