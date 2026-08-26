@@ -171,7 +171,9 @@ public sealed partial class DebugPanelViewModel : ObservableObject
             case SandboxMessageKind.OutputLog:
                 if (SandboxPayload.As<OutputLogPayload>(evt.Payload) is { } output)
                 {
-                    OutputLog.Add($"[{output.Channel}] {output.Text}");
+                    // Script output should look like terminal output. In particular,
+                    // print(17) is shown as "17", not as "[stdout] 17".
+                    AppendTerminalText(output.Text);
                 }
                 break;
 
@@ -507,7 +509,16 @@ public sealed partial class DebugPanelViewModel : ObservableObject
         var requested = command.Length == 2
             ? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)
             : command[2..].Trim().Trim('"');
-        var path = Path.GetFullPath(requested, TerminalWorkingDirectory);
+        string path;
+        try
+        {
+            path = Path.GetFullPath(requested, TerminalWorkingDirectory);
+        }
+        catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            OutputLog.Add($"The directory name is invalid: {requested}");
+            return true;
+        }
         if (!Directory.Exists(path))
         {
             OutputLog.Add($"The system cannot find the path specified: {path}");
