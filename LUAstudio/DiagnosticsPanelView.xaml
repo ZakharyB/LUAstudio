@@ -52,7 +52,7 @@
             <DockPanel Grid.Row="0" Margin="8">
 
                 <TextBlock DockPanel.Dock="Top"
-                           Text="Problems"
+                           Text="{DynamicResource UiProblems}"
                            FontWeight="SemiBold"
                            Foreground="{StaticResource BrushText}"
                            Margin="0,0,0,6"/>
@@ -102,9 +102,9 @@
 
                     <ListView.View>
                         <GridView>
-                            <GridViewColumn Header="Code" DisplayMemberBinding="{Binding Code}" Width="80"/>
-                            <GridViewColumn Header="Severity" DisplayMemberBinding="{Binding Severity}" Width="80"/>
-                            <GridViewColumn Header="Message" DisplayMemberBinding="{Binding Message}" Width="420"/>
+                            <GridViewColumn Header="{DynamicResource UiCode}" DisplayMemberBinding="{Binding Code}" Width="80"/>
+                            <GridViewColumn Header="{DynamicResource UiSeverity}" DisplayMemberBinding="{Binding Severity}" Width="80"/>
+                            <GridViewColumn Header="{DynamicResource UiMessage}" DisplayMemberBinding="{Binding Message}" Width="420"/>
                         </GridView>
                     </ListView.View>
 
@@ -118,7 +118,7 @@
             <DockPanel Grid.Row="2" Margin="8">
 
                 <TextBlock DockPanel.Dock="Top"
-                           Text="Require Graph"
+                           Text="{DynamicResource UiRequireGraph}"
                            FontWeight="SemiBold"
                            Foreground="{StaticResource BrushText}"
                            Margin="0,6,0,6"/>

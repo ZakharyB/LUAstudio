@@ -17,7 +17,9 @@ public static class BlockStructureService
         if (trimmed.StartsWith("function", StringComparison.Ordinal) ||
             trimmed.StartsWith("local function", StringComparison.Ordinal))
         {
-            if (!trimmed.Contains("end", StringComparison.Ordinal))
+            // Names such as `render` and `sendMessage` contain the letters "end"
+            // but do not close the function block.
+            if (!ContainsStandaloneEnd(trimmed))
             {
                 var indent = line.Length - trimmed.Length;
                 return new BlockInfo("function", caretOffset, indent / TabWidth);
@@ -41,6 +43,14 @@ public static class BlockStructureService
     }
 
     public static string GetIndent(int level) => new(' ', level * TabWidth);
+
+    private static bool ContainsStandaloneEnd(string text)
+    {
+        var words = text.Split(
+            [' ', '\t', '(', ')', '[', ']', '{', '}', ';', ','],
+            StringSplitOptions.RemoveEmptyEntries);
+        return words.Contains("end", StringComparer.Ordinal);
+    }
 
     private static string GetLineFromOffset(string text, int offset)
     {

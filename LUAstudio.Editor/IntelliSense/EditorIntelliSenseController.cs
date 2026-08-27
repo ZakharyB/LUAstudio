@@ -42,6 +42,8 @@ public sealed class EditorIntelliSenseController : IDisposable
     private CancellationTokenSource? _completionCts;
     private SnippetSession? _snippetSession;
     private int _popupSelectionIndex;
+    private string? _filePath;
+    private LuaDialect _dialect;
 
     public EditorIntelliSenseController(
         ICompletionService completion,
@@ -74,6 +76,8 @@ public sealed class EditorIntelliSenseController : IDisposable
         Detach();
         _editor = editor;
         _documentId = documentId;
+        _filePath = filePath;
+        _dialect = dialect;
 
         editor.SyntaxHighlighting = null;
 
@@ -84,7 +88,7 @@ public sealed class EditorIntelliSenseController : IDisposable
         _semanticHighlight.SetDocument(documentId);
         editor.TextArea.TextView.LineTransformers.Add(_semanticHighlight);
         _inline.Attach(editor, documentId);
-        _smartEnter.Attach(editor);
+        _smartEnter.Attach(editor, _analysis, documentId);
         _autoPairs.Attach(editor);
 
         editor.TextArea.TextEntering += OnTextEntering;
@@ -150,6 +154,16 @@ public sealed class EditorIntelliSenseController : IDisposable
 
     private void OnEditorTextChanged(object? sender, EventArgs e)
     {
+        if (_editor is null)
+        {
+            return;
+        }
+
+        // Keep completion's snapshot current synchronously.  The document view's
+        // binding notification can arrive later than AvalonEdit's TextChanged.
+        var snapshot = _snapshots.UpdateContent(
+            _documentId, _editor.Document.Text, _filePath, _dialect);
+        _analysis.RequestAnalysis(snapshot);
         _inline.OnTextChanged();
 
         if (_completionWindow is not null)

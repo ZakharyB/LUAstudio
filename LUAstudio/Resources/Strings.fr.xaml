@@ -1,4 +1,4 @@
-﻿<ResourceDictionary
+<ResourceDictionary
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:sys="clr-namespace:System;assembly=System.Runtime">
@@ -80,5 +80,103 @@
 
     <!-- Settings / language -->
     <sys:String x:Key="Language">Langue</sys:String>
+
+    <!-- Remaining application UI -->
+    <sys:String x:Key="UiApplication">Application</sys:String>
+    <sys:String x:Key="UiApply">Appliquer</sys:String>
+    <sys:String x:Key="UiAutoPairBracketsAndQuotes">Associer automatiquement crochets et guillemets</sys:String>
+    <sys:String x:Key="UiAutoSwitchToFileWhenOpenedFromExplorer">Afficher le fichier ouvert depuis l’explorateur</sys:String>
+    <sys:String x:Key="UiBoldFont">Police en gras</sys:String>
+    <sys:String x:Key="UiBreakpointMarginWidthPx">Largeur de marge des points d’arrêt (px)</sys:String>
+    <sys:String x:Key="UiBreakpoints">Points d’arrêt</sys:String>
+    <sys:String x:Key="UiBreakpointsNavigation">Points d’arrêt et navigation</sys:String>
+    <sys:String x:Key="UiCallStack">Pile d’appels</sys:String>
+    <sys:String x:Key="UiCancel">Annuler</sys:String>
+    <sys:String x:Key="UiChangesSaveAutomaticallyAndApplyImmediately">Les modifications sont enregistrées et appliquées immédiatement.</sys:String>
+    <sys:String x:Key="UiClear">Effacer</sys:String>
+    <sys:String x:Key="UiClearFilterEsc">Effacer le filtre (Échap)</sys:String>
+    <sys:String x:Key="UiClose">Fermer</sys:String>
+    <sys:String x:Key="UiCloseSearchEsc">Fermer la recherche (Échap)</sys:String>
+    <sys:String x:Key="UiCode">Code</sys:String>
+    <sys:String x:Key="UiColorPicker">Sélecteur de couleur</sys:String>
+    <sys:String x:Key="UiColumn">Colonne</sys:String>
+    <sys:String x:Key="UiContinueF5">Continuer (F5)</sys:String>
+    <sys:String x:Key="UiControlCompletionSuggestionsAndSmartEditingBehavior">Contrôlez la complétion, les suggestions et l’édition intelligente.</sys:String>
+    <sys:String x:Key="UiConvertTabsToSpaces">Convertir les tabulations en espaces</sys:String>
+    <sys:String x:Key="UiCustomizeLuaSyntaxHighlightingChangesApplyImmediately">Personnalisez la coloration Lua. Les modifications s’appliquent immédiatement.</sys:String>
+    <sys:String x:Key="UiDEBUGCONSOLE">CONSOLE DE DÉBOGAGE</sys:String>
+    <sys:String x:Key="UiDiagnostics">Diagnostics</sys:String>
+    <sys:String x:Key="UiDiagnosticsLinting">Diagnostics et analyse statique</sys:String>
+    <sys:String x:Key="UiEXPLORERACTIONS">ACTIONS DE L’EXPLORATEUR</sys:String>
+    <sys:String x:Key="UiEditor">Éditeur</sys:String>
+    <sys:String x:Key="UiEditorChrome">Interface de l’éditeur</sys:String>
+    <sys:String x:Key="UiEnableAutocompleteCtrlSpaceAndTriggers">Activer l’autocomplétion (Ctrl+Espace et déclencheurs)</sys:String>
+    <sys:String x:Key="UiEnableDiagnosticsAndLintSquiggles">Activer les diagnostics et soulignements</sys:String>
+    <sys:String x:Key="UiEnvironmentProfile">Profil d’environnement</sys:String>
+    <sys:String x:Key="UiEvaluate">Évaluer</sys:String>
+    <sys:String x:Key="UiEvaluateAnExpressionInTheSelectedStackFrame">Évaluer une expression dans le cadre de pile sélectionné</sys:String>
+    <sys:String x:Key="UiFPSLimit">Limite d’IPS</sys:String>
+    <sys:String x:Key="UiFile">Fichier</sys:String>
+    <sys:String x:Key="UiFind">Rechercher</sys:String>
+    <sys:String x:Key="UiFontFamily">Famille de police</sys:String>
+    <sys:String x:Key="UiFontLayoutAndDisplayOptionsForTheCodeEditor">Options de police, disposition et affichage de l’éditeur de code.</sys:String>
+    <sys:String x:Key="UiFontSizePt">Taille de police (pt)</sys:String>
+    <sys:String x:Key="UiFunction">Fonction</sys:String>
+    <sys:String x:Key="UiGoToDeclaration">Accéder à la déclaration</sys:String>
+    <sys:String x:Key="UiGoToImplementation">Accéder à l’implémentation</sys:String>
+    <sys:String x:Key="UiGoToLine">Accéder à la ligne…</sys:String>
+    <sys:String x:Key="UiHexColor">Couleur hexadécimale</sys:String>
+    <sys:String x:Key="UiHighlightCurrentLine">Surligner la ligne actuelle</sys:String>
+    <sys:String x:Key="UiInlineGhostCompletions">Complétions fantômes en ligne</sys:String>
+    <sys:String x:Key="UiIntelliSense">IntelliSense</sys:String>
+    <sys:String x:Key="UiItalicFont">Police en italique</sys:String>
+    <sys:String x:Key="UiLine">Ligne</sys:String>
+    <sys:String x:Key="UiLineHighlightDurationSec">Durée de surbrillance de ligne (s)</sys:String>
+    <sys:String x:Key="UiMatchCase">Respecter la casse</sys:String>
+    <sys:String x:Key="UiMessage">Message</sys:String>
+    <sys:String x:Key="UiModified">Modifié</sys:String>
+    <sys:String x:Key="UiName">Nom</sys:String>
+    <sys:String x:Key="UiNextMatch">Résultat suivant</sys:String>
+    <sys:String x:Key="UiNoWorkspaceFolders">Aucun dossier d’espace de travail</sys:String>
+    <sys:String x:Key="UiOK">OK</sys:String>
+    <sys:String x:Key="UiOpenFolder">Ouvrir un dossier…</sys:String>
+    <sys:String x:Key="UiOutput">Sortie</sys:String>
+    <sys:String x:Key="UiPauseF6">Pause (F6)</sys:String>
+    <sys:String x:Key="UiPreviousMatch">Résultat précédent</sys:String>
+    <sys:String x:Key="UiProblems">Problèmes</sys:String>
+    <sys:String x:Key="UiRefresh">Actualiser</sys:String>
+    <sys:String x:Key="UiRefreshTree">Actualiser l’arborescence</sys:String>
+    <sys:String x:Key="UiRegex">Expression régulière</sys:String>
+    <sys:String x:Key="UiRequireGraph">Graphe des dépendances</sys:String>
+    <sys:String x:Key="UiRestoreWorkspaceFoldersOnStartup">Restaurer les dossiers au démarrage</sys:String>
+    <sys:String x:Key="UiRestoreWorkspaceOnStartup">Restaurer l’espace de travail au démarrage</sys:String>
+    <sys:String x:Key="UiRunAMicrosoftCommandPromptCommandForExampleCdClsDir">Exécuter une commande Microsoft (par exemple : cd, cls, dir)</sys:String>
+    <sys:String x:Key="UiRunContinueF5">Exécuter / Continuer (F5)</sys:String>
+    <sys:String x:Key="UiSemanticAnalysisLintRulesAndEnvironmentProfiles">Analyse sémantique, règles et profils d’environnement.</sys:String>
+    <sys:String x:Key="UiSemanticHighlighting">Coloration sémantique</sys:String>
+    <sys:String x:Key="UiSettings">Paramètres</sys:String>
+    <sys:String x:Key="UiSettingsLuaStudio">Paramètres — LuaStudio</sys:String>
+    <sys:String x:Key="UiSeverity">Gravité</sys:String>
+    <sys:String x:Key="UiShowBracketHighlighting">Surligner les crochets</sys:String>
+    <sys:String x:Key="UiShowLineNumbers">Afficher les numéros de ligne</sys:String>
+    <sys:String x:Key="UiShowRelativeLineNumbers">Afficher les numéros de ligne relatifs</sys:String>
+    <sys:String x:Key="UiShowRequireDependencyGraphPanel">Afficher le graphe des dépendances require</sys:String>
+    <sys:String x:Key="UiSmartEnterAutoIndentBlocks">Entrée intelligente (indentation automatique)</sys:String>
+    <sys:String x:Key="UiStepIntoF11">Pas à pas détaillé (F11)</sys:String>
+    <sys:String x:Key="UiStepOutShiftF11">Pas à pas sortant (Maj+F11)</sys:String>
+    <sys:String x:Key="UiStepOverF10">Pas à pas principal (F10)</sys:String>
+    <sys:String x:Key="UiStopShiftF5">Arrêter (Maj+F5)</sys:String>
+    <sys:String x:Key="UiStrictTypeCheckingMode">Mode de vérification stricte des types</sys:String>
+    <sys:String x:Key="UiSyntaxColors">Couleurs syntaxiques</sys:String>
+    <sys:String x:Key="UiTERMINALRUNOUTPUT">TERMINAL / SORTIE D’EXÉCUTION</sys:String>
+    <sys:String x:Key="UiTabWidth">Largeur de tabulation</sys:String>
+    <sys:String x:Key="UiToggleBreakpoint">Basculer le point d’arrêt</sys:String>
+    <sys:String x:Key="UiType">Type</sys:String>
+    <sys:String x:Key="UiUseTheMenuAboveToOpenAFolder">Utilisez le menu ⋯ ci-dessus pour ouvrir un dossier.</sys:String>
+    <sys:String x:Key="UiValue">Valeur</sys:String>
+    <sys:String x:Key="UiVariables">Variables</sys:String>
+    <sys:String x:Key="UiWholeWords">Mots entiers</sys:String>
+    <sys:String x:Key="UiWordWrap">Retour automatique à la ligne</sys:String>
+    <sys:String x:Key="UiWorkspace">Espace de travail</sys:String>
 
 </ResourceDictionary>

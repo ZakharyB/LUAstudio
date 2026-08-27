@@ -66,30 +66,44 @@ public sealed class RobloxApiDatabase : IRobloxApiDatabase
             return;
         }
 
-        await Task.Run(() =>
+        try
         {
-            var bundled = Path.Combine(AppContext.BaseDirectory, "Assets", "Roblox", "api-dump.json");
-            var cachePath = Path.Combine(LuaStudioPaths.CacheDirectory, "roblox-api.json");
+            await Task.Run(() =>
+            {
+                var bundled = Path.Combine(AppContext.BaseDirectory, "Assets", "Roblox", "api-dump.json");
+                var cachePath = Path.Combine(LuaStudioPaths.CacheDirectory, "roblox-api.json");
 
-            string json;
-            if (File.Exists(cachePath))
-            {
-                json = File.ReadAllText(cachePath);
-            }
-            else if (File.Exists(bundled))
-            {
-                json = File.ReadAllText(bundled);
-                Directory.CreateDirectory(LuaStudioPaths.CacheDirectory);
-                File.WriteAllText(cachePath, json);
-            }
-            else
-            {
-                Apply(ApiDumpIngestor.BuildBuiltInFallback());
-                return;
-            }
+                string json;
+                if (File.Exists(cachePath))
+                {
+                    json = File.ReadAllText(cachePath);
+                }
+                else if (File.Exists(bundled))
+                {
+                    json = File.ReadAllText(bundled);
+                    Directory.CreateDirectory(LuaStudioPaths.CacheDirectory);
+                    File.WriteAllText(cachePath, json);
+                }
+                else
+                {
+                    Apply(ApiDumpIngestor.BuildBuiltInFallback());
+                    return;
+                }
 
-            Apply(ApiDumpIngestor.Ingest(json));
-        }, cancellationToken).ConfigureAwait(false);
+                Apply(ApiDumpIngestor.Ingest(json));
+            }, cancellationToken).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            Interlocked.Exchange(ref _loaded, 0);
+            throw;
+        }
+        catch
+        {
+            // A bad/stale cache must not take down completion (notably after ':').
+            // Fall back to the built-in API and allow a later reload to replace it.
+            Apply(ApiDumpIngestor.BuildBuiltInFallback());
+        }
     }
 
     public async Task ReloadFromPathAsync(string? path, CancellationToken cancellationToken = default)

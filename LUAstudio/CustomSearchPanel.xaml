@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="LUAstudio.CustomSearchPanel"
+<UserControl x:Class="LUAstudio.CustomSearchPanel"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              Background="#1E1E1E"
@@ -183,34 +183,34 @@
                 Style="{StaticResource ActionButtonStyle}"
                 Margin="0,0,4,0"
                 Click="FindPrevious_Click"
-                ToolTip="Previous match"/>
+                ToolTip="{DynamicResource UiPreviousMatch}"/>
 
         <Button x:Name="FindNextButton"
                 Content="▶"
                 Style="{StaticResource ActionButtonStyle}"
                 Margin="0,0,8,0"
                 Click="FindNext_Click"
-                ToolTip="Next match"/>
+                ToolTip="{DynamicResource UiNextMatch}"/>
 
         <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}"
                    Margin="2,4"/>
 
         <CheckBox x:Name="MatchCaseCheck"
-                  Content="Match case"
+                  Content="{DynamicResource UiMatchCase}"
                   Style="{StaticResource SearchCheckBoxStyle}"
                   Margin="4,0"
                   Checked="SearchOptionsChanged"
                   Unchecked="SearchOptionsChanged"/>
 
         <CheckBox x:Name="WholeWordCheck"
-                  Content="Whole words"
+                  Content="{DynamicResource UiWholeWords}"
                   Style="{StaticResource SearchCheckBoxStyle}"
                   Margin="4,0"
                   Checked="SearchOptionsChanged"
                   Unchecked="SearchOptionsChanged"/>
 
         <CheckBox x:Name="RegexCheck"
-                  Content="Regex"
+                  Content="{DynamicResource UiRegex}"
                   Style="{StaticResource SearchCheckBoxStyle}"
                   Margin="4,0"
                   Checked="SearchOptionsChanged"
@@ -222,6 +222,6 @@
                 Content="✕"
                 Style="{StaticResource CloseButtonStyle}"
                 Click="CloseButton_Click"
-                ToolTip="Close search (Esc)"/>
+                ToolTip="{DynamicResource UiCloseSearchEsc}"/>
     </StackPanel>
 </UserControl>

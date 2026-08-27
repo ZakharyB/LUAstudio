@@ -88,7 +88,7 @@
                      BorderBrush="{StaticResource BrushBorder}"
                      CaretBrush="{StaticResource BrushText}" />
             <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
-                <Button Content="OK"
+                <Button Content="{DynamicResource UiOK}"
                         MinWidth="80"
                         Margin="0,0,8,0"
                         Padding="12, 6"
@@ -98,7 +98,7 @@
                         Foreground="White"
                         Style="{StaticResource ActionButton}"
                         Click="Ok_Click"/>
-                <Button Content="Cancel"
+                <Button Content="{DynamicResource UiCancel}"
                         MinWidth="80"
                         Padding="12,6"
                         IsCancel="True"

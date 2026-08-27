@@ -56,15 +56,15 @@
             <Separator />
             <MenuItem Command="{x:Static ApplicationCommands.SelectAll}" />
             <Separator />
-            <MenuItem Header="Go to Implementation"
+            <MenuItem Header="{DynamicResource UiGoToImplementation}"
                       Click="GoToSymbol_Click" />
-            <MenuItem Header="Go to Declaration"
+            <MenuItem Header="{DynamicResource UiGoToDeclaration}"
                       Click="GoToSymbol_Click" />
-            <MenuItem Header="Toggle Breakpoint"
+            <MenuItem Header="{DynamicResource UiToggleBreakpoint}"
                       Click="ToggleBreakpoint_Click" />
-            <MenuItem Header="Go to Line..."
+            <MenuItem Header="{DynamicResource UiGoToLine}"
                       Click="GoToLine_Click" />
-            <MenuItem Header="Find"
+            <MenuItem Header="{DynamicResource UiFind}"
                       InputGestureText="Ctrl+F"
                       Click="Find_Click" />
         </ContextMenu>

@@ -71,20 +71,20 @@
                     <Button Style="{StaticResource DebugButtonStyle}"
                             Command="{Binding RunOrContinueCommand}"
                             IsEnabled="{Binding CanRun}"
-                            ToolTip="Run / Continue (F5)">
+                            ToolTip="{DynamicResource UiRunContinueF5}">
                         <TextBlock Text="&#xE768;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
                     </Button>
                     <Button Style="{StaticResource DebugButtonStyle}"
                             Command="{Binding StopCommand}"
                             IsEnabled="{Binding CanStop}"
-                            ToolTip="Stop (Shift+F5)"
+                            ToolTip="{DynamicResource UiStopShiftF5}"
                             Margin="4,0,0,0">
                         <TextBlock Text="&#xE71A;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
                     </Button>
                     <Button Style="{StaticResource DebugButtonStyle}"
                             Command="{Binding PauseCommand}"
                             IsEnabled="{Binding CanPause}"
-                            ToolTip="Pause (F6)"
+                            ToolTip="{DynamicResource UiPauseF6}"
                             Margin="4,0,0,0">
                         <TextBlock Text="&#xE769;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
                     </Button>
@@ -92,21 +92,21 @@
                     <Button Style="{StaticResource DebugButtonStyle}"
                             Command="{Binding StepOverCommand}"
                             IsEnabled="{Binding CanStepOver}"
-                            ToolTip="Step Over (F10)"
+                            ToolTip="{DynamicResource UiStepOverF10}"
                             Margin="0,0,4,0">
                         <TextBlock Text="&#xE76C;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
                     </Button>
                     <Button Style="{StaticResource DebugButtonStyle}"
                             Command="{Binding StepIntoCommand}"
                             IsEnabled="{Binding CanStepInto}"
-                            ToolTip="Step Into (F11)"
+                            ToolTip="{DynamicResource UiStepIntoF11}"
                             Margin="0,0,4,0">
                         <TextBlock Text="&#xE76D;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
                     </Button>
                     <Button Style="{StaticResource DebugButtonStyle}"
                             Command="{Binding StepOutCommand}"
                             IsEnabled="{Binding CanStepOut}"
-                            ToolTip="Step Out (Shift+F11)"
+                            ToolTip="{DynamicResource UiStepOutShiftF11}"
                             Margin="0,0,4,0">
                         <TextBlock Text="&#xE768;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
                     </Button>
@@ -114,7 +114,7 @@
                     <Button Style="{StaticResource DebugButtonStyle}"
                             Command="{Binding ContinueCommand}"
                             IsEnabled="{Binding CanContinue}"
-                            ToolTip="Continue (F5)"
+                            ToolTip="{DynamicResource UiContinueF5}"
                             Margin="0,0,4,0">
                         <TextBlock Text="&#xE768;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
                     </Button>
@@ -135,7 +135,7 @@
             <!-- Debug Panes -->
             <TabControl Grid.Row="1" Background="Transparent">
                 <!-- Variables Tab -->
-                <TabItem Header="Variables">
+                <TabItem Header="{DynamicResource UiVariables}">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
@@ -150,10 +150,10 @@
                             <TextBox Grid.Column="0" Text="{Binding WatchExpression, UpdateSourceTrigger=PropertyChanged}"
                                      Background="{StaticResource BrushBgEditor}" Foreground="{StaticResource BrushText}"
                                      BorderBrush="{StaticResource BrushBorder}" Padding="7,4"
-                                     ToolTip="Evaluate an expression in the selected stack frame"/>
-                            <Button Grid.Column="1" Content="Evaluate" Command="{Binding EvaluateWatchCommand}"
+                                     ToolTip="{DynamicResource UiEvaluateAnExpressionInTheSelectedStackFrame}"/>
+                            <Button Grid.Column="1" Content="{DynamicResource UiEvaluate}" Command="{Binding EvaluateWatchCommand}"
                                     Style="{StaticResource DebugButtonStyle}" Margin="6,0"/>
-                            <Button Grid.Column="2" Content="Refresh" Command="{Binding RefreshVariablesCommand}"
+                            <Button Grid.Column="2" Content="{DynamicResource UiRefresh}" Command="{Binding RefreshVariablesCommand}"
                                     Style="{StaticResource DebugButtonStyle}"/>
                         </Grid>
                         <ListView Grid.Row="1"
@@ -163,9 +163,9 @@
                                   ItemContainerStyle="{StaticResource ToolWindowItemStyle}">
                             <ListView.View>
                                 <GridView>
-                                    <GridViewColumn Header="Name" DisplayMemberBinding="{Binding Name}" Width="120"/>
-                                    <GridViewColumn Header="Value" DisplayMemberBinding="{Binding Value}" Width="200"/>
-                                    <GridViewColumn Header="Type" DisplayMemberBinding="{Binding TypeName}" Width="100"/>
+                                    <GridViewColumn Header="{DynamicResource UiName}" DisplayMemberBinding="{Binding Name}" Width="120"/>
+                                    <GridViewColumn Header="{DynamicResource UiValue}" DisplayMemberBinding="{Binding Value}" Width="200"/>
+                                    <GridViewColumn Header="{DynamicResource UiType}" DisplayMemberBinding="{Binding TypeName}" Width="100"/>
                                 </GridView>
                             </ListView.View>
                         </ListView>
@@ -173,14 +173,14 @@
                 </TabItem>
 
                 <!-- Stack Trace Tab -->
-                <TabItem Header="Call Stack">
+                <TabItem Header="{DynamicResource UiCallStack}">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
                         <Button Grid.Row="0"
-                                Content="Refresh"
+                                Content="{DynamicResource UiRefresh}"
                                 Command="{Binding RefreshStackCommand}"
                                 Style="{StaticResource DebugButtonStyle}"
                                 HorizontalAlignment="Right"
@@ -194,10 +194,10 @@
                                   ItemContainerStyle="{StaticResource ToolWindowItemStyle}">
                             <ListView.View>
                                 <GridView>
-                                    <GridViewColumn Header="Function" DisplayMemberBinding="{Binding Name}" Width="200"/>
-                                    <GridViewColumn Header="File" DisplayMemberBinding="{Binding SourcePath}" Width="250"/>
-                                    <GridViewColumn Header="Line" DisplayMemberBinding="{Binding Line}" Width="60"/>
-                                    <GridViewColumn Header="Column" DisplayMemberBinding="{Binding Column}" Width="60"/>
+                                    <GridViewColumn Header="{DynamicResource UiFunction}" DisplayMemberBinding="{Binding Name}" Width="200"/>
+                                    <GridViewColumn Header="{DynamicResource UiFile}" DisplayMemberBinding="{Binding SourcePath}" Width="250"/>
+                                    <GridViewColumn Header="{DynamicResource UiLine}" DisplayMemberBinding="{Binding Line}" Width="60"/>
+                                    <GridViewColumn Header="{DynamicResource UiColumn}" DisplayMemberBinding="{Binding Column}" Width="60"/>
                                 </GridView>
                             </ListView.View>
                         </ListView>
@@ -205,7 +205,7 @@
                 </TabItem>
 
                 <!-- Breakpoints Tab -->
-                <TabItem Header="Breakpoints">
+                <TabItem Header="{DynamicResource UiBreakpoints}">
                     <ListView ItemsSource="{Binding Breakpoints}"
                               Background="Transparent"
                               BorderThickness="0"
@@ -213,24 +213,24 @@
                               Margin="8">
                         <ListView.View>
                             <GridView>
-                                <GridViewColumn Header="File" DisplayMemberBinding="{Binding SourcePath}" Width="300"/>
-                                <GridViewColumn Header="Line" DisplayMemberBinding="{Binding Line}" Width="80"/>
+                                <GridViewColumn Header="{DynamicResource UiFile}" DisplayMemberBinding="{Binding SourcePath}" Width="300"/>
+                                <GridViewColumn Header="{DynamicResource UiLine}" DisplayMemberBinding="{Binding Line}" Width="80"/>
                             </GridView>
                         </ListView.View>
                     </ListView>
                 </TabItem>
 
                 <!-- Output Tab -->
-                <TabItem Header="Output">
+                <TabItem Header="{DynamicResource UiOutput}">
                     <Grid Background="{StaticResource BrushBgEditor}">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
                         <DockPanel Grid.Row="0" Margin="8,6">
-                            <Button DockPanel.Dock="Right" Content="Clear" Command="{Binding ClearOutputCommand}"
+                            <Button DockPanel.Dock="Right" Content="{DynamicResource UiClear}" Command="{Binding ClearOutputCommand}"
                                     Style="{StaticResource DebugButtonStyle}"/>
-                            <TextBlock Text="DEBUG CONSOLE" Foreground="{StaticResource BrushTextMuted}"
+                            <TextBlock Text="{DynamicResource UiDEBUGCONSOLE}" Foreground="{StaticResource BrushTextMuted}"
                                        FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center"/>
                         </DockPanel>
                         <ListBox Grid.Row="1" ItemsSource="{Binding OutputLog}"

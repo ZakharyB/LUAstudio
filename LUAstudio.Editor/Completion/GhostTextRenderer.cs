@@ -54,7 +54,7 @@ public sealed class GhostTextRenderer : IBackgroundRenderer, IDisposable
     public void SetGhostText(TextDocument document, int caretOffset, string prefix, string fullText)
     {
         if (string.IsNullOrEmpty(fullText) || fullText.Length <= prefix.Length ||
-            !fullText.StartsWith(prefix, StringComparison.Ordinal))
+            !fullText.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
         {
             Clear();
             return;

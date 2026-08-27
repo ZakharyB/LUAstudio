@@ -120,7 +120,7 @@ public static class ApiDumpIngestor
         foreach (var cls in classesEl.EnumerateArray())
         {
             var name = cls.GetProperty("Name").GetString() ?? "";
-            var super = cls.TryGetProperty("Superclass", out var s) ? s.GetString() : null;
+            var super = cls.TryGetProperty("Superclass", out var s) ? ReadTypeName(s) : null;
             var members = new List<RobloxMember>();
 
             if (cls.TryGetProperty("Members", out var membersEl))
@@ -128,12 +128,15 @@ public static class ApiDumpIngestor
                 foreach (var m in membersEl.EnumerateArray())
                 {
                     var memberName = m.GetProperty("Name").GetString() ?? "";
-                    var memberType = m.TryGetProperty("MemberType", out var mt) ? mt.GetString() : "Property";
+                    var memberType = m.TryGetProperty("MemberType", out var mt) ? ReadTypeName(mt) : "Property";
                     var kind = MapMemberType(memberType);
                     string? returnType = null;
                     if (m.TryGetProperty("ReturnType", out var rt))
                     {
-                        returnType = rt.GetString();
+                        // Current Roblox dumps represent types as objects (for
+                        // example { "Name": "string", "Category": "Primitive" }).
+                        // Older dumps use a plain string, so support both forms.
+                        returnType = ReadTypeName(rt);
                     }
 
                     members.Add(new RobloxMember(memberName, kind, null, returnType));
@@ -162,7 +165,7 @@ public static class ApiDumpIngestor
         foreach (var cls in array.EnumerateArray())
         {
             var name = cls.GetProperty("Name").GetString() ?? "";
-            var super = cls.TryGetProperty("Superclass", out var s) ? s.GetString() : null;
+            var super = cls.TryGetProperty("Superclass", out var s) ? ReadTypeName(s) : null;
             classes[name] = new RobloxClass(name, super, null, Array.Empty<RobloxMember>());
         }
 
@@ -183,4 +186,21 @@ public static class ApiDumpIngestor
         "Property" => SymbolKind.Property,
         _ => SymbolKind.Field
     };
+
+    private static string? ReadTypeName(JsonElement element)
+    {
+        if (element.ValueKind == JsonValueKind.String)
+        {
+            return element.GetString();
+        }
+
+        if (element.ValueKind == JsonValueKind.Object &&
+            element.TryGetProperty("Name", out var name) &&
+            name.ValueKind == JsonValueKind.String)
+        {
+            return name.GetString();
+        }
+
+        return null;
+    }
 }

@@ -129,7 +129,9 @@ public sealed class InlineCompletionService : IDisposable
     {
         try
         {
-            await Task.Delay(50, token).ConfigureAwait(false);
+            // Stay on AvalonEdit's dispatcher: the remainder reads the document,
+            // creates text anchors, and invalidates WPF rendering state.
+            await Task.Delay(50, token);
         }
         catch (OperationCanceledException)
         {
@@ -161,7 +163,7 @@ public sealed class InlineCompletionService : IDisposable
         IReadOnlyList<CompletionItem> items;
         try
         {
-            items = await _completion.GetCompletionsAsync(context, token).ConfigureAwait(false);
+            items = await _completion.GetCompletionsAsync(context, token);
         }
         catch (OperationCanceledException)
         {
