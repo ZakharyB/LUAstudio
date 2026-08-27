@@ -45,4 +45,14 @@ public static class SandboxPayload
 public static class SandboxPipeNames
 {
     public const string DefaultHostPipe = "LUAstudio.ExecutionHost";
+
+    public static string ForIdeProcess(int processId)
+    {
+        if (processId <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(processId));
+        }
+
+        return $"LUAstudio-{processId}";
+    }
 }

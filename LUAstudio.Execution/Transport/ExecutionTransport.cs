@@ -67,20 +67,29 @@ public sealed class ExecutionHostProcessManager : IExecutionHostProcessManager
     private Process? _process;
     private IExecutionHostClient? _client;
 
+    public event EventHandler<ExecutionHostLogEventArgs>? Log;
+
     public async Task<IExecutionHostClient> StartHostAsync(CancellationToken cancellationToken = default)
     {
         if (_client is not null)
         {
+            WriteLog("Start requested; the execution host is already connected.");
             return _client;
         }
 
         var hostPath = ResolveHostExecutablePath();
-        _process = new Process
+        var idePid = Environment.ProcessId;
+        var pipeName = SandboxPipeNames.ForIdeProcess(idePid);
+        WriteLog($"LUAstudio.exe PID {idePid}");
+        WriteLog($"Allocated private pipe: {pipeName}");
+        WriteLog($"Resolved host executable: {hostPath}");
+        WriteLog($"Launching: {Path.GetFileName(hostPath)} --pipe {pipeName}");
+        var process = new Process
         {
             StartInfo = new ProcessStartInfo
             {
                 FileName = hostPath,
-                Arguments = $"--pipe {SandboxPipeNames.DefaultHostPipe}",
+                ArgumentList = { "--pipe", pipeName },
                 UseShellExecute = false,
                 CreateNoWindow = true,
                 RedirectStandardError = true,
@@ -89,23 +98,59 @@ public sealed class ExecutionHostProcessManager : IExecutionHostProcessManager
             EnableRaisingEvents = true
         };
 
-        if (!_process.Start())
+        process.OutputDataReceived += (_, e) =>
+        {
+            if (!string.IsNullOrEmpty(e.Data)) WriteLog($"stdout: {e.Data}");
+        };
+        process.ErrorDataReceived += (_, e) =>
+        {
+            if (!string.IsNullOrEmpty(e.Data)) WriteLog($"stderr: {e.Data}");
+        };
+        process.Exited += (_, _) => WriteLog($"Process exited with code {process.ExitCode}.");
+        _process = process;
+
+        if (!process.Start())
         {
             throw new InvalidOperationException("Failed to start execution host process.");
         }
 
-        var client = new ExecutionHostClient(SandboxPipeNames.DefaultHostPipe);
-        await client.ConnectAsync(cancellationToken).ConfigureAwait(false);
-        _client = client;
-        return client;
+        WriteLog($"Process started: LUAstudio.ExecutionHost PID {process.Id}");
+        process.BeginOutputReadLine();
+        process.BeginErrorReadLine();
+
+        WriteLog($"Connecting named-pipe client to {pipeName}...");
+        var client = new ExecutionHostClient(pipeName);
+        try
+        {
+            await client.ConnectAsync(cancellationToken).ConfigureAwait(false);
+            _client = client;
+            WriteLog("Named-pipe connection established; sandbox host is ready.");
+            return client;
+        }
+        catch (Exception ex)
+        {
+            WriteLog($"Launch failed while connecting to {pipeName}: {ex.Message}");
+            await client.DisposeAsync().ConfigureAwait(false);
+            if (!process.HasExited)
+            {
+                process.Kill(entireProcessTree: true);
+                await process.WaitForExitAsync(CancellationToken.None).ConfigureAwait(false);
+            }
+
+            process.Dispose();
+            _process = null;
+            throw;
+        }
     }
 
     public async Task StopHostAsync(CancellationToken cancellationToken = default)
     {
+        WriteLog("Execution host shutdown requested.");
         if (_client is not null)
         {
             await _client.DisposeAsync().ConfigureAwait(false);
             _client = null;
+            WriteLog("Named-pipe client disconnected.");
         }
 
         if (_process is { HasExited: false })
@@ -116,7 +161,10 @@ public sealed class ExecutionHostProcessManager : IExecutionHostProcessManager
 
         _process?.Dispose();
         _process = null;
+        WriteLog("Execution host shutdown complete.");
     }
+
+    private void WriteLog(string message) => Log?.Invoke(this, new ExecutionHostLogEventArgs(message));
 
     private static string ResolveHostExecutablePath()
     {

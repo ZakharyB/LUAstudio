@@ -16,9 +16,11 @@ public sealed class WpfDocumentEditorHost : IDisposable
     private readonly EditorDiagnosticService _diagnostics;
     private readonly DocumentAnalysisHandler _analysisHandler;
     private readonly IEventBus _eventBus;
+    private readonly IServiceProvider _services;
     private readonly Dictionary<Guid, TextEditor> _editors = new();
     private readonly Dictionary<Guid, EditorFoldingManager> _foldings = new();
     private readonly Dictionary<Guid, EditorDiagnosticHoverController> _diagnosticHovers = new();
+    private readonly Dictionary<Guid, EditorIntelliSenseController> _intelliSenseControllers = new();
 
     public WpfDocumentEditorHost(
         EditorDiagnosticService diagnostics,
@@ -70,6 +72,14 @@ public sealed class WpfDocumentEditorHost : IDisposable
 
     public void Detach(TextEditor editor, TextDocument document)
     {
+        // Ignore a stale Unloaded notification from a view that no longer owns
+        // this document. A newly loaded tab may already have replaced it.
+        if (!_editors.TryGetValue(document.Id, out var attachedEditor) ||
+            !ReferenceEquals(attachedEditor, editor))
+        {
+            return;
+        }
+
         _editors.Remove(document.Id);
         // AvalonDock unloads tab content while switching documents. Keep the
         // document's latest markers so the squiggles are immediately available
@@ -81,7 +91,10 @@ public sealed class WpfDocumentEditorHost : IDisposable
             folding.Dispose();
         }
 
-        _intelliSense.DetachIfEditor(editor);
+        if (_intelliSenseControllers.Remove(document.Id, out var controller))
+        {
+            controller.Dispose();
+        }
         if (_diagnosticHovers.Remove(document.Id, out var hover))
         {
             hover.Detach();
@@ -125,6 +138,11 @@ public sealed class WpfDocumentEditorHost : IDisposable
         }
 
         _diagnosticHovers.Clear();
-        _intelliSense.Dispose();
+        foreach (var controller in _intelliSenseControllers.Values)
+        {
+            controller.Dispose();
+        }
+
+        _intelliSenseControllers.Clear();
     }
 }

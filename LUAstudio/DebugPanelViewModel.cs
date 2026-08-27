@@ -19,6 +19,7 @@ public sealed partial class DebugPanelViewModel : ObservableObject
     private IDebugEditorNavigation? _navigation;
     private Guid _sessionId;
     private CancellationTokenSource? _eventLoopCts;
+    private bool _isStartingRun;
 
     [ObservableProperty]
     private ExecutionSessionState _sessionState = ExecutionSessionState.Stopped;
@@ -87,11 +88,32 @@ public sealed partial class DebugPanelViewModel : ObservableObject
         IBreakpointService breakpoints,
         IDebugEditorNavigation navigation)
     {
+        if (_coordinator is not null)
+        {
+            _coordinator.HostLog -= OnHostLog;
+        }
+
         _coordinator = coordinator;
+        _coordinator.HostLog += OnHostLog;
         _breakpoints = breakpoints;
         _navigation = navigation;
         _breakpoints.BreakpointsChanged += SyncBreakpointList;
         SyncBreakpointList();
+    }
+
+    private void OnHostLog(object? sender, ExecutionHostLogEventArgs e)
+    {
+        void Append() => OutputLog.Add($"[ExecutionHost {e.Timestamp:HH:mm:ss.fff}] {e.Message}");
+
+        var dispatcher = Application.Current?.Dispatcher;
+        if (dispatcher is null || dispatcher.CheckAccess())
+        {
+            Append();
+        }
+        else
+        {
+            _ = dispatcher.InvokeAsync(Append);
+        }
     }
 
     public async Task InitializeAsync(IExecutionHostClient client)
@@ -132,6 +154,18 @@ public sealed partial class DebugPanelViewModel : ObservableObject
 
     private void HandleEvent(SandboxEnvelope evt)
     {
+        // Events from a previous session can still be in the transport queue when
+        // Run is pressed again. They must not change the new run back to Stopped.
+        if (evt.SessionId is Guid eventSessionId)
+        {
+            var currentSessionId = _coordinator?.CurrentSessionId ?? Guid.Empty;
+            if ((currentSessionId != Guid.Empty && eventSessionId != currentSessionId) ||
+                (_isStartingRun && currentSessionId == Guid.Empty))
+            {
+                return;
+            }
+        }
+
         switch (evt.Kind)
         {
             case SandboxMessageKind.SessionStarted:
@@ -171,7 +205,9 @@ public sealed partial class DebugPanelViewModel : ObservableObject
             case SandboxMessageKind.OutputLog:
                 if (SandboxPayload.As<OutputLogPayload>(evt.Payload) is { } output)
                 {
-                    OutputLog.Add($"[{output.Channel}] {output.Text}");
+                    // Script output should look like terminal output. In particular,
+                    // print(17) is shown as "17", not as "[stdout] 17".
+                    AppendTerminalText(output.Text);
                 }
                 break;
 
@@ -217,6 +253,7 @@ public sealed partial class DebugPanelViewModel : ObservableObject
 
         try
         {
+            _isStartingRun = true;
             StackFrames.Clear();
             Variables.Clear();
             OutputLog.Add($"> run {sourcePath ?? "<untitled>"}");
@@ -226,11 +263,17 @@ public sealed partial class DebugPanelViewModel : ObservableObject
                 await InitializeAsync(client);
             }
 
+            SessionState = ExecutionSessionState.Running;
             _sessionId = await _coordinator.RunAsync(source, sourcePath);
         }
         catch (Exception ex)
         {
+            SessionState = ExecutionSessionState.Crashed;
             OutputLog.Add($"Error starting session: {ex.Message}");
+        }
+        finally
+        {
+            _isStartingRun = false;
         }
     }
 
@@ -507,7 +550,16 @@ public sealed partial class DebugPanelViewModel : ObservableObject
         var requested = command.Length == 2
             ? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)
             : command[2..].Trim().Trim('"');
-        var path = Path.GetFullPath(requested, TerminalWorkingDirectory);
+        string path;
+        try
+        {
+            path = Path.GetFullPath(requested, TerminalWorkingDirectory);
+        }
+        catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            OutputLog.Add($"The directory name is invalid: {requested}");
+            return true;
+        }
         if (!Directory.Exists(path))
         {
             OutputLog.Add($"The system cannot find the path specified: {path}");
@@ -586,6 +638,11 @@ public sealed partial class DebugPanelViewModel : ObservableObject
         if (_breakpoints is not null)
         {
             _breakpoints.BreakpointsChanged -= SyncBreakpointList;
+        }
+
+        if (_coordinator is not null)
+        {
+            _coordinator.HostLog -= OnHostLog;
         }
 
         _eventLoopCts?.Cancel();

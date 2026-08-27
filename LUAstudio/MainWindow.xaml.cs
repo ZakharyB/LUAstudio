@@ -277,7 +277,12 @@ public partial class MainWindow
         }
 
         FindAnchorable("Problems")?.Show();
-        FindAnchorable("Output")?.Show();
+        var output = FindAnchorable("Output");
+        if (output is not null)
+        {
+            output.Show();
+            output.IsSelected = true;
+        }
         FindAnchorable("Debug")?.Show();
     }
 

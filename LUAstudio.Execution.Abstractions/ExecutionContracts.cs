@@ -192,7 +192,18 @@ public interface IExecutionHostClient : IAsyncDisposable
 
 public interface IExecutionHostProcessManager
 {
+    event EventHandler<ExecutionHostLogEventArgs>? Log;
+
     Task<IExecutionHostClient> StartHostAsync(CancellationToken cancellationToken = default);
 
     Task StopHostAsync(CancellationToken cancellationToken = default);
+}
+
+public sealed class ExecutionHostLogEventArgs : EventArgs
+{
+    public ExecutionHostLogEventArgs(string message) => Message = message;
+
+    public DateTimeOffset Timestamp { get; } = DateTimeOffset.Now;
+
+    public string Message { get; }
 }
