@@ -248,19 +248,27 @@ public sealed partial class DebugPanelViewModel : ObservableObject
     {
         if (_coordinator is null)
         {
+            OutputLog.Add("[RUN] Coordinator is NULL.");
+
             return;
         }
 
         try
         {
+            OutputLog.Add("[RUN] RunDocumentAsync entered.");
+
             _isStartingRun = true;
             StackFrames.Clear();
             Variables.Clear();
             OutputLog.Add($"> run {sourcePath ?? "<untitled>"}");
+            OutputLog.Add("[RUN] Calling EnsureHostRunningAsync...");
             var client = await _coordinator.EnsureHostRunningAsync();
+            OutputLog.Add("[RUN] EnsureHostRunningAsync returned.");
             if (_client != client)
             {
+                OutputLog.Add("[RUN] Initializing client...");
                 await InitializeAsync(client);
+                OutputLog.Add("[RUN] Client initialized.");
             }
 
             SessionState = ExecutionSessionState.Running;

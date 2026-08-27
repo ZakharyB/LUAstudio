@@ -28,9 +28,23 @@ public sealed class DebugSessionCoordinator : IAsyncDisposable
 
     private void OnHostLog(object? sender, ExecutionHostLogEventArgs e) => HostLog?.Invoke(this, e);
 
-    public async Task<IExecutionHostClient> EnsureHostRunningAsync(CancellationToken cancellationToken = default)
+    public async Task<IExecutionHostClient> EnsureHostRunningAsync(
+        CancellationToken cancellationToken = default)
     {
-        _client ??= await _hostManager.StartHostAsync(cancellationToken).ConfigureAwait(false);
+        if (_client is not null)
+        {
+            WriteLog("[COORDINATOR] Existing client returned.");
+            return _client;
+        }
+
+        WriteLog("[COORDINATOR] BEFORE StartHostAsync");
+
+        _client = await _hostManager
+            .StartHostAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        WriteLog("[COORDINATOR] AFTER StartHostAsync");
+
         return _client;
     }
 

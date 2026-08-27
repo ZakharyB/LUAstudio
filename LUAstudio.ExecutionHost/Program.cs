@@ -6,23 +6,52 @@ public static class Program
 {
     public static async Task Main(string[] args)
     {
-        var pipeName = SandboxPipeNames.DefaultHostPipe;
-        for (var i = 0; i < args.Length - 1; i++)
+        try
         {
-            if (string.Equals(args[i], "--pipe", StringComparison.OrdinalIgnoreCase))
+            Console.WriteLine(
+                $"ExecutionHost starting PID={Environment.ProcessId}");
+
+            Console.WriteLine(
+                $"Arguments: {string.Join(" ", args)}");
+
+            var pipeName = SandboxPipeNames.DefaultHostPipe;
+
+            for (var i = 0; i < args.Length - 1; i++)
             {
-                pipeName = args[i + 1];
+                if (string.Equals(
+                        args[i],
+                        "--pipe",
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    pipeName = args[i + 1];
+                    break;
+                }
             }
+
+            Console.WriteLine(
+                $"Using named pipe: {pipeName}");
+
+            using var cts = new CancellationTokenSource();
+
+            Console.CancelKeyPress += (_, e) =>
+            {
+                e.Cancel = true;
+                cts.Cancel();
+            };
+
+            var server = new SandboxHostServer(pipeName);
+
+            Console.WriteLine(
+                $"Starting SandboxHostServer on {pipeName}");
+
+            await server
+                .RunAsync(cts.Token)
+                .ConfigureAwait(false);
         }
-
-        using var cts = new CancellationTokenSource();
-        Console.CancelKeyPress += (_, e) =>
+        catch (Exception ex)
         {
-            e.Cancel = true;
-            cts.Cancel();
-        };
-
-        var server = new SandboxHostServer(pipeName);
-        await server.RunAsync(cts.Token).ConfigureAwait(false);
+            Console.Error.WriteLine(ex);
+            Environment.ExitCode = 1;
+        }
     }
 }

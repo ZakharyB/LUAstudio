@@ -15,17 +15,44 @@ public sealed class SandboxHostServer
 
     public async Task RunAsync(CancellationToken cancellationToken = default)
     {
+        Console.WriteLine($"[SERVER] RunAsync entered for '{_pipeName}'");
+
         while (!cancellationToken.IsCancellationRequested)
         {
+            Console.WriteLine($"[SERVER] Creating NamedPipeServerStream '{_pipeName}'");
+
             var stream = new NamedPipeServerStream(
                 _pipeName,
                 PipeDirection.InOut,
                 NamedPipeServerStream.MaxAllowedServerInstances,
                 PipeTransmissionMode.Byte,
                 PipeOptions.Asynchronous);
-            await stream.WaitForConnectionAsync(cancellationToken).ConfigureAwait(false);
-            _ = Task.Run(() => HandleClientAsync(stream, cancellationToken), cancellationToken);
+
+            Console.WriteLine($"[SERVER] Pipe created. Waiting for client '{_pipeName}'");
+
+            try
+            {
+                await stream
+                    .WaitForConnectionAsync(cancellationToken)
+                    .ConfigureAwait(false);
+
+                Console.WriteLine($"[SERVER] CLIENT CONNECTED '{_pipeName}'");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine(
+                    $"[SERVER] WaitForConnectionAsync failed: {ex}");
+
+                stream.Dispose();
+                throw;
+            }
+
+            _ = Task.Run(
+                () => HandleClientAsync(stream, cancellationToken),
+                CancellationToken.None);
         }
+
+        Console.WriteLine("[SERVER] RunAsync exiting");
     }
 
     private async Task HandleClientAsync(Stream stream, CancellationToken cancellationToken)
@@ -73,6 +100,10 @@ public sealed class SandboxHostServer
     {
         try
         {
+            Console.WriteLine(
+                $"[SERVER] Received {envelope.Kind} " +
+                $"Session={envelope.SessionId} " +
+                $"Request={envelope.RequestId}");
             switch (envelope.Kind)
             {
                 case SandboxMessageKind.CreateSession:
@@ -83,14 +114,41 @@ public sealed class SandboxHostServer
                         request.SessionId,
                         request.Configuration,
                         evt => _ = transport.SendAsync(evt, cancellationToken));
-                    return Ack(envelope, new SessionStartedPayload(request.SessionId, ExecutionSessionState.Created));
+
+                    await transport.SendAsync(
+                        new SandboxEnvelope(
+                            SandboxMessageKind.ExecutionStateChanged,
+                            request.SessionId,
+                            null,
+                            new ExecutionStateChangedPayload(
+                                request.SessionId,
+                                ExecutionSessionState.Created)),
+                        cancellationToken);
+
+                    return Ack(envelope, null);
                 }
 
                 case SandboxMessageKind.LoadScript:
                 {
                     var request = Required<LoadScriptRequest>(envelope);
-                    _sessions.Get(request.SessionId).LoadScript(request.Source, request.SourcePath);
-                    return Ack(envelope, new SessionStartedPayload(request.SessionId, ExecutionSessionState.Loaded));
+
+                    _sessions
+                        .Get(request.SessionId)
+                        .LoadScript(
+                            request.Source,
+                            request.SourcePath);
+
+                    await transport.SendAsync(
+                        new SandboxEnvelope(
+                            SandboxMessageKind.ExecutionStateChanged,
+                            request.SessionId,
+                            null,
+                            new ExecutionStateChangedPayload(
+                                request.SessionId,
+                                ExecutionSessionState.Loaded)),
+                        cancellationToken);
+
+                    return Ack(envelope, null);
                 }
 
                 case SandboxMessageKind.SetBreakpoints:
@@ -186,6 +244,8 @@ public sealed class SandboxHostServer
         }
         catch (Exception ex)
         {
+            Console.Error.WriteLine(
+                $"[SERVER] Dispatch error for {envelope.Kind}: {ex}");
             return Error(envelope, ex.Message);
         }
     }
@@ -201,22 +261,50 @@ public sealed class SandboxHostServer
 
     private sealed class PipeTransport : IAsyncDisposable
     {
+        private static readonly Encoding PipeEncoding =
+            new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
+
         private readonly StreamReader _reader;
         private readonly StreamWriter _writer;
         private readonly SemaphoreSlim _writeLock = new(1, 1);
 
         public PipeTransport(Stream stream)
         {
-            _reader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: false, leaveOpen: true);
-            _writer = new StreamWriter(stream, Encoding.UTF8, leaveOpen: true) { AutoFlush = true };
+            _reader = new StreamReader(
+                stream,
+                PipeEncoding,
+                detectEncodingFromByteOrderMarks: false,
+                bufferSize: 4096,
+                leaveOpen: true);
+
+            _writer = new StreamWriter(
+                stream,
+                PipeEncoding,
+                bufferSize: 4096,
+                leaveOpen: true);
+
+            // NO AutoFlush here.
         }
 
-        public async Task SendAsync(SandboxEnvelope envelope, CancellationToken cancellationToken)
+        public async Task SendAsync(
+            SandboxEnvelope envelope,
+            CancellationToken cancellationToken)
         {
-            await _writeLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+            await _writeLock
+                .WaitAsync(cancellationToken)
+                .ConfigureAwait(false);
+
             try
             {
-                await _writer.WriteLineAsync(SandboxJson.Serialize(envelope).AsMemory(), cancellationToken).ConfigureAwait(false);
+                await _writer
+                    .WriteLineAsync(
+                        SandboxJson.Serialize(envelope).AsMemory(),
+                        cancellationToken)
+                    .ConfigureAwait(false);
+
+                await _writer
+                    .FlushAsync(cancellationToken)
+                    .ConfigureAwait(false);
             }
             finally
             {
@@ -224,17 +312,26 @@ public sealed class SandboxHostServer
             }
         }
 
-        public async Task<SandboxEnvelope?> ReceiveAsync(CancellationToken cancellationToken)
+        public async Task<SandboxEnvelope?> ReceiveAsync(
+            CancellationToken cancellationToken)
         {
-            var line = await _reader.ReadLineAsync(cancellationToken).ConfigureAwait(false);
-            return string.IsNullOrWhiteSpace(line) ? null : SandboxJson.Deserialize(line);
+            var line = await _reader
+                .ReadLineAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+            return string.IsNullOrWhiteSpace(line)
+                ? null
+                : SandboxJson.Deserialize(line);
         }
 
         public async ValueTask DisposeAsync()
         {
             _writeLock.Dispose();
             _reader.Dispose();
-            await _writer.DisposeAsync().ConfigureAwait(false);
+
+            await _writer
+                .DisposeAsync()
+                .ConfigureAwait(false);
         }
     }
 }

@@ -224,47 +224,46 @@ public partial class MainWindow
     private async void OnLoaded(object sender, RoutedEventArgs e)
     {
         Loaded -= OnLoaded;
+
         if (DataContext is MainViewModel vm)
         {
             await vm.InitializeAsync().ConfigureAwait(true);
-            vm.RestoreWorkspaceOnStartup = Engine.Globals.Get<bool>(SettingKeys.RestoreWorkspaceRoots)?.Value ?? vm.RestoreWorkspaceOnStartup;
+
+            vm.RestoreWorkspaceOnStartup =
+                Engine.Globals
+                    .Get<bool>(SettingKeys.RestoreWorkspaceRoots)?.Value
+                ?? vm.RestoreWorkspaceOnStartup;
         }
 
         DockLayoutStore.DeleteLegacyLayoutFile();
         DockManager.Theme = new Vs2013DarkTheme();
         EnsureDockDefaults();
 
-        try
+        DebugPanelViewModel.GetActiveEditorLocation = () =>
         {
-            DebugPanelViewModel.GetActiveEditorLocation = () =>
+            if (DataContext is not MainViewModel vm ||
+                vm.ActiveDocument is null)
             {
-                if (DataContext is not MainViewModel vm || vm.ActiveDocument is null)
-                {
-                    return null;
-                }
+                return null;
+            }
 
-                return (vm.ActiveDocument.FilePath, vm.CaretLine > 0 ? vm.CaretLine : 1);
-            };
+            return (
+                vm.ActiveDocument.FilePath,
+                vm.CaretLine > 0 ? vm.CaretLine : 1);
+        };
 
-            DebugPanelViewModel.RunActiveDocumentAsync = async () =>
-            {
-                if (DataContext is not MainViewModel vm || vm.ActiveDocument is null)
-                {
-                    return;
-                }
-
-                await DebugPanelViewModel.RunDocumentAsync(
-                    vm.ActiveDocument.Content ?? string.Empty,
-                    vm.ActiveDocument.FilePath);
-            };
-
-            var client = await _debugCoordinator.EnsureHostRunningAsync();
-            await DebugPanelViewModel.InitializeAsync(client);
-        }
-        catch (Exception ex)
+        DebugPanelViewModel.RunActiveDocumentAsync = async () =>
         {
-            DebugPanelViewModel.OutputLog.Add($"Failed to initialize debug host: {ex.Message}");
-        }
+            if (DataContext is not MainViewModel vm ||
+                vm.ActiveDocument is null)
+            {
+                return;
+            }
+
+            await DebugPanelViewModel.RunDocumentAsync(
+                vm.ActiveDocument.Content ?? string.Empty,
+                vm.ActiveDocument.FilePath);
+        };
     }
 
     private void EnsureDockDefaults()

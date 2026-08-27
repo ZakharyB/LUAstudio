@@ -15,23 +15,52 @@ public sealed class ExecutionHostClient : IExecutionHostClient
     private readonly TaskCompletionSource _connected = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private CancellationTokenSource? _readerCts;
     private Task? _readerTask;
-
-    public ExecutionHostClient(string pipeName = SandboxPipeNames.DefaultHostPipe)
+    private readonly Action<string>? _log;
+    
+    public ExecutionHostClient(
+        string pipeName = SandboxPipeNames.DefaultHostPipe,
+        Action<string>? log = null)
     {
         _pipeName = pipeName;
+        _log = log;
     }
 
-    public async Task ConnectAsync(CancellationToken cancellationToken = default)
+    public async Task ConnectAsync(
+        CancellationToken cancellationToken = default)
     {
+        _log?.Invoke("[CLIENT] ConnectAsync ENTER");
+
         if (_transport is not null)
         {
+            _log?.Invoke("[CLIENT] Existing transport, returning.");
             return;
         }
 
-        _transport = await NamedPipeSandboxTransport.ConnectClientAsync(_pipeName, cancellationToken).ConfigureAwait(false);
-        _readerCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        _readerTask = Task.Run(() => ReadLoopAsync(_readerCts.Token), CancellationToken.None);
+        _log?.Invoke("[CLIENT] BEFORE ConnectClientAsync");
+
+        _transport = await NamedPipeSandboxTransport
+            .ConnectClientAsync(
+                _pipeName,
+                message => _log?.Invoke(message),
+                cancellationToken)
+            .ConfigureAwait(false);
+
+        _log?.Invoke("[CLIENT] AFTER ConnectClientAsync");
+
+        _readerCts = new CancellationTokenSource();
+
+        _log?.Invoke("[CLIENT] BEFORE Task.Run reader");
+
+        _readerTask = Task.Run(
+            () => ReadLoopAsync(_readerCts.Token),
+            CancellationToken.None);
+
+        _log?.Invoke("[CLIENT] AFTER Task.Run reader");
+
         _connected.TrySetResult();
+
+        _log?.Invoke("[CLIENT] AFTER connected.TrySetResult");
+        _log?.Invoke("[CLIENT] ConnectAsync EXIT");
     }
 
     public async Task<Guid> CreateSessionAsync(SessionConfiguration configuration, CancellationToken cancellationToken = default)
@@ -229,6 +258,9 @@ public sealed class ExecutionHostClient : IExecutionHostClient
 
         try
         {
+            System.Diagnostics.Debug.WriteLine(
+                $"[ExecutionClient] Sending {requestKind} " +
+                $"Session={sessionId} Request={requestId}");
             await _transport!.SendAsync(new SandboxEnvelope(requestKind, sessionId, requestId, payload), cancellationToken)
                 .ConfigureAwait(false);
 
