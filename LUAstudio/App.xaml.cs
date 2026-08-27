@@ -99,7 +99,9 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
-        _services?.Dispose();
+        // The container owns async-only services such as DebugSessionCoordinator.
+        // Synchronous disposal throws instead of shutting those services down.
+        _services?.DisposeAsync().AsTask().GetAwaiter().GetResult();
         base.OnExit(e);
     }
 }

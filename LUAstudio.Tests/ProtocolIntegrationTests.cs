@@ -11,6 +11,14 @@ namespace LUAstudio.Tests;
 public sealed class ProtocolIntegrationTests
 {
     [Fact]
+    public void Ide_processes_receive_distinct_private_pipe_names()
+    {
+        Assert.Equal("LUAstudio-15420", SandboxPipeNames.ForIdeProcess(15420));
+        Assert.Equal("LUAstudio-28704", SandboxPipeNames.ForIdeProcess(28704));
+        Assert.NotEqual(SandboxPipeNames.ForIdeProcess(15420), SandboxPipeNames.ForIdeProcess(28704));
+    }
+
+    [Fact]
     public async Task Host_process_supports_create_session_and_load_script()
     {
         await using var host = await InProcessExecutionHost.StartAsync();
@@ -50,12 +58,19 @@ public sealed class ProtocolIntegrationTests
         await client.ExecuteAsync(sessionId, timeout.Token);
 
         var output = new List<string>();
+        var states = new List<ExecutionSessionState>();
         await foreach (var message in client.WatchEventsAsync(timeout.Token))
         {
             if (message.Kind == SandboxMessageKind.OutputLog &&
                 SandboxPayload.As<OutputLogPayload>(message.Payload) is { } line)
             {
                 output.Add(line.Text);
+            }
+
+            if (message.Kind == SandboxMessageKind.ExecutionStateChanged &&
+                SandboxPayload.As<ExecutionStateChangedPayload>(message.Payload) is { } state)
+            {
+                states.Add(state.State);
             }
 
             if (message.Kind == SandboxMessageKind.ExecutionFinished)
@@ -65,6 +80,8 @@ public sealed class ProtocolIntegrationTests
         }
 
         Assert.Contains("17", output);
+        Assert.Contains(ExecutionSessionState.Running, states);
+        Assert.Equal(ExecutionSessionState.Stopped, states.Last());
     }
 }
 
