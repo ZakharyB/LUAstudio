@@ -197,8 +197,33 @@
                                                     ItemsSource="{Binding OpenDocuments}"
                                                     SelectedItem="{Binding ActiveDocument, Mode=TwoWay}"
                                                     Visibility="{Binding HasOpenDocuments, Converter={StaticResource BoolToVisibility}}">
+                                            <TabControl.Template>
+                                                <ControlTemplate TargetType="TabControl">
+                                                    <Grid Background="{TemplateBinding Background}">
+                                                        <Grid.RowDefinitions>
+                                                            <RowDefinition Height="Auto" />
+                                                            <RowDefinition Height="*" />
+                                                        </Grid.RowDefinitions>
+                                                        <ScrollViewer Grid.Row="0"
+                                                                      HorizontalScrollBarVisibility="Auto"
+                                                                      VerticalScrollBarVisibility="Disabled"
+                                                                      CanContentScroll="False">
+                                                            <TabPanel IsItemsHost="True" />
+                                                        </ScrollViewer>
+                                                        <Border Grid.Row="1" Background="{TemplateBinding Background}">
+                                                            <ContentPresenter Content="{TemplateBinding SelectedContent}"
+                                                                              ContentTemplate="{TemplateBinding SelectedContentTemplate}" />
+                                                        </Border>
+                                                    </Grid>
+                                                </ControlTemplate>
+                                            </TabControl.Template>
                                             <TabControl.ItemContainerStyle>
                                                 <Style TargetType="TabItem" BasedOn="{StaticResource {x:Type TabItem}}">
+                                                    <EventSetter Event="PreviewMouseLeftButtonDown" Handler="DocumentTab_OnPreviewMouseLeftButtonDown" />
+                                                    <EventSetter Event="MouseMove" Handler="DocumentTab_OnMouseMove" />
+                                                    <EventSetter Event="DragOver" Handler="DocumentTab_OnDragOver" />
+                                                    <EventSetter Event="Drop" Handler="DocumentTab_OnDrop" />
+                                                    <Setter Property="AllowDrop" Value="True" />
                                                     <Setter Property="HeaderTemplate">
                                                         <Setter.Value>
                                                             <DataTemplate DataType="{x:Type documents:TextDocument}">
@@ -209,6 +234,18 @@
                                                                                Foreground="{StaticResource BrushWarning}"
                                                                                Text="●"
                                                                                Visibility="{Binding IsDirty, Converter={StaticResource BoolToVisibility}}" />
+                                                                    <Button Margin="7,0,-5,0"
+                                                                            Width="18"
+                                                                            Height="18"
+                                                                            Padding="0"
+                                                                            Background="Transparent"
+                                                                            BorderThickness="0"
+                                                                            Foreground="{StaticResource BrushTextMuted}"
+                                                                            FontSize="13"
+                                                                            ToolTip="Close"
+                                                                            Content="×"
+                                                                            Command="{Binding DataContext.CloseDocumentCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                            CommandParameter="{Binding}" />
                                                                 </StackPanel>
                                                             </DataTemplate>
                                                         </Setter.Value>

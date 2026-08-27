@@ -132,6 +132,16 @@ internal sealed class LuaParser
     private SyntaxNode ParseLocal()
     {
         var start = Previous().Span.Start;
+
+        // `local function name(...)` places the function keyword before the
+        // identifier.  Parsing an identifier first produced two misleading
+        // parenthesis diagnostics and also prevented the function from being
+        // entered into the semantic scope.
+        if (MatchKeyword("function"))
+        {
+            return ParseFunctionDeclaration(isLocal: true, start);
+        }
+
         var name = ExpectIdentifier();
         TypeAnnotationSyntax? typeAnn = null;
         if (MatchText(":"))
@@ -143,11 +153,6 @@ internal sealed class LuaParser
         if (MatchText("="))
         {
             init = ParseExpression();
-        }
-
-        if (MatchKeyword("function"))
-        {
-            return ParseFunctionDeclaration(isLocal: true, start, name);
         }
 
         var end = Previous().Span.End;
@@ -166,7 +171,6 @@ internal sealed class LuaParser
 
         ExpectText("(");
         var parameters = ParseParameterList();
-        ExpectText(")");
         var body = ParseFunctionBody();
         var end = Previous().Span.End;
         return new FunctionDeclarationSyntax(TextSpan.FromBounds(start, end), null, isLocal, name, parameters, body, returnType);

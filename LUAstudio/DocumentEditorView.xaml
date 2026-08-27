@@ -49,13 +49,17 @@
             <Setter Property="Height" Value="1" />
         </Style>
             
-        <ContextMenu x:Key="EditorContextMenu">
+        <ContextMenu x:Key="EditorContextMenu" Opened="EditorContextMenu_Opened">
             <MenuItem Command="{x:Static ApplicationCommands.Cut}" />
             <MenuItem Command="{x:Static ApplicationCommands.Copy}" />
             <MenuItem Command="{x:Static ApplicationCommands.Paste}" />
             <Separator />
             <MenuItem Command="{x:Static ApplicationCommands.SelectAll}" />
             <Separator />
+            <MenuItem Header="Go to Implementation"
+                      Click="GoToSymbol_Click" />
+            <MenuItem Header="Go to Declaration"
+                      Click="GoToSymbol_Click" />
             <MenuItem Header="Toggle Breakpoint"
                       Click="ToggleBreakpoint_Click" />
             <MenuItem Header="Go to Line..."

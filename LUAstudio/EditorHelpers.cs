@@ -97,7 +97,6 @@ public class BreakpointMargin : AbstractMargin, IDisposable
     private readonly IBreakpointService _breakpointService;
     private string? _sourcePath;
     private double _marginWidth = 20;
-    private List<CachedBreakpointVisual> _cachedVisuals = new List<CachedBreakpointVisual>();
 
     public string? SourcePath
     {
@@ -161,12 +160,20 @@ public class BreakpointMargin : AbstractMargin, IDisposable
         base.OnRender(drawingContext);
         if (_sourcePath == null || TextView?.Document == null) return;
 
-        foreach (var bpVisual in _cachedVisuals)
+        // Derive positions from the current visual lines on every render. This
+        // keeps markers attached to their document line while the view scrolls.
+        var breakpoints = _breakpointService.GetBreakpointsForFile(_sourcePath)
+            .Select(bp => bp.Line)
+            .ToHashSet();
+        foreach (var visualLine in TextView.VisualLines)
         {
-            var yPos = bpVisual.YPosition;
-            var radius = bpVisual.Radius;
-            var center = new Point(Width / 2, yPos - radius / 2);
-            drawingContext.DrawEllipse(bpVisual.Fill, bpVisual.Stroke, center, radius, radius);
+            var line = visualLine.FirstDocumentLine.LineNumber;
+            if (!breakpoints.Contains(line))
+                continue;
+
+            var top = visualLine.VisualTop - TextView.VerticalOffset;
+            var center = new Point(Width / 2, top + visualLine.Height / 2);
+            drawingContext.DrawEllipse(Brushes.Red, new Pen(Brushes.DarkRed, 1), center, 6, 6);
         }
     }
 
@@ -188,32 +195,7 @@ public class BreakpointMargin : AbstractMargin, IDisposable
 
     private void InvalidateCache()
     {
-        _cachedVisuals.Clear();
-        if (_sourcePath == null || TextView?.Document == null) return;
-
-        var breakpoints = _breakpointService.GetBreakpointsForFile(_sourcePath);
-        if (breakpoints == null) return;
-
-        foreach (var bp in breakpoints)
-        {
-            var line = bp.Line;
-            if (line > TextView.Document.LineCount) continue;
-
-            var yPos = TextView.GetVisualPosition(
-                new TextViewPosition(line, 1, 0),
-                VisualYPosition.LineBottom).Y;
-
-            Brush fill = Brushes.Red;
-            Pen stroke = new Pen(Brushes.DarkRed, 1);
-
-            _cachedVisuals.Add(new CachedBreakpointVisual
-            {
-                YPosition = yPos,
-                Radius = 6.0,
-                Fill = fill,
-                Stroke = stroke
-            });
-        }
+        // Marker geometry is calculated from visible lines during OnRender.
     }
 
     protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
@@ -232,12 +214,8 @@ public class BreakpointMargin : AbstractMargin, IDisposable
         if (TextView == null) return null;
         foreach (var vl in TextView.VisualLines)
         {
-            var top = TextView.GetVisualPosition(
-                new TextViewPosition(vl.FirstDocumentLine.LineNumber, 1, 0),
-                VisualYPosition.LineTop).Y;
-            var bottom = TextView.GetVisualPosition(
-                new TextViewPosition(vl.FirstDocumentLine.LineNumber, 1, 0),
-                VisualYPosition.LineBottom).Y;
+            var top = vl.VisualTop - TextView.VerticalOffset;
+            var bottom = top + vl.Height;
             if (y >= top && y <= bottom)
                 return vl.FirstDocumentLine.LineNumber;
         }
@@ -254,13 +232,6 @@ public class BreakpointMargin : AbstractMargin, IDisposable
         UnsubscribeBreakpointEvents();
     }
 
-    private class CachedBreakpointVisual
-    {
-        public double YPosition;
-        public double Radius;
-        public Brush Fill;
-        public Pen Stroke;
-    }
 }
 
 public class RelativeLineNumberMargin : AbstractMargin
