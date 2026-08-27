@@ -12,6 +12,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
+using LUAstudio.IDE.Documents;
 using AvalonDock;
 using AvalonDock.Layout;
 using AvalonDock.Themes;
@@ -25,6 +26,48 @@ public partial class MainWindow
 
     private readonly DebugSessionCoordinator _debugCoordinator;
     private readonly IBreakpointService _breakpointService;
+    private Point _tabDragStart;
+    private TextDocument? _draggedDocument;
+
+    private void DocumentTab_OnPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        _tabDragStart = e.GetPosition(MainTabControl);
+        _draggedDocument = (sender as TabItem)?.DataContext as TextDocument;
+    }
+
+    private void DocumentTab_OnMouseMove(object sender, MouseEventArgs e)
+    {
+        if (e.LeftButton != MouseButtonState.Pressed || _draggedDocument is null)
+            return;
+
+        var position = e.GetPosition(MainTabControl);
+        if (Math.Abs(position.X - _tabDragStart.X) < SystemParameters.MinimumHorizontalDragDistance &&
+            Math.Abs(position.Y - _tabDragStart.Y) < SystemParameters.MinimumVerticalDragDistance)
+            return;
+
+        DragDrop.DoDragDrop((DependencyObject)sender, _draggedDocument, DragDropEffects.Move);
+    }
+
+    private void DocumentTab_OnDragOver(object sender, DragEventArgs e)
+    {
+        e.Effects = e.Data.GetDataPresent(typeof(TextDocument)) ? DragDropEffects.Move : DragDropEffects.None;
+        e.Handled = true;
+    }
+
+    private void DocumentTab_OnDrop(object sender, DragEventArgs e)
+    {
+        if (DataContext is not MainViewModel vm ||
+            e.Data.GetData(typeof(TextDocument)) is not TextDocument source ||
+            (sender as TabItem)?.DataContext is not TextDocument target ||
+            ReferenceEquals(source, target))
+            return;
+
+        var oldIndex = vm.OpenDocuments.IndexOf(source);
+        var newIndex = vm.OpenDocuments.IndexOf(target);
+        if (oldIndex >= 0 && newIndex >= 0)
+            vm.OpenDocuments.Move(oldIndex, newIndex);
+        e.Handled = true;
+    }
 
     public DebugPanelViewModel DebugPanelViewModel { get; }
 

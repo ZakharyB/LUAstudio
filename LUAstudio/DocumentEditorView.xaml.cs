@@ -15,6 +15,7 @@ using ICSharpCode.AvalonEdit.Rendering;
 using LUAstudio.Editor.Debugging;
 using LUAstudio.IDE.Documents;
 using LUAstudio.IDE.ViewModels;
+using LUAstudio.IntelliSense.Symbols;
 using ICSharpCode.AvalonEdit.Editing;
 using Microsoft.Extensions.DependencyInjection;
 using AvalonDocument = ICSharpCode.AvalonEdit.Document.TextDocument;
@@ -146,6 +147,8 @@ public partial class DocumentEditorView : UserControl, IDisposable
     private EditorSettingsCoordinator? _settingsCoordinator;
     private IBreakpointService? _breakpointService;
     private EditorNavigationService? _navigationService;
+    private ISymbolIndex? _symbolIndex;
+    private IDocumentService? _documentService;
     private BreakpointMargin? _breakpointMargin;
     private LineHighlighter? _lineHighlighter;
     private RelativeLineNumberMargin? _relativeLineNumberMargin;
@@ -187,6 +190,8 @@ public partial class DocumentEditorView : UserControl, IDisposable
             _settingsCoordinator = _services.GetRequiredService<EditorSettingsCoordinator>();
             _breakpointService = _services.GetRequiredService<IBreakpointService>();
             _navigationService = _services.GetRequiredService<EditorNavigationService>();
+            _symbolIndex = _services.GetRequiredService<ISymbolIndex>();
+            _documentService = _services.GetRequiredService<IDocumentService>();
 
             HookDocumentPropertyChanged();
 
@@ -505,8 +510,8 @@ public partial class DocumentEditorView : UserControl, IDisposable
     private void ReportCaretPosition()
     {
         if (!IsEditorReady) return;
-        CaretLine = Editor.TextArea.Caret.Line + 1;
-        CaretColumn = Editor.TextArea.Caret.Column + 1;
+        CaretLine = Editor.TextArea.Caret.Line;
+        CaretColumn = Editor.TextArea.Caret.Column;
     }
 
     private void OnNavigationRequested()
@@ -521,8 +526,8 @@ public partial class DocumentEditorView : UserControl, IDisposable
         var lineObj = Editor.Document.GetLineByNumber(line);
         int col = Math.Max(1, Math.Min((int)_navigationService.Column, (int)(lineObj.Length + 1)));
 
-        Editor.TextArea.Caret.Line = line - 1;
-        Editor.TextArea.Caret.Column = col - 1;
+        Editor.TextArea.Caret.Line = line;
+        Editor.TextArea.Caret.Column = col;
         Editor.TextArea.Caret.BringCaretToView();
         Editor.TextArea.Caret.BringCaretToView();
 
@@ -608,8 +613,62 @@ public partial class DocumentEditorView : UserControl, IDisposable
         if (_breakpointService == null || _boundCustomDocument?.FilePath == null)
             return;
 
-        var line = Editor.TextArea.Caret.Line + 1;
+        // AvalonEdit caret positions are already one-based.
+        var line = Editor.TextArea.Caret.Line;
         _breakpointService.ToggleBreakpoint(_boundCustomDocument.FilePath, line);
+    }
+
+    private void EditorContextMenu_Opened(object sender, RoutedEventArgs e)
+    {
+        if (sender is not ContextMenu menu)
+            return;
+
+        var symbol = FindSymbolAtCaret();
+        foreach (var item in menu.Items.OfType<MenuItem>().Where(i =>
+                     Equals(i.Header, "Go to Implementation") || Equals(i.Header, "Go to Declaration")))
+        {
+            var wantsFunction = Equals(item.Header, "Go to Implementation");
+            var isFunction = symbol?.Kind is SymbolKind.Function or SymbolKind.Method;
+            item.Visibility = symbol is not null && wantsFunction == isFunction
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+            item.Tag = symbol;
+        }
+    }
+
+    private Symbol? FindSymbolAtCaret()
+    {
+        if (_symbolIndex is null || _boundCustomDocument is null || Editor.Document is null)
+            return null;
+
+        var offset = Math.Clamp(Editor.CaretOffset, 0, Editor.Document.TextLength);
+        var text = Editor.Document.Text;
+        var start = offset;
+        while (start > 0 && IsIdentifierCharacter(text[start - 1])) start--;
+        var end = offset;
+        while (end < text.Length && IsIdentifierCharacter(text[end])) end++;
+        if (end == start) return null;
+
+        var name = text[start..end];
+        var table = _symbolIndex.GetDocumentTable(_boundCustomDocument.Id);
+        return table?.RootScope.Symbols.LastOrDefault(s => s.Name == name && s.DeclarationSpan.Start <= offset)
+               ?? _symbolIndex.GetGlobalSymbols().FirstOrDefault(s => s.Name == name);
+    }
+
+    private static bool IsIdentifierCharacter(char value) => char.IsLetterOrDigit(value) || value == '_';
+
+    private async void GoToSymbol_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as MenuItem)?.Tag is not Symbol symbol || _documentService is null || _navigationService is null)
+            return;
+
+        var path = symbol.ContainingFilePath ?? _boundCustomDocument?.FilePath;
+        if (string.IsNullOrEmpty(path)) return;
+
+        var document = await _documentService.OpenFromPathAsync(path);
+        var position = LUAstudio.Languages.Text.SourceText.From(document.Content ?? string.Empty)
+            .GetPosition(symbol.DeclarationSpan.Start);
+        _navigationService.NavigateTo(path, position.Line + 1, position.Column + 1);
     }
 
     private void GoToLine_Click(object sender, RoutedEventArgs e)
@@ -618,7 +677,7 @@ public partial class DocumentEditorView : UserControl, IDisposable
         if (input.ShowDialog() == true && int.TryParse(input.Result, out int line))
         {
             line = Math.Max(1, Math.Min(line, Editor.Document.LineCount));
-            Editor.TextArea.Caret.Line = line - 1;
+            Editor.TextArea.Caret.Line = line;
             Editor.TextArea.Caret.BringCaretToView();
             Editor.ScrollToLine(line);
             _lineHighlighter?.HighlightLine(line);
