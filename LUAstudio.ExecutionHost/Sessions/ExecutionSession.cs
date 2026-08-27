@@ -29,6 +29,10 @@ public sealed class ExecutionSession : IDisposable
         _modules = new ModuleResolver();
         _trace = new ExecutionTraceRecorder();
         _runtime = new LuauRuntime(_debug, _modules, configuration, _trace);
+        // A created session must be ready for LoadScript. Previously the Luau
+        // state was only created after an optional ConfigureEnvironment command,
+        // so the normal Create -> Load -> Execute flow always failed.
+        _runtime.Initialize(configuration.EnableRobloxMocks);
         _runtime.Output += (_, text) => _publish(new SandboxEnvelope(
             SandboxMessageKind.OutputLog,
             SessionId,
