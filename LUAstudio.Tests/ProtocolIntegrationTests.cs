@@ -1,6 +1,7 @@
 using System.IO.Pipes;
 using LUAstudio.Execution;
 using LUAstudio.Execution.Abstractions;
+using LUAstudio.Execution.Abstractions.Protocol;
 using LUAstudio.ExecutionHost;
 using Xunit;
 
@@ -33,6 +34,37 @@ public sealed class ProtocolIntegrationTests
 
         var error = await Assert.ThrowsAsync<InvalidOperationException>(() => client.ExecuteAsync(sessionId));
         Assert.Contains("LoadScript", error.Message);
+    }
+
+    [Fact]
+    public async Task Configured_host_executes_script_and_publishes_print_output()
+    {
+        await using var host = await InProcessExecutionHost.StartAsync();
+        await using var client = new ExecutionHostClient(host.PipeName);
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        await client.ConnectAsync(timeout.Token);
+
+        var configuration = new SessionConfiguration(EnableRobloxMocks: false, EnvironmentProfile: "lua");
+        var sessionId = await client.CreateSessionAsync(configuration, timeout.Token);
+        await client.LoadScriptAsync(sessionId, "print(5 + 12)", "sum.lua", timeout.Token);
+        await client.ExecuteAsync(sessionId, timeout.Token);
+
+        var output = new List<string>();
+        await foreach (var message in client.WatchEventsAsync(timeout.Token))
+        {
+            if (message.Kind == SandboxMessageKind.OutputLog &&
+                SandboxPayload.As<OutputLogPayload>(message.Payload) is { } line)
+            {
+                output.Add(line.Text);
+            }
+
+            if (message.Kind == SandboxMessageKind.ExecutionFinished)
+            {
+                break;
+            }
+        }
+
+        Assert.Contains("17", output);
     }
 }
 

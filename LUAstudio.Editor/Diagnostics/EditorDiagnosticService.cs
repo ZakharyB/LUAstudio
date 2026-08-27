@@ -76,7 +76,10 @@ public sealed class EditorDiagnosticService
 
         foreach (var seg in segments)
         {
-            if (offset >= seg.StartOffset && offset <= seg.EndOffset)
+            var containsOffset = seg.EndOffset > seg.StartOffset
+                ? offset >= seg.StartOffset && offset < seg.EndOffset
+                : offset == seg.StartOffset;
+            if (containsOffset)
             {
                 return new SemanticDiagnostic(seg.Code, seg.Message, default, MapSeverity(seg.Severity), seg.FixSuggestion);
             }
@@ -95,6 +98,11 @@ public sealed class EditorDiagnosticService
     {
         var s = Math.Clamp(start, 0, document.TextLength);
         var len = Math.Clamp(length, 0, document.TextLength - s);
+        if (len == 0 && s < document.TextLength)
+        {
+            len = 1;
+        }
+
         return new DiagnosticMarker(s, s + len, severity, code, message, fix);
     }
 
@@ -185,8 +193,8 @@ public sealed class EditorDiagnosticHoverController
     private readonly Popup _popup = new()
     {
         AllowsTransparency = true,
-        PopupAnimation = PopupAnimation.Fade,
-        StaysOpen = false,
+        PopupAnimation = PopupAnimation.None,
+        StaysOpen = true,
         Placement = PlacementMode.Mouse
     };
 
@@ -194,6 +202,8 @@ public sealed class EditorDiagnosticHoverController
     private Guid _documentId;
     private System.Windows.Threading.DispatcherTimer? _hoverTimer;
     private int _pendingOffset = -1;
+    private int _lastPointerOffset = -1;
+    private string? _visibleDiagnosticKey;
 
     public EditorDiagnosticHoverController(EditorDiagnosticService diagnostics) => _diagnostics = diagnostics;
 
@@ -218,6 +228,8 @@ public sealed class EditorDiagnosticHoverController
         _hoverTimer?.Stop();
         _hoverTimer = null;
         _popup.IsOpen = false;
+        _visibleDiagnosticKey = null;
+        _lastPointerOffset = -1;
         _editor = null;
     }
 
@@ -236,6 +248,12 @@ public sealed class EditorDiagnosticHoverController
         }
 
         _pendingOffset = _editor.Document.GetOffset(pos.Value.Line, pos.Value.Column);
+        if (_pendingOffset == _lastPointerOffset)
+        {
+            return;
+        }
+
+        _lastPointerOffset = _pendingOffset;
         _hoverTimer ??= CreateHoverTimer();
         _hoverTimer.Stop();
         _hoverTimer.Start();
@@ -245,7 +263,7 @@ public sealed class EditorDiagnosticHoverController
     {
         var timer = new System.Windows.Threading.DispatcherTimer
         {
-            Interval = TimeSpan.FromMilliseconds(50)
+            Interval = TimeSpan.FromMilliseconds(250)
         };
         timer.Tick += (_, _) =>
         {
@@ -259,15 +277,29 @@ public sealed class EditorDiagnosticHoverController
             if (diagnostic is null)
             {
                 _popup.IsOpen = false;
+                _visibleDiagnosticKey = null;
                 return;
             }
 
+            var key = $"{diagnostic.Code}\0{diagnostic.Message}\0{diagnostic.FixSuggestion}";
+            if (_popup.IsOpen && string.Equals(_visibleDiagnosticKey, key, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            _visibleDiagnosticKey = key;
             ShowTooltip(diagnostic);
         };
         return timer;
     }
 
-    private void OnMouseLeave(object sender, System.Windows.Input.MouseEventArgs e) => _popup.IsOpen = false;
+    private void OnMouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
+    {
+        _hoverTimer?.Stop();
+        _popup.IsOpen = false;
+        _visibleDiagnosticKey = null;
+        _lastPointerOffset = -1;
+    }
 
     private void ShowTooltip(SemanticDiagnostic diagnostic)
     {
