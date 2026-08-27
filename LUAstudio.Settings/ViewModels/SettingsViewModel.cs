@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using LUAstudio;
 using LUAstudio.Abstractions;
 using LUAstudio.Core;
 
@@ -53,6 +54,36 @@ public sealed partial class SettingsViewModel : ObservableObject
         Track<bool>(SettingKeys.EditorHighlightCurrentLine, () => OnPropertyChanged(nameof(EditorHighlightCurrentLine)));
         Track<bool>(SettingKeys.EditorShowBracketHighlighting, () => OnPropertyChanged(nameof(EditorShowBracketHighlighting)));
     }
+    
+    public sealed record LanguageOption(
+        string Code,
+        string DisplayName);
+
+    public IReadOnlyList<LanguageOption> LanguageOptions { get; } =
+    [
+        new("en", "English"),
+        new("fr", "Français")
+    ];
+
+    public LanguageOption SelectedLanguage
+    {
+        get
+        {
+            return LanguageOptions.First(
+                x => x.Code == LocalizationManager.CurrentLanguage);
+        }
+
+        set
+        {
+            if (value is null ||
+                value.Code == LocalizationManager.CurrentLanguage)
+                return;
+
+            LocalizationManager.SetLanguage(value.Code);
+            OnPropertyChanged();
+        }
+    }
+
 
     public string EditorFontFamily
     {

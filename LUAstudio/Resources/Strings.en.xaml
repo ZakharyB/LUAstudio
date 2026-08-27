@@ -1,0 +1,84 @@
+﻿<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:sys="clr-namespace:System;assembly=System.Runtime">
+
+    <!-- Main menus -->
+    <sys:String x:Key="File">_File</sys:String>
+    <sys:String x:Key="Edit">_Edit</sys:String>
+    <sys:String x:Key="View">_View</sys:String>
+    <sys:String x:Key="Selection">_Selection</sys:String>
+    <sys:String x:Key="Terminal">_Terminal</sys:String>
+    <sys:String x:Key="Help">_Help</sys:String>
+
+    <!-- File menu -->
+    <sys:String x:Key="New">_New</sys:String>
+    <sys:String x:Key="OpenFile">_Open file…</sys:String>
+    <sys:String x:Key="OpenFolder">_Open folder…</sys:String>
+    <sys:String x:Key="Recent">_Recent</sys:String>
+    <sys:String x:Key="Save">_Save</sys:String>
+    <sys:String x:Key="SaveAs">_Save as…</sys:String>
+    <sys:String x:Key="Run">_Run</sys:String>
+    <sys:String x:Key="Settings">_Settings</sys:String>
+    <sys:String x:Key="Plugins">_Plugins</sys:String>
+    <sys:String x:Key="BetaFeatures">_Beta Features</sys:String>
+    <sys:String x:Key="Close">_Close</sys:String>
+
+    <!-- Edit menu -->
+    <sys:String x:Key="Undo">_Undo</sys:String>
+    <sys:String x:Key="Redo">_Redo</sys:String>
+    <sys:String x:Key="Cut">_Cut</sys:String>
+    <sys:String x:Key="Copy">_Copy</sys:String>
+    <sys:String x:Key="Paste">_Paste</sys:String>
+    <sys:String x:Key="Find">_Find</sys:String>
+
+    <!-- View menu -->
+    <sys:String x:Key="ResetToolWindowLayout">_Reset tool window layout</sys:String>
+    <sys:String x:Key="Explorer">_Explorer</sys:String>
+    <sys:String x:Key="Output">_Output</sys:String>
+
+    <!-- Selection menu -->
+    <sys:String x:Key="SelectAll">Select _All</sys:String>
+    <sys:String x:Key="ExpandSelection">Expand Selection</sys:String>
+    <sys:String x:Key="ShrinkSelection">Shrink Selection</sys:String>
+    <sys:String x:Key="AddCursorAbove">Add Cursor Above</sys:String>
+    <sys:String x:Key="AddCursorBelow">Add Cursor Below</sys:String>
+
+    <!-- Terminal menu -->
+    <sys:String x:Key="NewTerminal">_New Terminal</sys:String>
+    <sys:String x:Key="SplitTerminal">Split Terminal</sys:String>
+    <sys:String x:Key="ClearTerminal">Clear Terminal</sys:String>
+
+    <!-- Help menu -->
+    <sys:String x:Key="Documentation">_Documentation</sys:String>
+    <sys:String x:Key="KeyboardShortcuts">Keyboard Shortcuts</sys:String>
+    <sys:String x:Key="AboutLuaStudio">_About LuaStudio</sys:String>
+
+    <!-- Window controls -->
+    <sys:String x:Key="Minimize">Minimize</sys:String>
+    <sys:String x:Key="Maximize">Maximize</sys:String>
+    <sys:String x:Key="CloseWindow">Close</sys:String>
+
+    <!-- Dock panels -->
+    <sys:String x:Key="ExplorerPanel">Explorer</sys:String>
+    <sys:String x:Key="EditorPanel">Editor</sys:String>
+    <sys:String x:Key="DebugPanel">Debug</sys:String>
+    <sys:String x:Key="ProblemsPanel">Problems</sys:String>
+    <sys:String x:Key="TerminalRunOutput">Terminal / Run OUTPUT</sys:String>
+
+    <!-- Editor -->
+    <sys:String x:Key="NoFileOpen">No file open</sys:String>
+    <sys:String x:Key="OpenFileHint">Open a file from the File menu or Explorer.</sys:String>
+
+    <!-- Output / Terminal -->
+    <sys:String x:Key="Clear">Clear</sys:String>
+    <sys:String x:Key="TerminalRunOutputHeader">TERMINAL / RUN OUTPUT</sys:String>
+    <sys:String x:Key="TerminalCommandTooltip">Run a Microsoft Command Prompt command (for example: cd, cls, dir)</sys:String>
+
+    <!-- Status bar -->
+    <sys:String x:Key="RestoreWorkspaceOnStartup">Restore workspace on startup</sys:String>
+
+    <!-- Settings / language -->
+    <sys:String x:Key="Language">Language</sys:String>
+
+</ResourceDictionary>

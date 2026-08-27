@@ -3,7 +3,7 @@ namespace LUAstudio.Abstractions;
 public static class SettingKeys
 {
     public const string FpsLimit = "fps_limit";
-
+    public const string ApplicationLanguage = "Application.Language";
     public const string EditorFontFamily = "editor.font_family";
     public const string EditorFontSize = "editor.font_size";
     public const string EditorFontBold = "editor.font_bold";

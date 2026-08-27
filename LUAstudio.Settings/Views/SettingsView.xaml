@@ -196,6 +196,23 @@
                     <TextBlock Text="Workspace" Style="{StaticResource SettingsSectionHeader}" Margin="0,0,0,8" />
                     <CheckBox Style="{StaticResource SettingsCheckBox}" Content="Restore workspace folders on startup" IsChecked="{Binding RestoreWorkspaceOnStartup}" />
 
+                    <Grid Margin="0,4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="160" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Column="0"
+                                   Style="{StaticResource SettingsLabel}"
+                                   Text="{DynamicResource Language}" />
+
+                        <ComboBox Grid.Column="1"
+                                  Style="{StaticResource SettingsComboBox}"
+                                  ItemsSource="{Binding LanguageOptions}"
+                                  SelectedItem="{Binding SelectedLanguage}"
+                                  DisplayMemberPath="DisplayName" />
+                    </Grid>
+                    
                     <TextBlock Text="Application" Style="{StaticResource SettingsSectionHeader}" />
                     <Grid Margin="0,4">
                         <Grid.ColumnDefinitions>

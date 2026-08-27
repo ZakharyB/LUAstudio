@@ -20,6 +20,7 @@ public sealed class SettingsBootstrap
         try
         {
             await LoadValueAsync(SettingKeys.FpsLimit, int.Parse, cancellationToken).ConfigureAwait(false);
+            await LoadValueAsync(SettingKeys.ApplicationLanguage, v => v, cancellationToken).ConfigureAwait(false);
 
             await LoadValueAsync(SettingKeys.EditorFontFamily, v => v, cancellationToken).ConfigureAwait(false);
             await LoadValueAsync(SettingKeys.EditorFontSize, v => double.Parse(v, CultureInfo.InvariantCulture), cancellationToken).ConfigureAwait(false);
@@ -70,6 +71,7 @@ public sealed class SettingsBootstrap
 
     public void AttachPersistence()
     {
+        Persist<string>(SettingKeys.ApplicationLanguage, v => v);
         Persist<int>(SettingKeys.FpsLimit, v => v.ToString(CultureInfo.InvariantCulture));
 
         Persist<string>(SettingKeys.EditorFontFamily, v => v);

@@ -1,0 +1,84 @@
+﻿<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:sys="clr-namespace:System;assembly=System.Runtime">
+
+    <!-- Main menus -->
+    <sys:String x:Key="File">_Fichier</sys:String>
+    <sys:String x:Key="Edit">_Modifier</sys:String>
+    <sys:String x:Key="View">_Affichage</sys:String>
+    <sys:String x:Key="Selection">_Sélection</sys:String>
+    <sys:String x:Key="Terminal">_Terminal</sys:String>
+    <sys:String x:Key="Help">_Aide</sys:String>
+
+    <!-- File menu -->
+    <sys:String x:Key="New">_Nouveau</sys:String>
+    <sys:String x:Key="OpenFile">_Ouvrir un fichier…</sys:String>
+    <sys:String x:Key="OpenFolder">_Ouvrir un dossier…</sys:String>
+    <sys:String x:Key="Recent">_Récents</sys:String>
+    <sys:String x:Key="Save">_Enregistrer</sys:String>
+    <sys:String x:Key="SaveAs">Enregistrer _sous…</sys:String>
+    <sys:String x:Key="Run">_Exécuter</sys:String>
+    <sys:String x:Key="Settings">_Paramètres</sys:String>
+    <sys:String x:Key="Plugins">_Extensions</sys:String>
+    <sys:String x:Key="BetaFeatures">Fonctionnalités _bêta</sys:String>
+    <sys:String x:Key="Close">_Fermer</sys:String>
+
+    <!-- Edit menu -->
+    <sys:String x:Key="Undo">_Annuler</sys:String>
+    <sys:String x:Key="Redo">_Rétablir</sys:String>
+    <sys:String x:Key="Cut">_Couper</sys:String>
+    <sys:String x:Key="Copy">_Copier</sys:String>
+    <sys:String x:Key="Paste">C_oller</sys:String>
+    <sys:String x:Key="Find">_Rechercher</sys:String>
+
+    <!-- View menu -->
+    <sys:String x:Key="ResetToolWindowLayout">_Réinitialiser la disposition des fenêtres</sys:String>
+    <sys:String x:Key="Explorer">_Explorateur</sys:String>
+    <sys:String x:Key="Output">_Sortie</sys:String>
+
+    <!-- Selection menu -->
+    <sys:String x:Key="SelectAll">_Tout sélectionner</sys:String>
+    <sys:String x:Key="ExpandSelection">Étendre la sélection</sys:String>
+    <sys:String x:Key="ShrinkSelection">Réduire la sélection</sys:String>
+    <sys:String x:Key="AddCursorAbove">Ajouter un curseur au-dessus</sys:String>
+    <sys:String x:Key="AddCursorBelow">Ajouter un curseur en dessous</sys:String>
+
+    <!-- Terminal menu -->
+    <sys:String x:Key="NewTerminal">_Nouveau terminal</sys:String>
+    <sys:String x:Key="SplitTerminal">Diviser le terminal</sys:String>
+    <sys:String x:Key="ClearTerminal">Effacer le terminal</sys:String>
+
+    <!-- Help menu -->
+    <sys:String x:Key="Documentation">_Documentation</sys:String>
+    <sys:String x:Key="KeyboardShortcuts">Raccourcis clavier</sys:String>
+    <sys:String x:Key="AboutLuaStudio">_À propos de LuaStudio</sys:String>
+
+    <!-- Window controls -->
+    <sys:String x:Key="Minimize">Réduire</sys:String>
+    <sys:String x:Key="Maximize">Agrandir</sys:String>
+    <sys:String x:Key="CloseWindow">Fermer</sys:String>
+
+    <!-- Dock panels -->
+    <sys:String x:Key="ExplorerPanel">Explorateur</sys:String>
+    <sys:String x:Key="EditorPanel">Éditeur</sys:String>
+    <sys:String x:Key="DebugPanel">Débogage</sys:String>
+    <sys:String x:Key="ProblemsPanel">Problèmes</sys:String>
+    <sys:String x:Key="TerminalRunOutput">Terminal / Sortie d'exécution</sys:String>
+
+    <!-- Editor -->
+    <sys:String x:Key="NoFileOpen">Aucun fichier ouvert</sys:String>
+    <sys:String x:Key="OpenFileHint">Ouvrez un fichier depuis le menu Fichier ou l'Explorateur.</sys:String>
+
+    <!-- Output / Terminal -->
+    <sys:String x:Key="Clear">Effacer</sys:String>
+    <sys:String x:Key="TerminalRunOutputHeader">TERMINAL / SORTIE D'EXÉCUTION</sys:String>
+    <sys:String x:Key="TerminalCommandTooltip">Exécuter une commande de l'invite de commandes Microsoft (par exemple : cd, cls, dir)</sys:String>
+
+    <!-- Status bar -->
+    <sys:String x:Key="RestoreWorkspaceOnStartup">Restaurer l'espace de travail au démarrage</sys:String>
+
+    <!-- Settings / language -->
+    <sys:String x:Key="Language">Langue</sys:String>
+
+</ResourceDictionary>

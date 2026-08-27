@@ -76,63 +76,151 @@
                         <TextBlock FontSize="13" FontWeight="Bold" Foreground="{StaticResource BrushText}" Text="Studio" />
                     </StackPanel>
 
-                    <Menu VerticalAlignment="Center"
-                          Background="Transparent"
-                          shell:WindowChrome.IsHitTestVisibleInChrome="True">
-                        <MenuItem Header="_File">
-                            <MenuItem Header="_New" Command="{Binding NewDocumentCommand}" InputGestureText="Ctrl+N" />
-                            <MenuItem Header="_Open file…" Command="{Binding OpenDocumentCommand}" InputGestureText="Ctrl+O" />
-                            <MenuItem Header="_Open folder…" Command="{Binding Explorer.AddWorkspaceRootCommand}" />
-                            <MenuItem Header="_Recent"/>
-                            <Separator />
-                            <MenuItem Header="_Save" Command="{Binding SaveActiveCommand}" InputGestureText="Ctrl+S" />
-                            <MenuItem Header="_Save as…" Command="{Binding SaveAsActiveCommand}" InputGestureText="Ctrl+Shift+S" />
-                            <Separator />
-                            <MenuItem Header="_Run" Click="RunActiveDocument_OnClick" InputGestureText="F5" />
-                            <Separator />
-                            <MenuItem Header="_Settings" Click="OpenSettings_OnClick" />
-                            <MenuItem Header="_Plugins" Click="OpenPlugins_OnClick" />
-                            <MenuItem Header="_Beta Features"/>
-                            <Separator />
-                            <MenuItem Header="_Close" Command="{Binding CloseActiveCommand}" InputGestureText="Ctrl+W" />
-                        </MenuItem>
-                        <MenuItem Header="_Edit">
-                            <MenuItem Header="_Undo" InputGestureText="Ctrl+Z"/>
-                            <MenuItem Header="_Redo" InputGestureText="Ctrl+Y"/>
-                            <Separator />
-                            <MenuItem Header="_Cut" InputGestureText="Ctrl+X"/>
-                            <MenuItem Header="_Copy" InputGestureText="Ctrl+C"/>
-                            <MenuItem Header="_Paste" InputGestureText="Ctrl+V"/>
-                            <Separator />
-                            <MenuItem Header="_Find" Click="Find_Click" InputGestureText="Ctrl+F"/>
-                        </MenuItem>
+                        <Menu VerticalAlignment="Center"
+                              Background="Transparent"
+                              shell:WindowChrome.IsHitTestVisibleInChrome="True">
 
-                        <MenuItem Header="_View">
-                            <MenuItem Header="_Reset tool window layout" Click="ResetDockLayout_OnClick" />
-                            <MenuItem Header="_Explorer" IsEnabled="False" />
-                            <MenuItem Header="_Output" IsEnabled="False" />
-                        </MenuItem>
-                        <MenuItem Header="_Selection">
-                            <MenuItem Header="Select _All" IsEnabled="False" InputGestureText="Ctrl+A" />
-                            <MenuItem Header="Expand Selection" IsEnabled="False" />
-                            <MenuItem Header="Shrink Selection" IsEnabled="False" />
-                            <Separator />
-                            <MenuItem Header="Add Cursor Above" IsEnabled="False" />
-                            <MenuItem Header="Add Cursor Below" IsEnabled="False" />
-                        </MenuItem>
-                        <MenuItem Header="_Terminal">
-                            <MenuItem Header="_New Terminal" IsEnabled="False" InputGestureText="Ctrl+`" />
-                            <MenuItem Header="Split Terminal" IsEnabled="False" />
-                            <Separator />
-                            <MenuItem Header="Clear Terminal" IsEnabled="False" />
-                        </MenuItem>
-                        <MenuItem Header="_Help">
-                            <MenuItem Header="_Documentation" IsEnabled="False" />
-                            <MenuItem Header="Keyboard Shortcuts" IsEnabled="False" />
-                            <Separator />
-                            <MenuItem Header="_About LuaStudio" IsEnabled="False" />
-                        </MenuItem>
-                    </Menu>
+                            <MenuItem Header="{DynamicResource File}">
+                                <MenuItem Header="{DynamicResource New}"
+                                          Command="{Binding NewDocumentCommand}"
+                                          InputGestureText="Ctrl+N" />
+
+                                <MenuItem Header="{DynamicResource OpenFile}"
+                                          Command="{Binding OpenDocumentCommand}"
+                                          InputGestureText="Ctrl+O" />
+
+                                <MenuItem Header="{DynamicResource OpenFolder}"
+                                          Command="{Binding Explorer.AddWorkspaceRootCommand}" />
+
+                                <MenuItem Header="{DynamicResource Recent}" />
+
+                                <Separator />
+
+                                <MenuItem Header="{DynamicResource Save}"
+                                          Command="{Binding SaveActiveCommand}"
+                                          InputGestureText="Ctrl+S" />
+
+                                <MenuItem Header="{DynamicResource SaveAs}"
+                                          Command="{Binding SaveAsActiveCommand}"
+                                          InputGestureText="Ctrl+Shift+S" />
+
+                                <Separator />
+
+                                <MenuItem Header="{DynamicResource Run}"
+                                          Click="RunActiveDocument_OnClick"
+                                          InputGestureText="F5" />
+
+                                <Separator />
+
+                                <MenuItem Header="{DynamicResource Settings}"
+                                          Click="OpenSettings_OnClick" />
+
+                                <MenuItem Header="{DynamicResource Plugins}"
+                                          Click="OpenPlugins_OnClick" />
+
+                                <MenuItem Header="{DynamicResource BetaFeatures}" />
+
+                                <Separator />
+
+                                <MenuItem Header="{DynamicResource Close}"
+                                          Command="{Binding CloseActiveCommand}"
+                                          InputGestureText="Ctrl+W" />
+                            </MenuItem>
+
+
+                            <MenuItem Header="{DynamicResource Edit}">
+
+                                <MenuItem Header="{DynamicResource Undo}"
+                                          InputGestureText="Ctrl+Z" />
+
+                                <MenuItem Header="{DynamicResource Redo}"
+                                          InputGestureText="Ctrl+Y" />
+
+                                <Separator />
+
+                                <MenuItem Header="{DynamicResource Cut}"
+                                          InputGestureText="Ctrl+X" />
+
+                                <MenuItem Header="{DynamicResource Copy}"
+                                          InputGestureText="Ctrl+C" />
+
+                                <MenuItem Header="{DynamicResource Paste}"
+                                          InputGestureText="Ctrl+V" />
+
+                                <Separator />
+
+                                <MenuItem Header="{DynamicResource Find}"
+                                          Click="Find_Click"
+                                          InputGestureText="Ctrl+F" />
+                            </MenuItem>
+
+
+                            <MenuItem Header="{DynamicResource View}">
+
+                                <MenuItem Header="{DynamicResource ResetToolWindowLayout}"
+                                          Click="ResetDockLayout_OnClick" />
+
+                                <MenuItem Header="{DynamicResource Explorer}"
+                                          IsEnabled="False" />
+
+                                <MenuItem Header="{DynamicResource Output}"
+                                          IsEnabled="False" />
+                            </MenuItem>
+
+
+                            <MenuItem Header="{DynamicResource Selection}">
+
+                                <MenuItem Header="{DynamicResource SelectAll}"
+                                          IsEnabled="False"
+                                          InputGestureText="Ctrl+A" />
+
+                                <MenuItem Header="{DynamicResource ExpandSelection}"
+                                          IsEnabled="False" />
+
+                                <MenuItem Header="{DynamicResource ShrinkSelection}"
+                                          IsEnabled="False" />
+
+                                <Separator />
+
+                                <MenuItem Header="{DynamicResource AddCursorAbove}"
+                                          IsEnabled="False" />
+
+                                <MenuItem Header="{DynamicResource AddCursorBelow}"
+                                          IsEnabled="False" />
+                            </MenuItem>
+
+
+                            <MenuItem Header="{DynamicResource Terminal}">
+
+                                <MenuItem Header="{DynamicResource NewTerminal}"
+                                          IsEnabled="False"
+                                          InputGestureText="Ctrl+`" />
+
+                                <MenuItem Header="{DynamicResource SplitTerminal}"
+                                          IsEnabled="False" />
+
+                                <Separator />
+
+                                <MenuItem Header="{DynamicResource ClearTerminal}"
+                                          IsEnabled="False" />
+                            </MenuItem>
+
+
+                            <MenuItem Header="{DynamicResource Help}">
+
+                                <MenuItem Header="{DynamicResource Documentation}"
+                                          IsEnabled="False" />
+
+                                <MenuItem Header="{DynamicResource KeyboardShortcuts}"
+                                          IsEnabled="False" />
+
+                                <Separator />
+
+                                <MenuItem Header="{DynamicResource AboutLuaStudio}"
+                                          IsEnabled="False" />
+                            </MenuItem>
+
+                        </Menu>
                 </StackPanel>
 
                 <StackPanel Grid.Column="1"
@@ -157,16 +245,18 @@
                     <Button x:Name="MinimizeButton"
                             Style="{StaticResource TitleBarButton}"
                             Click="MinimizeButton_OnClick"
-                            ToolTip="Minimize"
+                            ToolTip="{DynamicResource Minimize}"
                             Content="&#xE921;" />
+
                     <Button x:Name="MaximizeButton"
                             Style="{StaticResource TitleBarButton}"
                             Click="MaximizeButton_OnClick"
-                            ToolTip="Maximize"
+                            ToolTip="{DynamicResource Maximize}"
                             Content="&#xE922;" />
+
                     <Button Style="{StaticResource TitleBarCloseButton}"
                             Click="CloseButton_OnClick"
-                            ToolTip="Close"
+                            ToolTip="{DynamicResource CloseWindow}"
                             Content="&#xE8BB;" />
                 </StackPanel>
             </Grid>
@@ -178,20 +268,22 @@
             <dock:LayoutRoot>
                 <dock:LayoutPanel Orientation="Horizontal">
                     <dock:LayoutAnchorablePane DockWidth="280">
-                        <dock:LayoutAnchorable Title="Explorer"
-                                               ContentId="Explorer"
-                                               CanClose="False"
-                                               CanHide="True"
-                                               CanAutoHide="True">
+                            <dock:LayoutAnchorable
+                                Title="{DynamicResource ExplorerPanel}"
+                                ContentId="Explorer"
+                                CanClose="False"
+                                CanHide="True"
+                                CanAutoHide="True">
                             <local:WorkspaceExplorerView DataContext="{Binding Explorer}" />
                         </dock:LayoutAnchorable>
                     </dock:LayoutAnchorablePane>
                     <dock:LayoutPanel Orientation="Vertical">
                         <dock:LayoutPanel Orientation="Horizontal">
                             <dock:LayoutDocumentPane>
-                                <dock:LayoutDocument Title="Editor"
-                                                     ContentId="Editor"
-                                                     CanClose="False">
+                                    <dock:LayoutDocument
+                                        Title="{DynamicResource EditorPanel}"
+                                        ContentId="Editor"
+                                        CanClose="False">
                                     <Grid Background="{StaticResource BrushBgEditor}">
                                         <TabControl x:Name="MainTabControl"
                                                     ItemsSource="{Binding OpenDocuments}"
@@ -242,7 +334,7 @@
                                                                             BorderThickness="0"
                                                                             Foreground="{StaticResource BrushTextMuted}"
                                                                             FontSize="13"
-                                                                            ToolTip="Close"
+                                                                            ToolTip="{DynamicResource CloseWindow}"
                                                                             Content="×"
                                                                             Command="{Binding DataContext.CloseDocumentCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                                                             CommandParameter="{Binding}" />
@@ -268,11 +360,11 @@
                                                            FontSize="18"
                                                            FontWeight="SemiBold"
                                                            Foreground="{StaticResource BrushText}"
-                                                           Text="No file open" />
+                                                           Text="{DynamicResource NoFileOpen}" />
                                                 <TextBlock Margin="0,8,0,0"
                                                            HorizontalAlignment="Center"
                                                            Foreground="{StaticResource BrushTextMuted}"
-                                                           Text="Open a file from the File menu or Explorer."
+                                                           Text="{DynamicResource OpenFileHint}"
                                                            TextAlignment="Center"
                                                            TextWrapping="Wrap" />
                                             </StackPanel>
@@ -281,28 +373,31 @@
                                 </dock:LayoutDocument>
                             </dock:LayoutDocumentPane>
                             <dock:LayoutAnchorablePane DockWidth="320">
-                                <dock:LayoutAnchorable Title="Debug"
-                                                       ContentId="Debug"
-                                                       CanClose="False"
-                                                       CanHide="True"
-                                                       CanAutoHide="True">
+                                    <dock:LayoutAnchorable
+                                        Title="{DynamicResource DebugPanel}"
+                                        ContentId="Debug"
+                                        CanClose="False"
+                                        CanHide="True"
+                                        CanAutoHide="True">
                                     <local:DebugPanelView x:Name="DebugPanel" />
                                 </dock:LayoutAnchorable>
                             </dock:LayoutAnchorablePane>
                         </dock:LayoutPanel>
                         <dock:LayoutAnchorablePane DockHeight="200">
-                            <dock:LayoutAnchorable Title="Problems"
-                                                   ContentId="Problems"
-                                                   CanClose="False"
-                                                   CanHide="True"
-                                                   CanAutoHide="True">
+                                <dock:LayoutAnchorable
+                                    Title="{DynamicResource ProblemsPanel}"
+                                    ContentId="Problems"
+                                    CanClose="False"
+                                    CanHide="True"
+                                    CanAutoHide="True">
                                 <local:DiagnosticsPanelView x:Name="DiagnosticsPanel" />
                             </dock:LayoutAnchorable>
-                            <dock:LayoutAnchorable Title="Terminal / Run OUTPUT"
-                                                   ContentId="Output"
-                                                   CanClose="False"
-                                                   CanHide="True"
-                                                   CanAutoHide="True">
+                                <dock:LayoutAnchorable
+                                    Title="{DynamicResource TerminalRunOutput}"
+                                    ContentId="Output"
+                                    CanClose="False"
+                                    CanHide="True"
+                                    CanAutoHide="True">
                                 <Grid Background="{StaticResource BrushBgEditor}">
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto" />

@@ -26,7 +26,7 @@ public partial class MainWindow
 
     private readonly DebugSessionCoordinator _debugCoordinator;
     private readonly IBreakpointService _breakpointService;
-    private Point _tabDragStart;
+    private System.Windows.Point _tabDragStart;
     private TextDocument? _draggedDocument;
 
     private void DocumentTab_OnPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
