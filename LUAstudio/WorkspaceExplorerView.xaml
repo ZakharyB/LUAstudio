@@ -67,10 +67,10 @@
                               Foreground="{StaticResource BrushTextMuted}"
                               FontSize="16"
                               Padding="8,2">
-                        <MenuItem Header="Open folder…"
+                        <MenuItem Header="{DynamicResource UiOpenFolder}"
                                   Command="{Binding AddWorkspaceRootCommand}" />
                         <Separator />
-                        <MenuItem Header="Refresh tree"
+                        <MenuItem Header="{DynamicResource UiRefreshTree}"
                                   Command="{Binding RefreshWorkspaceTreeCommand}" />
                     </MenuItem>
                 </Menu>
@@ -79,7 +79,7 @@
                            FontSize="11"
                            FontWeight="SemiBold"
                            Foreground="{StaticResource BrushTextMuted}"
-                           Text="EXPLORER ACTIONS" />
+                           Text="{DynamicResource UiEXPLORERACTIONS}" />
             </DockPanel>
         </Border>
 
@@ -106,7 +106,7 @@
                         Background="Transparent"
                         BorderThickness="0"
                         Cursor="Hand"
-                        ToolTip="Clear filter (Esc)"
+                        ToolTip="{DynamicResource UiClearFilterEsc}"
                         Command="{Binding ClearFilterCommand}"
                         Visibility="{Binding IsFilterActive, Converter={StaticResource BoolToVisibility}}">
                     <TextBlock FontFamily="Segoe MDL2 Assets"
@@ -123,13 +123,13 @@
             <StackPanel VerticalAlignment="Center">
                 <TextBlock HorizontalAlignment="Center"
                            Foreground="{StaticResource BrushTextMuted}"
-                           Text="No workspace folders"
+                           Text="{DynamicResource UiNoWorkspaceFolders}"
                            TextAlignment="Center" />
                 <TextBlock Margin="0,8,0,0"
                            HorizontalAlignment="Center"
                            Foreground="{StaticResource BrushTextMuted}"
                            FontSize="12"
-                           Text="Use the ⋯ menu above to open a folder."
+                           Text="{DynamicResource UiUseTheMenuAboveToOpenAFolder}"
                            TextAlignment="Center"
                            TextWrapping="Wrap" />
             </StackPanel>
@@ -248,7 +248,7 @@
                                      Margin="4,0,0,0"
                                      VerticalAlignment="Center"
                                      Fill="{StaticResource BrushExplorerModified}"
-                                     ToolTip="Modified"
+                                     ToolTip="{DynamicResource UiModified}"
                                      Visibility="{Binding ShowModifiedDot, Converter={StaticResource BoolToVisibility}}" />
                             <TextBlock Margin="4,0,0,0"
                                        VerticalAlignment="Center"

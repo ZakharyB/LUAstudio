@@ -12,6 +12,7 @@ using LUAstudio.Workspace.DependencyInjection;
 using LUAstudio.Execution.DependencyInjection;
 using LUAstudio.IntelliSense.Workspace;
 using Microsoft.Extensions.DependencyInjection;
+using LUAstudio.Settings;
 
 namespace LUAstudio;
 
@@ -84,6 +85,9 @@ public partial class App : Application
         var bootstrap = _services.GetRequiredService<SettingsBootstrap>();
         bootstrap.LoadAsync().GetAwaiter().GetResult();
         bootstrap.AttachPersistence();
+        // Load the language dictionary before constructing any windows.  Dynamic
+        // resources otherwise resolve to null until the user changes language.
+        LocalizationManager.Initialize();
         _services.GetRequiredService<EditorSettingsCoordinator>().Start();
 
         _ = _services.GetRequiredService<DocumentSyncHandler>();

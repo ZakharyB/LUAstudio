@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="LUAstudio.Settings.Views.SettingsView"
+<UserControl x:Class="LUAstudio.Settings.Views.SettingsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -19,7 +19,7 @@
                 BorderThickness="0,0,1,0"
                 Padding="8">
             <StackPanel>
-                <TextBlock Text="Settings"
+                <TextBlock Text="{DynamicResource UiSettings}"
                            FontSize="16"
                            FontWeight="SemiBold"
                            Foreground="{StaticResource BrushText}"
@@ -30,11 +30,11 @@
                     <ListBox.ItemContainerStyle>
                         <Style TargetType="ListBoxItem" BasedOn="{StaticResource SettingsNavItem}" />
                     </ListBox.ItemContainerStyle>
-                    <ListBoxItem Content="Editor" />
-                    <ListBoxItem Content="Syntax colors" />
-                    <ListBoxItem Content="IntelliSense" />
-                    <ListBoxItem Content="Diagnostics" />
-                    <ListBoxItem Content="Workspace" />
+                    <ListBoxItem Content="{DynamicResource UiEditor}" />
+                    <ListBoxItem Content="{DynamicResource UiSyntaxColors}" />
+                    <ListBoxItem Content="{DynamicResource UiIntelliSense}" />
+                    <ListBoxItem Content="{DynamicResource UiDiagnostics}" />
+                    <ListBoxItem Content="{DynamicResource UiWorkspace}" />
                 </ListBox>
             </StackPanel>
         </Border>
@@ -45,8 +45,8 @@
             <StackPanel MaxWidth="640">
 
                 <StackPanel x:Name="EditorPage">
-                    <TextBlock Text="Editor" Style="{StaticResource SettingsSectionHeader}" Margin="0,0,0,8" />
-                    <TextBlock Text="Font, layout, and display options for the code editor."
+                    <TextBlock Text="{DynamicResource UiEditor}" Style="{StaticResource SettingsSectionHeader}" Margin="0,0,0,8" />
+                    <TextBlock Text="{DynamicResource UiFontLayoutAndDisplayOptionsForTheCodeEditor}"
                                Foreground="{StaticResource BrushTextMuted}"
                                TextWrapping="Wrap"
                                Margin="0,0,0,12" />
@@ -56,7 +56,7 @@
                             <ColumnDefinition Width="160" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Style="{StaticResource SettingsLabel}" Text="Font family" />
+                        <TextBlock Grid.Column="0" Style="{StaticResource SettingsLabel}" Text="{DynamicResource UiFontFamily}" />
                         <TextBox Grid.Column="1" Style="{StaticResource SettingsTextBox}"
                                  Text="{Binding EditorFontFamily, UpdateSourceTrigger=PropertyChanged}" />
                     </Grid>
@@ -69,20 +69,20 @@
 
                         <TextBlock Grid.Column="0"
                                    Style="{StaticResource SettingsLabel}"
-                                   Text="Font size (pt)" />
+                                   Text="{DynamicResource UiFontSizePt}" />
 
                         <TextBox Grid.Column="1"
                                  Style="{StaticResource SettingsTextBox}"
                                  Text="{Binding EditorFontSize, UpdateSourceTrigger=PropertyChanged}" />
                     </Grid>
 
-                    <CheckBox  Style="{StaticResource SettingsCheckBox}" Content="Bold font" IsChecked="{Binding EditorFontBold}" />
-                    <CheckBox Style="{StaticResource SettingsCheckBox}" Content="Italic font" IsChecked="{Binding EditorFontItalic}" />
-                    <CheckBox Style="{StaticResource SettingsCheckBox}" Content="Show line numbers" IsChecked="{Binding EditorShowLineNumbers}" />
-                    <CheckBox Style="{StaticResource SettingsCheckBox}" Content="Word wrap" IsChecked="{Binding EditorWordWrap}" />
-                    <CheckBox Style="{StaticResource SettingsCheckBox}" Content="Convert tabs to spaces" IsChecked="{Binding EditorConvertTabsToSpaces}" />
+                    <CheckBox  Style="{StaticResource SettingsCheckBox}" Content="{DynamicResource UiBoldFont}" IsChecked="{Binding EditorFontBold}" />
+                    <CheckBox Style="{StaticResource SettingsCheckBox}" Content="{DynamicResource UiItalicFont}" IsChecked="{Binding EditorFontItalic}" />
+                    <CheckBox Style="{StaticResource SettingsCheckBox}" Content="{DynamicResource UiShowLineNumbers}" IsChecked="{Binding EditorShowLineNumbers}" />
+                    <CheckBox Style="{StaticResource SettingsCheckBox}" Content="{DynamicResource UiWordWrap}" IsChecked="{Binding EditorWordWrap}" />
+                    <CheckBox Style="{StaticResource SettingsCheckBox}" Content="{DynamicResource UiConvertTabsToSpaces}" IsChecked="{Binding EditorConvertTabsToSpaces}" />
 
-                    <TextBlock Text="Breakpoints &amp; Navigation"
+                    <TextBlock Text="{DynamicResource UiBreakpointsNavigation}"
                                Style="{StaticResource SettingsSectionHeader}"
                                Margin="0,16,0,8" />
 
@@ -91,7 +91,7 @@
                             <ColumnDefinition Width="160" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Style="{StaticResource SettingsLabel}" Text="Breakpoint margin width (px)" />
+                        <TextBlock Grid.Column="0" Style="{StaticResource SettingsLabel}" Text="{DynamicResource UiBreakpointMarginWidthPx}" />
                         <TextBox Grid.Column="1" Style="{StaticResource SettingsTextBox}"
                                  Text="{Binding EditorBreakpointMarginWidth, UpdateSourceTrigger=PropertyChanged}" />
                     </Grid>
@@ -101,14 +101,14 @@
                             <ColumnDefinition Width="160" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Style="{StaticResource SettingsLabel}" Text="Line highlight duration (sec)" />
+                        <TextBlock Grid.Column="0" Style="{StaticResource SettingsLabel}" Text="{DynamicResource UiLineHighlightDurationSec}" />
                         <TextBox Grid.Column="1" Style="{StaticResource SettingsTextBox}"
                                  Text="{Binding EditorHighlightDurationSeconds, UpdateSourceTrigger=PropertyChanged}" />
                     </Grid>
 
-                    <CheckBox Style="{StaticResource SettingsCheckBox}" Content="Show relative line numbers" IsChecked="{Binding EditorShowRelativeLineNumbers}" />
-                    <CheckBox Style="{StaticResource SettingsCheckBox}" Content="Highlight current line" IsChecked="{Binding EditorHighlightCurrentLine}" />
-                    <CheckBox Style="{StaticResource SettingsCheckBox}" Content="Show bracket highlighting" IsChecked="{Binding EditorShowBracketHighlighting}" />
+                    <CheckBox Style="{StaticResource SettingsCheckBox}" Content="{DynamicResource UiShowRelativeLineNumbers}" IsChecked="{Binding EditorShowRelativeLineNumbers}" />
+                    <CheckBox Style="{StaticResource SettingsCheckBox}" Content="{DynamicResource UiHighlightCurrentLine}" IsChecked="{Binding EditorHighlightCurrentLine}" />
+                    <CheckBox Style="{StaticResource SettingsCheckBox}" Content="{DynamicResource UiShowBracketHighlighting}" IsChecked="{Binding EditorShowBracketHighlighting}" />
                     
                     <Grid Margin="0,8,0,4">
                         <Grid.ColumnDefinitions>
@@ -118,21 +118,21 @@
 
                         <TextBlock Grid.Column="0"
                                    Style="{StaticResource SettingsLabel}"
-                                   Text="Tab width" />
+                                   Text="{DynamicResource UiTabWidth}" />
 
                         <TextBox Grid.Column="1"
                                  Style="{StaticResource SettingsTextBox}"
                                  Text="{Binding EditorTabWidth, UpdateSourceTrigger=PropertyChanged}" />
                     </Grid>
                     
-                    <TextBlock Text="Editor chrome" Style="{StaticResource SettingsSectionHeader}" />
+                    <TextBlock Text="{DynamicResource UiEditorChrome}" Style="{StaticResource SettingsSectionHeader}" />
                     <controls:ColorSettingRow Label="Text color" HexValue="{Binding EditorForeground, UpdateSourceTrigger=PropertyChanged}" />
                     <controls:ColorSettingRow Label="Background" HexValue="{Binding EditorBackground, UpdateSourceTrigger=PropertyChanged}" />
                 </StackPanel>
 
                 <StackPanel x:Name="ColorsPage" Visibility="Collapsed">
-                    <TextBlock Text="Syntax colors" Style="{StaticResource SettingsSectionHeader}" Margin="0,0,0,8" />
-                    <TextBlock Text="Customize Lua syntax highlighting. Changes apply immediately."
+                    <TextBlock Text="{DynamicResource UiSyntaxColors}" Style="{StaticResource SettingsSectionHeader}" Margin="0,0,0,8" />
+                    <TextBlock Text="{DynamicResource UiCustomizeLuaSyntaxHighlightingChangesApplyImmediately}"
                                Foreground="{StaticResource BrushTextMuted}"
                                TextWrapping="Wrap"
                                Margin="0,0,0,12" />
@@ -155,37 +155,37 @@
                 </StackPanel>
 
                 <StackPanel x:Name="IntelliSensePage" Visibility="Collapsed">
-                    <TextBlock Text="IntelliSense" Style="{StaticResource SettingsSectionHeader}" Margin="0,0,0,8" />
-                    <TextBlock Text="Control completion, suggestions, and smart editing behavior."
+                    <TextBlock Text="{DynamicResource UiIntelliSense}" Style="{StaticResource SettingsSectionHeader}" Margin="0,0,0,8" />
+                    <TextBlock Text="{DynamicResource UiControlCompletionSuggestionsAndSmartEditingBehavior}"
                                Foreground="{StaticResource BrushTextMuted}"
                                TextWrapping="Wrap"
                                Margin="0,0,0,12" />
 
-                    <CheckBox Style="{StaticResource SettingsCheckBox}" Content="Enable autocomplete (Ctrl+Space and triggers)" IsChecked="{Binding EditorAutoComplete}" />
-                    <CheckBox Style="{StaticResource SettingsCheckBox}" Content="Inline ghost completions" IsChecked="{Binding EditorInlineCompletions}" />
-                    <CheckBox Style="{StaticResource SettingsCheckBox}" Content="Auto-pair brackets and quotes" IsChecked="{Binding EditorAutoPairBrackets}" />
-                    <CheckBox Style="{StaticResource SettingsCheckBox}" Content="Smart Enter (auto-indent blocks)" IsChecked="{Binding EditorSmartEnter}" />
-                    <CheckBox Style="{StaticResource SettingsCheckBox}" Content="Semantic highlighting" IsChecked="{Binding EditorSemanticHighlighting}" />
-                    <CheckBox Style="{StaticResource SettingsCheckBox}" Content="Auto-switch to file when opened from explorer" IsChecked="{Binding EditorAutoSwitchOnOpen}" />
+                    <CheckBox Style="{StaticResource SettingsCheckBox}" Content="{DynamicResource UiEnableAutocompleteCtrlSpaceAndTriggers}" IsChecked="{Binding EditorAutoComplete}" />
+                    <CheckBox Style="{StaticResource SettingsCheckBox}" Content="{DynamicResource UiInlineGhostCompletions}" IsChecked="{Binding EditorInlineCompletions}" />
+                    <CheckBox Style="{StaticResource SettingsCheckBox}" Content="{DynamicResource UiAutoPairBracketsAndQuotes}" IsChecked="{Binding EditorAutoPairBrackets}" />
+                    <CheckBox Style="{StaticResource SettingsCheckBox}" Content="{DynamicResource UiSmartEnterAutoIndentBlocks}" IsChecked="{Binding EditorSmartEnter}" />
+                    <CheckBox Style="{StaticResource SettingsCheckBox}" Content="{DynamicResource UiSemanticHighlighting}" IsChecked="{Binding EditorSemanticHighlighting}" />
+                    <CheckBox Style="{StaticResource SettingsCheckBox}" Content="{DynamicResource UiAutoSwitchToFileWhenOpenedFromExplorer}" IsChecked="{Binding EditorAutoSwitchOnOpen}" />
                 </StackPanel>
 
                 <StackPanel x:Name="DiagnosticsPage" Visibility="Collapsed">
-                    <TextBlock Text="Diagnostics &amp; Linting" Style="{StaticResource SettingsSectionHeader}" Margin="0,0,0,8" />
-                    <TextBlock Text="Semantic analysis, lint rules, and environment profiles."
+                    <TextBlock Text="{DynamicResource UiDiagnosticsLinting}" Style="{StaticResource SettingsSectionHeader}" Margin="0,0,0,8" />
+                    <TextBlock Text="{DynamicResource UiSemanticAnalysisLintRulesAndEnvironmentProfiles}"
                                Foreground="{StaticResource BrushTextMuted}"
                                TextWrapping="Wrap"
                                Margin="0,0,0,12" />
 
-                    <CheckBox Style="{StaticResource SettingsCheckBox}" Content="Enable diagnostics and lint squiggles" IsChecked="{Binding DiagnosticsEnabled}" />
-                    <CheckBox Style="{StaticResource SettingsCheckBox}" Content="Strict type checking mode" IsChecked="{Binding DiagnosticsStrictMode}" />
-                    <CheckBox Style="{StaticResource SettingsCheckBox}" Content="Show require dependency graph panel" IsChecked="{Binding DiagnosticsShowRequireGraph}" />
+                    <CheckBox Style="{StaticResource SettingsCheckBox}" Content="{DynamicResource UiEnableDiagnosticsAndLintSquiggles}" IsChecked="{Binding DiagnosticsEnabled}" />
+                    <CheckBox Style="{StaticResource SettingsCheckBox}" Content="{DynamicResource UiStrictTypeCheckingMode}" IsChecked="{Binding DiagnosticsStrictMode}" />
+                    <CheckBox Style="{StaticResource SettingsCheckBox}" Content="{DynamicResource UiShowRequireDependencyGraphPanel}" IsChecked="{Binding DiagnosticsShowRequireGraph}" />
 
                     <Grid Margin="0,8,0,4">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="160" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Style="{StaticResource SettingsLabel}" Text="Environment profile" />
+                        <TextBlock Grid.Column="0" Style="{StaticResource SettingsLabel}" Text="{DynamicResource UiEnvironmentProfile}" />
                         <ComboBox Grid.Column="1" Style="{StaticResource SettingsComboBox}"
                                   ItemsSource="{Binding EnvironmentProfileOptions}"
                                   SelectedItem="{Binding DiagnosticsEnvironmentProfile, UpdateSourceTrigger=PropertyChanged}" />
@@ -193,8 +193,8 @@
                 </StackPanel>
 
                 <StackPanel x:Name="WorkspacePage" Visibility="Collapsed">
-                    <TextBlock Text="Workspace" Style="{StaticResource SettingsSectionHeader}" Margin="0,0,0,8" />
-                    <CheckBox Style="{StaticResource SettingsCheckBox}" Content="Restore workspace folders on startup" IsChecked="{Binding RestoreWorkspaceOnStartup}" />
+                    <TextBlock Text="{DynamicResource UiWorkspace}" Style="{StaticResource SettingsSectionHeader}" Margin="0,0,0,8" />
+                    <CheckBox Style="{StaticResource SettingsCheckBox}" Content="{DynamicResource UiRestoreWorkspaceFoldersOnStartup}" IsChecked="{Binding RestoreWorkspaceOnStartup}" />
 
                     <Grid Margin="0,4">
                         <Grid.ColumnDefinitions>
@@ -213,13 +213,13 @@
                                   DisplayMemberPath="DisplayName" />
                     </Grid>
                     
-                    <TextBlock Text="Application" Style="{StaticResource SettingsSectionHeader}" />
+                    <TextBlock Text="{DynamicResource UiApplication}" Style="{StaticResource SettingsSectionHeader}" />
                     <Grid Margin="0,4">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="160" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Style="{StaticResource SettingsLabel}" Text="FPS limit" />
+                        <TextBlock Grid.Column="0" Style="{StaticResource SettingsLabel}" Text="{DynamicResource UiFPSLimit}" />
                         <TextBox Grid.Column="1" Style="{StaticResource SettingsTextBox}"
                                  Text="{Binding FpsLimit, UpdateSourceTrigger=PropertyChanged}" />
                     </Grid>

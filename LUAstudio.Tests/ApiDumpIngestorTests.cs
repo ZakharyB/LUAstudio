@@ -22,4 +22,30 @@ public sealed class ApiDumpIngestorTests
         var result = ApiDumpIngestor.Ingest(json);
         Assert.True(result.Classes.ContainsKey("Foo"));
     }
+
+    [Fact]
+    public void Ingest_accepts_object_type_descriptors()
+    {
+        const string json = """
+            {
+              "Classes": [
+                {
+                  "Name": "Foo",
+                  "Superclass": "Instance",
+                  "Members": [
+                    {
+                      "Name": "Bar",
+                      "MemberType": "Function",
+                      "ReturnType": { "Name": "string", "Category": "Primitive" }
+                    }
+                  ]
+                }
+              ]
+            }
+            """;
+
+        var result = ApiDumpIngestor.Ingest(json);
+
+        Assert.Equal("string", Assert.Single(result.Classes["Foo"].Members).ReturnType);
+    }
 }

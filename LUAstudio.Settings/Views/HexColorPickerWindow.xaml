@@ -1,7 +1,7 @@
-﻿<Window x:Class="LUAstudio.Settings.Views.HexColorPickerWindow"
+<Window x:Class="LUAstudio.Settings.Views.HexColorPickerWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Color Picker"
+        Title="{DynamicResource UiColorPicker}"
         Height="180"
         Width="260"
         WindowStartupLocation="CenterOwner">
@@ -13,7 +13,7 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Text="Hex Color"
+        <TextBlock Text="{DynamicResource UiHexColor}"
                    Margin="0,0,0,6"/>
 
         <TextBox Grid.Row="1"
@@ -35,12 +35,12 @@
 
             <Button Width="70"
                     Margin="0,0,8,0"
-                    Content="Cancel"
+                    Content="{DynamicResource UiCancel}"
                     Click="Cancel_Click">
             </Button>
 
             <Button Width="70"
-                    Content="OK"
+                    Content="{DynamicResource UiOK}"
                     Click="Ok_Click"/>
         </StackPanel>
     </Grid>
