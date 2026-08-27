@@ -72,6 +72,14 @@ public sealed class WpfDocumentEditorHost : IDisposable
 
     public void Detach(TextEditor editor, TextDocument document)
     {
+        // Ignore a stale Unloaded notification from a view that no longer owns
+        // this document. A newly loaded tab may already have replaced it.
+        if (!_editors.TryGetValue(document.Id, out var attachedEditor) ||
+            !ReferenceEquals(attachedEditor, editor))
+        {
+            return;
+        }
+
         _editors.Remove(document.Id);
         // AvalonDock unloads tab content while switching documents. Keep the
         // document's latest markers so the squiggles are immediately available

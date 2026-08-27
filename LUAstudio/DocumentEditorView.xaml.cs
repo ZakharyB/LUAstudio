@@ -11,7 +11,6 @@ using System.Windows.Media;
 using System.Windows.Threading;
 using ICSharpCode.AvalonEdit;
 using ICSharpCode.AvalonEdit.Document;
-using ICSharpCode.AvalonEdit.Highlighting;
 using ICSharpCode.AvalonEdit.Rendering;
 using LUAstudio.Editor.Debugging;
 using LUAstudio.IDE.Documents;
@@ -140,6 +139,7 @@ public partial class DocumentEditorView : UserControl, IDisposable
     private bool _isUpdatingFromViewModel;
     private bool _isUpdatingFromEditor;
     private bool _caretHooked;
+    private bool _documentPropertyHooked;
     private bool _isLoaded;
 
     private WpfDocumentEditorHost? _languageHost;
@@ -188,6 +188,8 @@ public partial class DocumentEditorView : UserControl, IDisposable
             _breakpointService = _services.GetRequiredService<IBreakpointService>();
             _navigationService = _services.GetRequiredService<EditorNavigationService>();
 
+            HookDocumentPropertyChanged();
+
             EnsureBreakpointMargin();
             EnsureLineHighlighter();
             ApplyRelativeLineNumbers(ShowRelativeLineNumbers);
@@ -207,9 +209,9 @@ public partial class DocumentEditorView : UserControl, IDisposable
             Editor.PreviewMouseWheel += Editor_PreviewMouseWheel;
 
             if (Document != null)
-                ApplyDocument(Document, true);
+                ApplyDocument(Document);
             else if (_boundCustomDocument != null)
-                ApplyDocument(_boundCustomDocument, true);
+                ApplyDocument(_boundCustomDocument);
 
             Editor.Focus();
         }
@@ -234,7 +236,7 @@ public partial class DocumentEditorView : UserControl, IDisposable
 
             if (_boundCustomDocument != null)
             {
-                _boundCustomDocument.PropertyChanged -= OnCustomDocumentPropertyChanged;
+                UnhookDocumentPropertyChanged();
                 _languageHost?.Detach(Editor, _boundCustomDocument);
             }
 
@@ -262,6 +264,12 @@ public partial class DocumentEditorView : UserControl, IDisposable
             _lineHighlighter?.Dispose();
             _lineHighlighter = null;
 
+            if (_errorSquiggleRenderer != null)
+            {
+                Editor.TextArea.TextView.BackgroundRenderers.Remove(_errorSquiggleRenderer);
+                _errorSquiggleRenderer = null;
+            }
+
             _searchPanelControl = null;
 
             _throttleTimer?.Stop();
@@ -285,41 +293,44 @@ public partial class DocumentEditorView : UserControl, IDisposable
     {
         if (oldCustomDoc != null)
         {
-            oldCustomDoc.PropertyChanged -= OnCustomDocumentPropertyChanged;
+            UnhookDocumentPropertyChanged();
             if (IsEditorReady)
                 _languageHost?.Detach(Editor, oldCustomDoc);
         }
 
         _boundCustomDocument = newCustomDoc;
 
-        if (newCustomDoc != null)
-            newCustomDoc.PropertyChanged += OnCustomDocumentPropertyChanged;
+        HookDocumentPropertyChanged();
 
         if (_isLoaded && IsEditorReady)
-            ApplyDocument(newCustomDoc, false);
+            ApplyDocument(newCustomDoc);
     }
 
-    private void ApplyDocument(CustomDocument? customDoc, bool forceNew)
+    private void HookDocumentPropertyChanged()
     {
-        if (!IsEditorReady) return;
-
-        if (!forceNew && customDoc == _boundCustomDocument && _currentAvalonDocument != null)
+        if (_documentPropertyHooked || _boundCustomDocument is null)
         {
-            var newContent = customDoc?.Content ?? string.Empty;
-            if (_currentAvalonDocument.Text != newContent)
-            {
-                _isUpdatingFromViewModel = true;
-                try
-                {
-                    ReplaceContentPreservingUndo(newContent);
-                }
-                finally
-                {
-                    _isUpdatingFromViewModel = false;
-                }
-            }
             return;
         }
+
+        _boundCustomDocument.PropertyChanged += OnCustomDocumentPropertyChanged;
+        _documentPropertyHooked = true;
+    }
+
+    private void UnhookDocumentPropertyChanged()
+    {
+        if (!_documentPropertyHooked || _boundCustomDocument is null)
+        {
+            return;
+        }
+
+        _boundCustomDocument.PropertyChanged -= OnCustomDocumentPropertyChanged;
+        _documentPropertyHooked = false;
+    }
+
+    private void ApplyDocument(CustomDocument? customDoc)
+    {
+        if (!IsEditorReady) return;
 
         if (customDoc == null)
         {
@@ -330,40 +341,28 @@ public partial class DocumentEditorView : UserControl, IDisposable
         else
         {
             var content = customDoc.Content ?? string.Empty;
-            Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
+            // Apply and attach synchronously. Deferred callbacks can run after a
+            // quick tab switch and attach the previous document to this editor,
+            // which leaves highlighting and diagnostics bound to the wrong tab.
+            try
             {
-                try
-                {
-                    _isUpdatingFromViewModel = true;
-                    var newDoc = new AvalonDocument(content);
-                    Editor.Document = newDoc;
-                    _currentAvalonDocument = newDoc;
-                    _languageHost?.Attach(Editor, customDoc);
-                    _breakpointMargin?.SetDocument(customDoc);
+                _isUpdatingFromViewModel = true;
+                var newDoc = new AvalonDocument(content);
+                Editor.Document = newDoc;
+                _currentAvalonDocument = newDoc;
+                _languageHost?.Attach(Editor, customDoc);
+                _breakpointMargin?.SetDocument(customDoc);
 
-                    if (_breakpointMargin != null && !string.IsNullOrEmpty(customDoc.FilePath))
-                        _breakpointMargin.SourcePath = customDoc.FilePath;
+                if (_breakpointMargin != null && !string.IsNullOrEmpty(customDoc.FilePath))
+                    _breakpointMargin.SourcePath = customDoc.FilePath;
 
-                    if (!string.IsNullOrEmpty(customDoc.FilePath))
-                    {
-                        var ext = Path.GetExtension(customDoc.FilePath);
-                        if (!string.IsNullOrEmpty(ext))
-                        {
-                            ext = ext.TrimStart('.');
-                            var highlighting = HighlightingManager.Instance.GetDefinitionByExtension("." + ext);
-                            if (highlighting != null)
-                                Editor.SyntaxHighlighting = highlighting;
-                        }
-                    }
-
-                    StartFileWatcher(customDoc.FilePath);
-                    Editor.Focus();
-                }
-                finally
-                {
-                    _isUpdatingFromViewModel = false;
-                }
-            }));
+                StartFileWatcher(customDoc.FilePath);
+                Editor.Focus();
+            }
+            finally
+            {
+                _isUpdatingFromViewModel = false;
+            }
         }
     }
 
@@ -676,6 +675,7 @@ public partial class DocumentEditorView : UserControl, IDisposable
         if (_disposed) return;
         if (disposing)
         {
+            UnhookDocumentPropertyChanged();
             _lineHighlighter?.Dispose();
             _breakpointMargin?.Dispose();
             StopFileWatcher();
