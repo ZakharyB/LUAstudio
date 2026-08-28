@@ -1,0 +1,182 @@
+﻿<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:sys="clr-namespace:System;assembly=System.Runtime">
+
+    <!-- Main menus -->
+    <sys:String x:Key="File">_Archivo</sys:String>
+    <sys:String x:Key="Edit">_Editar</sys:String>
+    <sys:String x:Key="View">_Vista</sys:String>
+    <sys:String x:Key="Selection">_Selección</sys:String>
+    <sys:String x:Key="Terminal">_Terminal</sys:String>
+    <sys:String x:Key="Help">_Ayuda</sys:String>
+
+    <!-- File menu -->
+    <sys:String x:Key="New">_Nuevo</sys:String>
+    <sys:String x:Key="OpenFile">_Abrir archivo…</sys:String>
+    <sys:String x:Key="OpenFolder">_Abrir carpeta…</sys:String>
+    <sys:String x:Key="Recent">_Reciente</sys:String>
+    <sys:String x:Key="Save">_Ahorrar</sys:String>
+    <sys:String x:Key="SaveAs">_Guardar como…</sys:String>
+    <sys:String x:Key="Run">_Correr</sys:String>
+    <sys:String x:Key="Settings">_Ajustes</sys:String>
+    <sys:String x:Key="Plugins">_Complementos</sys:String>
+    <sys:String x:Key="BetaFeatures">_Características beta</sys:String>
+    <sys:String x:Key="Close">_Cerca</sys:String>
+
+    <!-- Edit menu -->
+    <sys:String x:Key="Undo">_Deshacer</sys:String>
+    <sys:String x:Key="Redo">_Rehacer</sys:String>
+    <sys:String x:Key="Cut">_Cortar</sys:String>
+    <sys:String x:Key="Copy">_Copiar</sys:String>
+    <sys:String x:Key="Paste">_Pasta</sys:String>
+    <sys:String x:Key="Find">_Encontrar</sys:String>
+
+    <!-- View menu -->
+    <sys:String x:Key="ResetToolWindowLayout">_Restablecer diseño de ventana de herramientas</sys:String>
+    <sys:String x:Key="Explorer">_Explorador</sys:String>
+    <sys:String x:Key="Output">_Producción</sys:String>
+
+    <!-- Selection menu -->
+    <sys:String x:Key="SelectAll">Seleccionar _Todos</sys:String>
+    <sys:String x:Key="ExpandSelection">Ampliar selección</sys:String>
+    <sys:String x:Key="ShrinkSelection">Selección de reducción</sys:String>
+    <sys:String x:Key="AddCursorAbove">Agregar cursor arriba</sys:String>
+    <sys:String x:Key="AddCursorBelow">Agregar cursor a continuación</sys:String>
+
+    <!-- Terminal menu -->
+    <sys:String x:Key="NewTerminal">_Nueva Terminal</sys:String>
+    <sys:String x:Key="SplitTerminal">Terminal dividida</sys:String>
+    <sys:String x:Key="ClearTerminal">Borrar terminal</sys:String>
+
+    <!-- Help menu -->
+    <sys:String x:Key="Documentation">_Documentación</sys:String>
+    <sys:String x:Key="KeyboardShortcuts">Atajos de teclado</sys:String>
+    <sys:String x:Key="AboutLuaStudio">_Acerca de LuaStudio</sys:String>
+
+    <!-- Window controls -->
+    <sys:String x:Key="Minimize">Minimizar</sys:String>
+    <sys:String x:Key="Maximize">Maximizar</sys:String>
+    <sys:String x:Key="CloseWindow">Cerca</sys:String>
+
+    <!-- Dock panels -->
+    <sys:String x:Key="ExplorerPanel">Explorador</sys:String>
+    <sys:String x:Key="EditorPanel">Editor</sys:String>
+    <sys:String x:Key="DebugPanel">Depurar</sys:String>
+    <sys:String x:Key="ProblemsPanel">Problemas</sys:String>
+    <sys:String x:Key="TerminalRunOutput">Terminal / Ejecutar SALIDA</sys:String>
+
+    <!-- Editor -->
+    <sys:String x:Key="NoFileOpen">ningún archivo abierto</sys:String>
+    <sys:String x:Key="OpenFileHint">Abra un archivo desde el menú Archivo o el Explorador.</sys:String>
+
+    <!-- Output / Terminal -->
+    <sys:String x:Key="Clear">Claro</sys:String>
+    <sys:String x:Key="TerminalRunOutputHeader">TERMINAL / SALIDA DE MARCHA</sys:String>
+    <sys:String x:Key="TerminalCommandTooltip">Ejecute un comando del símbolo del sistema de Microsoft (por ejemplo: cd, cls, dir)</sys:String>
+
+    <!-- Status bar -->
+    <sys:String x:Key="RestoreWorkspaceOnStartup">Restaurar el espacio de trabajo al iniciar</sys:String>
+
+    <!-- Settings / language -->
+    <sys:String x:Key="Language">Idioma</sys:String>
+
+    <!-- Remaining application UI -->
+    <sys:String x:Key="UiApplication">Solicitud</sys:String>
+    <sys:String x:Key="UiApply">Aplicar</sys:String>
+    <sys:String x:Key="UiAutoPairBracketsAndQuotes">Paréntesis y cotizaciones de par automático</sys:String>
+    <sys:String x:Key="UiAutoSwitchToFileWhenOpenedFromExplorer">Cambiar automáticamente al archivo cuando se abre desde el explorador</sys:String>
+    <sys:String x:Key="UiBoldFont">fuente en negrita</sys:String>
+    <sys:String x:Key="UiBreakpointMarginWidthPx">Ancho del margen del punto de interrupción (px)</sys:String>
+    <sys:String x:Key="UiBreakpoints">Puntos de interrupción</sys:String>
+    <sys:String x:Key="UiBreakpointsNavigation">Puntos de interrupción y Navegación</sys:String>
+    <sys:String x:Key="UiCallStack">Pila de llamadas</sys:String>
+    <sys:String x:Key="UiCancel">Cancelar</sys:String>
+    <sys:String x:Key="UiChangesSaveAutomaticallyAndApplyImmediately">Los cambios se guardan automáticamente y se aplican inmediatamente.</sys:String>
+    <sys:String x:Key="UiClear">Claro</sys:String>
+    <sys:String x:Key="UiClearFilterEsc">Limpiar filtro (Esc)</sys:String>
+    <sys:String x:Key="UiClose">Cerca</sys:String>
+    <sys:String x:Key="UiCloseSearchEsc">Cerrar búsqueda (Esc)</sys:String>
+    <sys:String x:Key="UiCode">Código</sys:String>
+    <sys:String x:Key="UiColorPicker">Selector de color</sys:String>
+    <sys:String x:Key="UiColumn">Columna</sys:String>
+    <sys:String x:Key="UiContinueF5">Continuar (F5)</sys:String>
+    <sys:String x:Key="UiControlCompletionSuggestionsAndSmartEditingBehavior">Controle la finalización, las sugerencias y el comportamiento de edición inteligente.</sys:String>
+    <sys:String x:Key="UiConvertTabsToSpaces">Convertir pestañas a espacios</sys:String>
+    <sys:String x:Key="UiCustomizeLuaSyntaxHighlightingChangesApplyImmediately">Personaliza el resaltado de sintaxis de Lua. Los cambios se aplican inmediatamente.</sys:String>
+    <sys:String x:Key="UiDEBUGCONSOLE">CONSOLA DE DEPURACIÓN</sys:String>
+    <sys:String x:Key="UiDiagnostics">Diagnóstico</sys:String>
+    <sys:String x:Key="UiDiagnosticsLinting">Diagnóstico y pelusa</sys:String>
+    <sys:String x:Key="UiEXPLORERACTIONS">ACCIONES DEL EXPLORADOR</sys:String>
+    <sys:String x:Key="UiEditor">Editor</sys:String>
+    <sys:String x:Key="UiEditorChrome">Editor cromado</sys:String>
+    <sys:String x:Key="UiEnableAutocompleteCtrlSpaceAndTriggers">Habilitar autocompletar (Ctrl+Espacio y activadores)</sys:String>
+    <sys:String x:Key="UiEnableDiagnosticsAndLintSquiggles">Habilitar diagnósticos y garabatos de pelusa</sys:String>
+    <sys:String x:Key="UiEnvironmentProfile">Perfil ambiental</sys:String>
+    <sys:String x:Key="UiEvaluate">Evaluar</sys:String>
+    <sys:String x:Key="UiEvaluateAnExpressionInTheSelectedStackFrame">Evaluar una expresión en el marco de pila seleccionado</sys:String>
+    <sys:String x:Key="UiFPSLimit">Límite de FPS</sys:String>
+    <sys:String x:Key="UiFile">Archivo</sys:String>
+    <sys:String x:Key="UiFind">Encontrar</sys:String>
+    <sys:String x:Key="UiFontFamily">Familia de fuentes</sys:String>
+    <sys:String x:Key="UiFontLayoutAndDisplayOptionsForTheCodeEditor">Opciones de fuente, diseño y visualización para el editor de código.</sys:String>
+    <sys:String x:Key="UiFontSizePt">Tamaño de fuente (pt)</sys:String>
+    <sys:String x:Key="UiFunction">Función</sys:String>
+    <sys:String x:Key="UiGoToDeclaration">Ir a Declaración</sys:String>
+    <sys:String x:Key="UiGoToImplementation">Ir a Implementación</sys:String>
+    <sys:String x:Key="UiGoToLine">Ir a la línea...</sys:String>
+    <sys:String x:Key="UiHexColor">Color hexagonal</sys:String>
+    <sys:String x:Key="UiHighlightCurrentLine">Resaltar la línea actual</sys:String>
+    <sys:String x:Key="UiInlineGhostCompletions">Finalizaciones de fantasmas en línea</sys:String>
+    <sys:String x:Key="UiIntelliSense">IntelliSense</sys:String>
+    <sys:String x:Key="UiItalicFont">fuente cursiva</sys:String>
+    <sys:String x:Key="UiLine">Línea</sys:String>
+    <sys:String x:Key="UiLineHighlightDurationSec">Duración del resaltado de línea (seg.)</sys:String>
+    <sys:String x:Key="UiMatchCase">caso de partido</sys:String>
+    <sys:String x:Key="UiMessage">Mensaje</sys:String>
+    <sys:String x:Key="UiModified">Modificado</sys:String>
+    <sys:String x:Key="UiName">Nombre</sys:String>
+    <sys:String x:Key="UiNextMatch">Próximo partido</sys:String>
+    <sys:String x:Key="UiNoWorkspaceFolders">Sin carpetas de espacio de trabajo</sys:String>
+    <sys:String x:Key="UiOK">DE ACUERDO</sys:String>
+    <sys:String x:Key="UiOpenFolder">Abrir carpeta…</sys:String>
+    <sys:String x:Key="UiOutput">Producción</sys:String>
+    <sys:String x:Key="UiPauseF6">Pausa (F6)</sys:String>
+    <sys:String x:Key="UiPreviousMatch">Partido anterior</sys:String>
+    <sys:String x:Key="UiProblems">Problemas</sys:String>
+    <sys:String x:Key="UiRefresh">Refrescar</sys:String>
+    <sys:String x:Key="UiRefreshTree">Actualizar árbol</sys:String>
+    <sys:String x:Key="UiRegex">expresión regular</sys:String>
+    <sys:String x:Key="UiRequireGraph">Requerir gráfico</sys:String>
+    <sys:String x:Key="UiRestoreWorkspaceFoldersOnStartup">Restaurar las carpetas del espacio de trabajo al iniciar</sys:String>
+    <sys:String x:Key="UiRestoreWorkspaceOnStartup">Restaurar el espacio de trabajo al iniciar</sys:String>
+    <sys:String x:Key="UiRunAMicrosoftCommandPromptCommandForExampleCdClsDir">Ejecute un comando del símbolo del sistema de Microsoft (por ejemplo: cd, cls, dir)</sys:String>
+    <sys:String x:Key="UiRunContinueF5">Ejecutar/Continuar (F5)</sys:String>
+    <sys:String x:Key="UiSemanticAnalysisLintRulesAndEnvironmentProfiles">Análisis semántico, reglas de pelusa y perfiles ambientales.</sys:String>
+    <sys:String x:Key="UiSemanticHighlighting">Resaltado semántico</sys:String>
+    <sys:String x:Key="UiSettings">Ajustes</sys:String>
+    <sys:String x:Key="UiSettingsLuaStudio">Configuración — LuaStudio</sys:String>
+    <sys:String x:Key="UiSeverity">Gravedad</sys:String>
+    <sys:String x:Key="UiShowBracketHighlighting">Mostrar resaltado de corchetes</sys:String>
+    <sys:String x:Key="UiShowLineNumbers">Mostrar números de línea</sys:String>
+    <sys:String x:Key="UiShowRelativeLineNumbers">Mostrar números de línea relativos</sys:String>
+    <sys:String x:Key="UiShowRequireDependencyGraphPanel">Mostrar panel de gráfico de dependencia requerida</sys:String>
+    <sys:String x:Key="UiSmartEnterAutoIndentBlocks">Smart Enter (bloques de sangría automática)</sys:String>
+    <sys:String x:Key="UiStepIntoF11">Entra (F11)</sys:String>
+    <sys:String x:Key="UiStepOutShiftF11">Salir (Mayús+F11)</sys:String>
+    <sys:String x:Key="UiStepOverF10">Pasar por encima (F10)</sys:String>
+    <sys:String x:Key="UiStopShiftF5">Detener (Mayús+F5)</sys:String>
+    <sys:String x:Key="UiStrictTypeCheckingMode">Modo de verificación de tipo estricto</sys:String>
+    <sys:String x:Key="UiSyntaxColors">Colores de sintaxis</sys:String>
+    <sys:String x:Key="UiTERMINALRUNOUTPUT">TERMINAL / SALIDA DE MARCHA</sys:String>
+    <sys:String x:Key="UiTabWidth">Ancho de pestaña</sys:String>
+    <sys:String x:Key="UiToggleBreakpoint">Alternar punto de interrupción</sys:String>
+    <sys:String x:Key="UiType">Tipo</sys:String>
+    <sys:String x:Key="UiUseTheMenuAboveToOpenAFolder">Utilice el menú ⋯ de arriba para abrir una carpeta.</sys:String>
+    <sys:String x:Key="UiValue">Valor</sys:String>
+    <sys:String x:Key="UiVariables">variables</sys:String>
+    <sys:String x:Key="UiWholeWords">palabras completas</sys:String>
+    <sys:String x:Key="UiWordWrap">ajuste de palabras</sys:String>
+    <sys:String x:Key="UiWorkspace">Espacio de trabajo</sys:String>
+
+</ResourceDictionary>

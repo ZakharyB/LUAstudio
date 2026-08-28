@@ -62,7 +62,9 @@ public sealed partial class SettingsViewModel : ObservableObject
     public IReadOnlyList<LanguageOption> LanguageOptions { get; } =
     [
         new("en", "English"),
-        new("fr", "Français")
+        new("fr", "Français"),
+        new("af", "Afrikaans"),
+        new("es", "español")
     ];
 
     public LanguageOption SelectedLanguage

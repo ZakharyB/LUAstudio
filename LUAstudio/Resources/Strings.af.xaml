@@ -1,0 +1,182 @@
+﻿<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:sys="clr-namespace:System;assembly=System.Runtime">
+
+    <!-- Main menus -->
+    <sys:String x:Key="File">_Lêer</sys:String>
+    <sys:String x:Key="Edit">_Redigeer</sys:String>
+    <sys:String x:Key="View">_Bekyk</sys:String>
+    <sys:String x:Key="Selection">_Seleksie</sys:String>
+    <sys:String x:Key="Terminal">_Terminaal</sys:String>
+    <sys:String x:Key="Help">_Hulp</sys:String>
+
+    <!-- File menu -->
+    <sys:String x:Key="New">_Nuut</sys:String>
+    <sys:String x:Key="OpenFile">_Maak lêer oop...</sys:String>
+    <sys:String x:Key="OpenFolder">_Maak vouer oop...</sys:String>
+    <sys:String x:Key="Recent">_ Onlangs</sys:String>
+    <sys:String x:Key="Save">_Stoor</sys:String>
+    <sys:String x:Key="SaveAs">_Stoor as...</sys:String>
+    <sys:String x:Key="Run">_ Hardloop</sys:String>
+    <sys:String x:Key="Settings">_Instellings</sys:String>
+    <sys:String x:Key="Plugins">_Plugins</sys:String>
+    <sys:String x:Key="BetaFeatures">_Beta-kenmerke</sys:String>
+    <sys:String x:Key="Close">_Maak toe</sys:String>
+
+    <!-- Edit menu -->
+    <sys:String x:Key="Undo">_Ontdoen</sys:String>
+    <sys:String x:Key="Redo">_ Herhaal</sys:String>
+    <sys:String x:Key="Cut">_Sny</sys:String>
+    <sys:String x:Key="Copy">_Kopieer</sys:String>
+    <sys:String x:Key="Paste">_Plak</sys:String>
+    <sys:String x:Key="Find">_Vind</sys:String>
+
+    <!-- View menu -->
+    <sys:String x:Key="ResetToolWindowLayout">_ Stel gereedskapvensteruitleg terug</sys:String>
+    <sys:String x:Key="Explorer">_Verkenner</sys:String>
+    <sys:String x:Key="Output">_ Uitset</sys:String>
+
+    <!-- Selection menu -->
+    <sys:String x:Key="SelectAll">Kies _Alle</sys:String>
+    <sys:String x:Key="ExpandSelection">Brei seleksie uit</sys:String>
+    <sys:String x:Key="ShrinkSelection">Krimp seleksie</sys:String>
+    <sys:String x:Key="AddCursorAbove">Voeg wyser hierbo by</sys:String>
+    <sys:String x:Key="AddCursorBelow">Voeg wyser hieronder by</sys:String>
+
+    <!-- Terminal menu -->
+    <sys:String x:Key="NewTerminal">_Nuwe terminaal</sys:String>
+    <sys:String x:Key="SplitTerminal">Verdeel terminale</sys:String>
+    <sys:String x:Key="ClearTerminal">Vee terminale uit</sys:String>
+
+    <!-- Help menu -->
+    <sys:String x:Key="Documentation">_Dokumentasie</sys:String>
+    <sys:String x:Key="KeyboardShortcuts">Sleutelbordkortpaaie</sys:String>
+    <sys:String x:Key="AboutLuaStudio">_Oor LuaStudio</sys:String>
+
+    <!-- Window controls -->
+    <sys:String x:Key="Minimize">Minimaliseer</sys:String>
+    <sys:String x:Key="Maximize">Maksimeer</sys:String>
+    <sys:String x:Key="CloseWindow">Maak toe</sys:String>
+
+    <!-- Dock panels -->
+    <sys:String x:Key="ExplorerPanel">Verkenner</sys:String>
+    <sys:String x:Key="EditorPanel">Redakteur</sys:String>
+    <sys:String x:Key="DebugPanel">Ontfout</sys:String>
+    <sys:String x:Key="ProblemsPanel">Probleme</sys:String>
+    <sys:String x:Key="TerminalRunOutput">Terminale / Begin UITSET</sys:String>
+
+    <!-- Editor -->
+    <sys:String x:Key="NoFileOpen">Geen lêer oop nie</sys:String>
+    <sys:String x:Key="OpenFileHint">Maak 'n lêer oop vanaf die Lêer-kieslys of Explorer.</sys:String>
+
+    <!-- Output / Terminal -->
+    <sys:String x:Key="Clear">Duidelik</sys:String>
+    <sys:String x:Key="TerminalRunOutputHeader">TERMINAAL / UITVOER</sys:String>
+    <sys:String x:Key="TerminalCommandTooltip">Voer 'n Microsoft Command Prompt-opdrag uit (byvoorbeeld: cd, cls, dir)</sys:String>
+
+    <!-- Status bar -->
+    <sys:String x:Key="RestoreWorkspaceOnStartup">Herstel werkspasie by opstart</sys:String>
+
+    <!-- Settings / language -->
+    <sys:String x:Key="Language">Taal</sys:String>
+
+    <!-- Remaining application UI -->
+    <sys:String x:Key="UiApplication">Toepassing</sys:String>
+    <sys:String x:Key="UiApply">Doen aansoek</sys:String>
+    <sys:String x:Key="UiAutoPairBracketsAndQuotes">Outo-paar hakies en kwotasies</sys:String>
+    <sys:String x:Key="UiAutoSwitchToFileWhenOpenedFromExplorer">Skakel outomaties oor na lêer wanneer dit vanaf die verkenner oopgemaak word</sys:String>
+    <sys:String x:Key="UiBoldFont">Vet lettertipe</sys:String>
+    <sys:String x:Key="UiBreakpointMarginWidthPx">Breekpunt marge breedte (px)</sys:String>
+    <sys:String x:Key="UiBreakpoints">Breekpunte</sys:String>
+    <sys:String x:Key="UiBreakpointsNavigation">Breekpunte en amp; Navigasie</sys:String>
+    <sys:String x:Key="UiCallStack">Bel Stack</sys:String>
+    <sys:String x:Key="UiCancel">Kanselleer</sys:String>
+    <sys:String x:Key="UiChangesSaveAutomaticallyAndApplyImmediately">Veranderinge word outomaties gestoor en word onmiddellik van toepassing.</sys:String>
+    <sys:String x:Key="UiClear">Duidelik</sys:String>
+    <sys:String x:Key="UiClearFilterEsc">Vee filter uit (Esc)</sys:String>
+    <sys:String x:Key="UiClose">Maak toe</sys:String>
+    <sys:String x:Key="UiCloseSearchEsc">Maak soektog toe (Esc)</sys:String>
+    <sys:String x:Key="UiCode">Kode</sys:String>
+    <sys:String x:Key="UiColorPicker">Kleurkieser</sys:String>
+    <sys:String x:Key="UiColumn">Kolom</sys:String>
+    <sys:String x:Key="UiContinueF5">Gaan voort (F5)</sys:String>
+    <sys:String x:Key="UiControlCompletionSuggestionsAndSmartEditingBehavior">Beheer voltooiing, voorstelle en slim redigeringgedrag.</sys:String>
+    <sys:String x:Key="UiConvertTabsToSpaces">Skakel oortjies om na spasies</sys:String>
+    <sys:String x:Key="UiCustomizeLuaSyntaxHighlightingChangesApplyImmediately">Pas Lua-sintaksisverligting aan. Veranderinge geld onmiddellik.</sys:String>
+    <sys:String x:Key="UiDEBUGCONSOLE">DEBUG KONSOLE</sys:String>
+    <sys:String x:Key="UiDiagnostics">Diagnostiek</sys:String>
+    <sys:String x:Key="UiDiagnosticsLinting">Diagnostiek &amp; Linting</sys:String>
+    <sys:String x:Key="UiEXPLORERACTIONS">VERKENNER-AKSIES</sys:String>
+    <sys:String x:Key="UiEditor">Redakteur</sys:String>
+    <sys:String x:Key="UiEditorChrome">Redigeerder chroom</sys:String>
+    <sys:String x:Key="UiEnableAutocompleteCtrlSpaceAndTriggers">Aktiveer outovoltooi (Ctrl+Spasie en snellers)</sys:String>
+    <sys:String x:Key="UiEnableDiagnosticsAndLintSquiggles">Aktiveer diagnostiek en pluis squiggles</sys:String>
+    <sys:String x:Key="UiEnvironmentProfile">Omgewingsprofiel</sys:String>
+    <sys:String x:Key="UiEvaluate">Evalueer</sys:String>
+    <sys:String x:Key="UiEvaluateAnExpressionInTheSelectedStackFrame">Evalueer 'n uitdrukking in die geselekteerde stapelraam</sys:String>
+    <sys:String x:Key="UiFPSLimit">FPS limiet</sys:String>
+    <sys:String x:Key="UiFile">Lêer</sys:String>
+    <sys:String x:Key="UiFind">Vind</sys:String>
+    <sys:String x:Key="UiFontFamily">Lettertipe familie</sys:String>
+    <sys:String x:Key="UiFontLayoutAndDisplayOptionsForTheCodeEditor">Lettertipe, uitleg en vertoonopsies vir die koderedigeerder.</sys:String>
+    <sys:String x:Key="UiFontSizePt">Lettergrootte (pt)</sys:String>
+    <sys:String x:Key="UiFunction">Funksie</sys:String>
+    <sys:String x:Key="UiGoToDeclaration">Gaan na Verklaring</sys:String>
+    <sys:String x:Key="UiGoToImplementation">Gaan na Implementering</sys:String>
+    <sys:String x:Key="UiGoToLine">Gaan na lyn...</sys:String>
+    <sys:String x:Key="UiHexColor">Hex kleur</sys:String>
+    <sys:String x:Key="UiHighlightCurrentLine">Merk huidige lyn</sys:String>
+    <sys:String x:Key="UiInlineGhostCompletions">Inlyn spookvoltooiings</sys:String>
+    <sys:String x:Key="UiIntelliSense">IntelliSense</sys:String>
+    <sys:String x:Key="UiItalicFont">Kursief lettertipe</sys:String>
+    <sys:String x:Key="UiLine">Lyn</sys:String>
+    <sys:String x:Key="UiLineHighlightDurationSec">Duur van lynhoogtepunte (sek.)</sys:String>
+    <sys:String x:Key="UiMatchCase">Pasmaatkas</sys:String>
+    <sys:String x:Key="UiMessage">Boodskap</sys:String>
+    <sys:String x:Key="UiModified">Gewysig</sys:String>
+    <sys:String x:Key="UiName">Naam</sys:String>
+    <sys:String x:Key="UiNextMatch">Volgende wedstryd</sys:String>
+    <sys:String x:Key="UiNoWorkspaceFolders">Geen werkspasie-vouers nie</sys:String>
+    <sys:String x:Key="UiOK">OK</sys:String>
+    <sys:String x:Key="UiOpenFolder">Maak vouer oop …</sys:String>
+    <sys:String x:Key="UiOutput">Uitset</sys:String>
+    <sys:String x:Key="UiPauseF6">Pouse (F6)</sys:String>
+    <sys:String x:Key="UiPreviousMatch">Vorige wedstryd</sys:String>
+    <sys:String x:Key="UiProblems">Probleme</sys:String>
+    <sys:String x:Key="UiRefresh">Verfris</sys:String>
+    <sys:String x:Key="UiRefreshTree">Verfris boom</sys:String>
+    <sys:String x:Key="UiRegex">Regeks</sys:String>
+    <sys:String x:Key="UiRequireGraph">Vereis Grafiek</sys:String>
+    <sys:String x:Key="UiRestoreWorkspaceFoldersOnStartup">Herstel werkspasie-vouers by opstart</sys:String>
+    <sys:String x:Key="UiRestoreWorkspaceOnStartup">Herstel werkspasie by opstart</sys:String>
+    <sys:String x:Key="UiRunAMicrosoftCommandPromptCommandForExampleCdClsDir">Voer 'n Microsoft Command Prompt-opdrag uit (byvoorbeeld: cd, cls, dir)</sys:String>
+    <sys:String x:Key="UiRunContinueF5">Hardloop / Gaan voort (F5)</sys:String>
+    <sys:String x:Key="UiSemanticAnalysisLintRulesAndEnvironmentProfiles">Semantiese analise, pluisreëls en omgewingsprofiele.</sys:String>
+    <sys:String x:Key="UiSemanticHighlighting">Semantiese beligting</sys:String>
+    <sys:String x:Key="UiSettings">Instellings</sys:String>
+    <sys:String x:Key="UiSettingsLuaStudio">Instellings — LuaStudio</sys:String>
+    <sys:String x:Key="UiSeverity">Erns</sys:String>
+    <sys:String x:Key="UiShowBracketHighlighting">Wys hakie-uitlig</sys:String>
+    <sys:String x:Key="UiShowLineNumbers">Wys reëlnommers</sys:String>
+    <sys:String x:Key="UiShowRelativeLineNumbers">Toon relatiewe lynnommers</sys:String>
+    <sys:String x:Key="UiShowRequireDependencyGraphPanel">Wys vereis afhanklikheid grafiek paneel</sys:String>
+    <sys:String x:Key="UiSmartEnterAutoIndentBlocks">Smart Enter (outo-inkeep blokke)</sys:String>
+    <sys:String x:Key="UiStepIntoF11">Stap in (F11)</sys:String>
+    <sys:String x:Key="UiStepOutShiftF11">Stap uit (Shift+F11)</sys:String>
+    <sys:String x:Key="UiStepOverF10">Stap oor (F10)</sys:String>
+    <sys:String x:Key="UiStopShiftF5">Stop (Shift+F5)</sys:String>
+    <sys:String x:Key="UiStrictTypeCheckingMode">Streng tipe nagaanmodus</sys:String>
+    <sys:String x:Key="UiSyntaxColors">Sintaksis kleure</sys:String>
+    <sys:String x:Key="UiTERMINALRUNOUTPUT">TERMINAAL / UITVOER</sys:String>
+    <sys:String x:Key="UiTabWidth">Tab breedte</sys:String>
+    <sys:String x:Key="UiToggleBreakpoint">Wissel Breekpunt</sys:String>
+    <sys:String x:Key="UiType">Tik</sys:String>
+    <sys:String x:Key="UiUseTheMenuAboveToOpenAFolder">Gebruik die ⋯-kieslys hierbo om 'n vouer oop te maak.</sys:String>
+    <sys:String x:Key="UiValue">Waarde</sys:String>
+    <sys:String x:Key="UiVariables">Veranderlikes</sys:String>
+    <sys:String x:Key="UiWholeWords">Hele woorde</sys:String>
+    <sys:String x:Key="UiWordWrap">Woordomhulsel</sys:String>
+    <sys:String x:Key="UiWorkspace">Werkspasie</sys:String>
+
+</ResourceDictionary>

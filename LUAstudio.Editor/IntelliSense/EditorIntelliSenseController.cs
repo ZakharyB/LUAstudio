@@ -10,6 +10,7 @@ using LUAstudio.Core.Threading;
 using LUAstudio.Editor.Completion;
 using LUAstudio.Editor.Editing;
 using LUAstudio.Editor.Highlighting;
+using LUAstudio.IntelliSense;
 using LUAstudio.IntelliSense.Analysis;
 using LUAstudio.IntelliSense.Completion;
 using LUAstudio.IntelliSense.Documents;

@@ -6,14 +6,18 @@ using LUAstudio.Core;
 namespace LUAstudio.Settings;
 public static class LocalizationManager
 {
-    // TODO : Add spanish
+    // TODO : add German
     public const string English = "en";
     public const string French = "fr";
+    public const string Afrikaans = "af";
+    public const string Spanish = "es";
 
     private static readonly HashSet<string> SupportedLanguages =
     [
         English,
-        French
+        French,
+        Afrikaans,
+        Spanish
     ];
 
     private static ResourceDictionary? _currentDictionary;
