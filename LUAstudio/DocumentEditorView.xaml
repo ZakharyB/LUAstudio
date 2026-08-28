@@ -57,9 +57,9 @@
             <MenuItem Command="{x:Static ApplicationCommands.SelectAll}" />
             <Separator />
             <MenuItem Header="{DynamicResource UiGoToImplementation}"
-                      Click="GoToSymbol_Click" />
+                      Click="GoToImplementation_Click" />
             <MenuItem Header="{DynamicResource UiGoToDeclaration}"
-                      Click="GoToSymbol_Click" />
+                      Click="GoToDeclaration_Click" />
             <MenuItem Header="{DynamicResource UiToggleBreakpoint}"
                       Click="ToggleBreakpoint_Click" />
             <MenuItem Header="{DynamicResource UiGoToLine}"
