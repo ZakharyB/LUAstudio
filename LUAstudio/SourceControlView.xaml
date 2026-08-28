@@ -1,0 +1,49 @@
+<UserControl x:Class="LUAstudio.SourceControlView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid Background="{StaticResource BrushBgPanel}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="2*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <DockPanel Margin="8">
+            <Button DockPanel.Dock="Right" Content="↻" Padding="7,2" Command="{Binding RefreshCommand}" ToolTip="Refresh Git status" />
+            <TextBlock VerticalAlignment="Center" FontWeight="SemiBold" Foreground="{StaticResource BrushText}" Text="CHANGES" />
+        </DockPanel>
+        <ListBox Grid.Row="1" ItemsSource="{Binding Changes}" Background="Transparent" BorderThickness="0">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <Grid Margin="6,2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Width="20" Foreground="{StaticResource BrushAccent}" FontWeight="Bold" Text="{Binding Glyph}" />
+                        <TextBlock Grid.Column="1" Foreground="{StaticResource BrushText}" Text="{Binding RelativePath}" TextTrimming="CharacterEllipsis" />
+                        <Button Grid.Column="2" Padding="6,1" Content="{Binding IsStaged, Converter={StaticResource StageButtonTextConverter}}"
+                                Command="{Binding DataContext.ToggleStageCommand, RelativeSource={RelativeSource AncestorType=ListBox}}" CommandParameter="{Binding}" />
+                    </Grid>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+        <StackPanel Grid.Row="2" Margin="8">
+            <TextBox Text="{Binding CommitMessage, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" MinHeight="48"
+                     Background="{StaticResource BrushBgEditor}" Foreground="{StaticResource BrushText}" BorderBrush="{StaticResource BrushBorder}" />
+            <Button Margin="0,6,0,0" Padding="8,4" Content="Commit staged changes" Command="{Binding CommitCommand}" />
+            <TextBlock Margin="0,4,0,0" Foreground="{StaticResource BrushWarning}" Text="{Binding ErrorMessage}" TextWrapping="Wrap" />
+        </StackPanel>
+        <ListBox Grid.Row="3" ItemsSource="{Binding Commits}" Background="Transparent" BorderThickness="0">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Margin="8,3">
+                        <TextBlock Foreground="{StaticResource BrushText}" Text="{Binding Subject}" TextTrimming="CharacterEllipsis" />
+                        <TextBlock Foreground="{StaticResource BrushTextMuted}" FontSize="10" Text="{Binding Author}" />
+                    </StackPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+    </Grid>
+</UserControl>

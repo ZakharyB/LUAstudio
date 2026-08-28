@@ -13,6 +13,7 @@ using LUAstudio.Execution.DependencyInjection;
 using LUAstudio.IntelliSense.Workspace;
 using Microsoft.Extensions.DependencyInjection;
 using LUAstudio.Settings;
+using LUAstudio.Git.DependencyInjection;
 
 namespace LUAstudio;
 
@@ -64,6 +65,7 @@ public partial class App : Application
         services.AddLuaStudioWorkspace();
         services.AddLuaStudioEditor();
         services.AddLuaStudioIde();
+        services.AddLuaStudioGit();
         services.AddLuaStudioExecution();
         services.AddSingleton<IMainThread, WpfMainThread>();
         services.AddSingleton<IFileDialogService, WpfFileDialogService>();

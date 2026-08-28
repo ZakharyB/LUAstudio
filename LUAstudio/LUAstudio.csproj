@@ -5,6 +5,7 @@
       <ProjectReference Include="..\LUAstudio.Core\LUAstudio.Core.csproj" />
       <ProjectReference Include="..\LUAstudio.Editor\LUAstudio.Editor.csproj" />
       <ProjectReference Include="..\LUAstudio.IDE\LUAstudio.IDE.csproj" />
+      <ProjectReference Include="..\LUAstudio.Git\LUAstudio.Git.csproj" />
       <ProjectReference Include="..\LUAstudio.Plugins\LUAstudio.Plugins.csproj" />
       <ProjectReference Include="..\LUAstudio.Settings\LUAstudio.Settings.csproj" />
       <ProjectReference Include="..\LUAstudio.Storage\LUAstudio.Storage.csproj" />
