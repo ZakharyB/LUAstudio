@@ -1,6 +1,72 @@
 <UserControl x:Class="LUAstudio.SourceControlView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:LUAstudio">
+    
+    <UserControl.Resources>
+        <Style x:Key="ActionButton" TargetType="Button">
+            <Setter Property="Background" Value="#2A2D31"/>
+            <Setter Property="Foreground" Value="#E6E6E6"/>
+            <Setter Property="BorderBrush" Value="#3A3D42"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Padding" Value="10,0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style TargetType="TextBox">
+            <Setter Property="Foreground" Value="#E6E6E6"/>
+            <Setter Property="Background" Value="#252526"/>
+            <Setter Property="BorderBrush" Value="#3C3C3C"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="8,0"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Height" Value="34"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6">
+                            <ScrollViewer x:Name="PART_ContentHost"/>
+                        </Border>
+
+                        <ControlTemplate.Triggers>
+
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#2D5BFF"/>
+                                <Setter TargetName="Bd" Property="BorderThickness" Value="2"/>
+                            </Trigger>
+
+                            <Trigger Property="Tag" Value="Invalid">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#FF3B30"/>
+                                <Setter TargetName="Bd" Property="BorderThickness" Value="2"/>
+                            </Trigger>
+
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <local:StageButtonTextConverter x:Key="StageButtonTextConverter" />
+    </UserControl.Resources>
+
     <Grid Background="{StaticResource BrushBgPanel}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -8,11 +74,27 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
+
         <DockPanel Margin="8">
-            <Button DockPanel.Dock="Right" Content="↻" Padding="7,2" Command="{Binding RefreshCommand}" ToolTip="Refresh Git status" />
-            <TextBlock VerticalAlignment="Center" FontWeight="SemiBold" Foreground="{StaticResource BrushText}" Text="CHANGES" />
+            <Button DockPanel.Dock="Right"
+                    MinWidth="28"
+                    Content="↻"
+                    Padding="7,2"
+                    Command="{Binding RefreshCommand}"
+                    Style="{StaticResource ActionButton}"
+                    ToolTip="Refresh Git status" />
+
+            <TextBlock VerticalAlignment="Center"
+                       FontWeight="SemiBold"
+                       Foreground="{StaticResource BrushText}"
+                       Text="CHANGES" />
         </DockPanel>
-        <ListBox Grid.Row="1" ItemsSource="{Binding Changes}" Background="Transparent" BorderThickness="0">
+
+        <ListBox Grid.Row="1"
+                 ItemsSource="{Binding Changes}"
+                 Background="Transparent"
+                 BorderThickness="0">
+
             <ListBox.ItemTemplate>
                 <DataTemplate>
                     <Grid Margin="6,2">
@@ -21,26 +103,70 @@
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <TextBlock Width="20" Foreground="{StaticResource BrushAccent}" FontWeight="Bold" Text="{Binding Glyph}" />
-                        <TextBlock Grid.Column="1" Foreground="{StaticResource BrushText}" Text="{Binding RelativePath}" TextTrimming="CharacterEllipsis" />
-                        <Button Grid.Column="2" Padding="6,1" Content="{Binding IsStaged, Converter={StaticResource StageButtonTextConverter}}"
-                                Command="{Binding DataContext.ToggleStageCommand, RelativeSource={RelativeSource AncestorType=ListBox}}" CommandParameter="{Binding}" />
+
+                        <TextBlock Width="20"
+                                   Foreground="{StaticResource BrushAccent}"
+                                   FontWeight="Bold"
+                                   Text="{Binding Glyph}" />
+
+                        <TextBlock Grid.Column="1"
+                                   Foreground="{StaticResource BrushText}"
+                                   Text="{Binding RelativePath}"
+                                   TextTrimming="CharacterEllipsis" />
+
+                        <Button Grid.Column="2"
+                                Padding="6,1"
+                                Content="{Binding IsStaged,
+                                    Converter={StaticResource StageButtonTextConverter}}"
+                                Command="{Binding DataContext.ToggleStageCommand,
+                                    RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                CommandParameter="{Binding}"
+                                />
                     </Grid>
                 </DataTemplate>
             </ListBox.ItemTemplate>
         </ListBox>
+
         <StackPanel Grid.Row="2" Margin="8">
-            <TextBox Text="{Binding CommitMessage, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" MinHeight="48"
-                     Background="{StaticResource BrushBgEditor}" Foreground="{StaticResource BrushText}" BorderBrush="{StaticResource BrushBorder}" />
-            <Button Margin="0,6,0,0" Padding="8,4" Content="Commit staged changes" Command="{Binding CommitCommand}" />
-            <TextBlock Margin="0,4,0,0" Foreground="{StaticResource BrushWarning}" Text="{Binding ErrorMessage}" TextWrapping="Wrap" />
+            <TextBox Text="{Binding CommitMessage, UpdateSourceTrigger=PropertyChanged}"
+                     AcceptsReturn="True"
+                     MinHeight="48"
+                     Background="{StaticResource BrushBgEditor}"
+                     Foreground="{StaticResource BrushText}"
+                     BorderBrush="{StaticResource BrushBorder}" />
+            <Button Content="Commit changes"
+                    Padding="8,4"
+                    MinWidth="80"
+                    Margin="0,6,0,0"
+                    IsDefault="True"
+                    Background="#2D5BFF"
+                    BorderBrush="#2D5BFF"
+                    Foreground="White"
+                    Style="{StaticResource ActionButton}"
+                    Command="{Binding CommitCommand}"
+                    />
+            
+            <TextBlock Margin="0,4,0,0"
+                       Foreground="{StaticResource BrushWarning}"
+                       Text="{Binding ErrorMessage}"
+                       TextWrapping="Wrap" />
         </StackPanel>
-        <ListBox Grid.Row="3" ItemsSource="{Binding Commits}" Background="Transparent" BorderThickness="0">
+
+        <ListBox Grid.Row="3"
+                 ItemsSource="{Binding Commits}"
+                 Background="Transparent"
+                 BorderThickness="0">
+
             <ListBox.ItemTemplate>
                 <DataTemplate>
                     <StackPanel Margin="8,3">
-                        <TextBlock Foreground="{StaticResource BrushText}" Text="{Binding Subject}" TextTrimming="CharacterEllipsis" />
-                        <TextBlock Foreground="{StaticResource BrushTextMuted}" FontSize="10" Text="{Binding Author}" />
+                        <TextBlock Foreground="{StaticResource BrushText}"
+                                   Text="{Binding Subject}"
+                                   TextTrimming="CharacterEllipsis" />
+
+                        <TextBlock Foreground="{StaticResource BrushTextMuted}"
+                                   FontSize="10"
+                                   Text="{Binding Author}" />
                     </StackPanel>
                 </DataTemplate>
             </ListBox.ItemTemplate>

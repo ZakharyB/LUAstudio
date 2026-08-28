@@ -42,7 +42,7 @@ public sealed class GitStatusService : IGitStatusService
             var repositories = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (var root in _workspace.Roots)
             {
-                var repository = (await RunAsync(root.Path, "rev-parse --show-toplevel", cancellationToken).ConfigureAwait(false)).Trim();
+                var repository = (await RunAsync(root.FullPath, "rev-parse --show-toplevel", cancellationToken).ConfigureAwait(false)).Trim();
                 if (string.IsNullOrWhiteSpace(repository) || !Directory.Exists(repository) || !repositories.Add(repository))
                 {
                     continue;
