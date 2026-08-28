@@ -657,9 +657,15 @@ public partial class DocumentEditorView : UserControl, IDisposable
 
     private static bool IsIdentifierCharacter(char value) => char.IsLetterOrDigit(value) || value == '_';
 
-    private async void GoToSymbol_Click(object sender, RoutedEventArgs e)
+    private async void GoToDeclaration_Click(object sender, RoutedEventArgs e) =>
+        await NavigateToSymbolAsync((sender as MenuItem)?.Tag as Symbol);
+
+    private async void GoToImplementation_Click(object sender, RoutedEventArgs e) =>
+        await NavigateToSymbolAsync((sender as MenuItem)?.Tag as Symbol);
+
+    private async Task NavigateToSymbolAsync(Symbol? symbol)
     {
-        if ((sender as MenuItem)?.Tag is not Symbol symbol || _documentService is null || _navigationService is null)
+        if (symbol is null || _documentService is null || _navigationService is null)
             return;
 
         var path = symbol.ContainingFilePath ?? _boundCustomDocument?.FilePath;

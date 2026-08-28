@@ -1,4 +1,5 @@
 using LUAstudio.IntelliSense.Roblox;
+using LUAstudio.IntelliSense.Semantic;
 using LUAstudio.Languages.Syntax.Nodes;
 
 namespace LUAstudio.IntelliSense;
@@ -8,8 +9,13 @@ public sealed record SignatureInfo(string Label, string? Documentation, int Para
 public sealed class SignatureHelpService
 {
     private readonly IRobloxApiDatabase _roblox;
+    private readonly ExpressionTypeResolver _types;
 
-    public SignatureHelpService(IRobloxApiDatabase roblox) => _roblox = roblox;
+    public SignatureHelpService(IRobloxApiDatabase roblox, ExpressionTypeResolver types)
+    {
+        _roblox = roblox;
+        _types = types;
+    }
 
     public async Task<SignatureInfo?> GetSignatureAsync(
         Completion.CompletionContext context,
@@ -17,15 +23,19 @@ public sealed class SignatureHelpService
     {
         await _roblox.EnsureLoadedAsync(cancellationToken).ConfigureAwait(false);
 
-        if (context.NodeAtCaret is not CallExpressionSyntax call)
+        var call = context.NodeAtCaret;
+        while (call is not null && call is not CallExpressionSyntax)
+            call = call.Parent;
+        if (call is not CallExpressionSyntax callExpression)
         {
             return null;
         }
 
-        if (call.Target is MemberAccessExpressionSyntax member &&
-            _roblox.TryGetMember("Instance", member.Member.Text, out var m))
+        if (callExpression.Target is MemberAccessExpressionSyntax member &&
+            _types.ResolveType(member.Expression, context.SemanticModel?.RootScope) is { } calleeType &&
+            _roblox.TryGetMember(calleeType, member.Member.Text, out var m))
         {
-            var paramIndex = CountCommas(context.Snapshot.Content, context.CaretOffset);
+            var paramIndex = CountCommas(context.Snapshot.Content, callExpression.Span.Start, context.CaretOffset);
             return new SignatureInfo(
                 $"{member.Member.Text}({string.Join(", ", m.Parameters ?? [])})",
                 m.Documentation,
@@ -35,11 +45,11 @@ public sealed class SignatureHelpService
         return null;
     }
 
-    private static int CountCommas(string text, int offset)
+    private static int CountCommas(string text, int callStart, int offset)
     {
         var depth = 0;
         var commas = 0;
-        for (var i = 0; i < offset && i < text.Length; i++)
+        for (var i = Math.Max(0, callStart); i < offset && i < text.Length; i++)
         {
             switch (text[i])
             {

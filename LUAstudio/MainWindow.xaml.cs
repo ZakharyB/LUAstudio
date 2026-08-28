@@ -16,6 +16,7 @@ using LUAstudio.IDE.Documents;
 using AvalonDock;
 using AvalonDock.Layout;
 using AvalonDock.Themes;
+using System.Reflection;
 
 namespace LUAstudio;
 
@@ -363,6 +364,36 @@ public partial class MainWindow
         }
 
         EnsureDockDefaults();
+    }
+
+    private void ToggleExplorer_OnClick(object sender, RoutedEventArgs e) =>
+        ToggleAnchorable("Explorer", (sender as MenuItem)?.IsChecked == true);
+
+    private void ToggleOutput_OnClick(object sender, RoutedEventArgs e) =>
+        ToggleAnchorable("Output", (sender as MenuItem)?.IsChecked == true);
+
+    private void ToggleAnchorable(string contentId, bool show)
+    {
+        var pane = FindAnchorable(contentId);
+        if (pane is null) return;
+        if (show)
+        {
+            pane.Show();
+            pane.IsSelected = true;
+        }
+        else
+        {
+            pane.Hide();
+        }
+    }
+
+    private void KeyboardShortcuts_OnClick(object sender, RoutedEventArgs e) =>
+        ShellInfoWindow.ShowShortcuts(this);
+
+    private void About_OnClick(object sender, RoutedEventArgs e)
+    {
+        var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "development";
+        ShellInfoWindow.ShowAbout(this, version);
     }
 
     private async void OnClosing(object? sender, CancelEventArgs e)

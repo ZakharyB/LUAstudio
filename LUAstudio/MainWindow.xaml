@@ -92,7 +92,16 @@
                                 <MenuItem Header="{DynamicResource OpenFolder}"
                                           Command="{Binding Explorer.AddWorkspaceRootCommand}" />
 
-                                <MenuItem Header="{DynamicResource Recent}" />
+                                <MenuItem Header="{DynamicResource Recent}" ItemsSource="{Binding RecentFiles}">
+                                    <MenuItem.ItemContainerStyle>
+                                        <Style TargetType="MenuItem">
+                                            <Setter Property="Header" Value="{Binding DisplayName}" />
+                                            <Setter Property="ToolTip" Value="{Binding FullPath}" />
+                                            <Setter Property="Command" Value="{Binding DataContext.OpenRecentCommand, ElementName=RootShell}" />
+                                            <Setter Property="CommandParameter" Value="{Binding}" />
+                                        </Style>
+                                    </MenuItem.ItemContainerStyle>
+                                </MenuItem>
 
                                 <Separator />
 
@@ -118,8 +127,6 @@
                                 <MenuItem Header="{DynamicResource Plugins}"
                                           Click="OpenPlugins_OnClick" />
 
-                                <MenuItem Header="{DynamicResource BetaFeatures}" />
-
                                 <Separator />
 
                                 <MenuItem Header="{DynamicResource Close}"
@@ -131,20 +138,25 @@
                             <MenuItem Header="{DynamicResource Edit}">
 
                                 <MenuItem Header="{DynamicResource Undo}"
+                                          Command="{x:Static ApplicationCommands.Undo}"
                                           InputGestureText="Ctrl+Z" />
 
                                 <MenuItem Header="{DynamicResource Redo}"
+                                          Command="{x:Static ApplicationCommands.Redo}"
                                           InputGestureText="Ctrl+Y" />
 
                                 <Separator />
 
                                 <MenuItem Header="{DynamicResource Cut}"
+                                          Command="{x:Static ApplicationCommands.Cut}"
                                           InputGestureText="Ctrl+X" />
 
                                 <MenuItem Header="{DynamicResource Copy}"
+                                          Command="{x:Static ApplicationCommands.Copy}"
                                           InputGestureText="Ctrl+C" />
 
                                 <MenuItem Header="{DynamicResource Paste}"
+                                          Command="{x:Static ApplicationCommands.Paste}"
                                           InputGestureText="Ctrl+V" />
 
                                 <Separator />
@@ -161,17 +173,17 @@
                                           Click="ResetDockLayout_OnClick" />
 
                                 <MenuItem Header="{DynamicResource Explorer}"
-                                          IsEnabled="False" />
+                                          IsCheckable="True" IsChecked="True" Click="ToggleExplorer_OnClick" />
 
                                 <MenuItem Header="{DynamicResource Output}"
-                                          IsEnabled="False" />
+                                          IsCheckable="True" IsChecked="True" Click="ToggleOutput_OnClick" />
                             </MenuItem>
 
 
                             <MenuItem Header="{DynamicResource Selection}">
 
                                 <MenuItem Header="{DynamicResource SelectAll}"
-                                          IsEnabled="False"
+                                          Command="{x:Static ApplicationCommands.SelectAll}"
                                           InputGestureText="Ctrl+A" />
 
                                 <MenuItem Header="{DynamicResource ExpandSelection}"
@@ -212,12 +224,12 @@
                                           IsEnabled="False" />
 
                                 <MenuItem Header="{DynamicResource KeyboardShortcuts}"
-                                          IsEnabled="False" />
+                                          Click="KeyboardShortcuts_OnClick" />
 
                                 <Separator />
 
                                 <MenuItem Header="{DynamicResource AboutLuaStudio}"
-                                          IsEnabled="False" />
+                                          Click="About_OnClick" />
                             </MenuItem>
 
                         </Menu>

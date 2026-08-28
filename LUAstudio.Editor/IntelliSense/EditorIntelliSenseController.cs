@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Controls.Primitives;
 using ICSharpCode.AvalonEdit;
 using ICSharpCode.AvalonEdit.CodeCompletion;
 using ICSharpCode.AvalonEdit.Editing;
@@ -34,6 +35,8 @@ public sealed class EditorIntelliSenseController : IDisposable
     private readonly AutoPairInsertService _autoPairs;
     private readonly IRobloxApiDatabase _roblox;
     private readonly ExpressionTypeResolver _typeResolver;
+    private readonly HoverInfoService _hover;
+    private readonly SignatureHelpService _signatureHelp;
     private LuaSyntaxHighlighting? _syntaxHighlight;
     private SemanticHighlightingClassifier? _semanticHighlight;
     private TextEditor? _editor;
@@ -44,6 +47,8 @@ public sealed class EditorIntelliSenseController : IDisposable
     private int _popupSelectionIndex;
     private string? _filePath;
     private LuaDialect _dialect;
+    private ToolTip? _hoverTip;
+    private Popup? _signaturePopup;
 
     public EditorIntelliSenseController(
         ICompletionService completion,
@@ -55,7 +60,9 @@ public sealed class EditorIntelliSenseController : IDisposable
         SmartEnterHandler smartEnter,
         AutoPairInsertService autoPairs,
         IRobloxApiDatabase roblox,
-        ExpressionTypeResolver typeResolver)
+        ExpressionTypeResolver typeResolver,
+        HoverInfoService hover,
+        SignatureHelpService signatureHelp)
     {
         _completion = completion;
         _analysis = analysis;
@@ -67,6 +74,8 @@ public sealed class EditorIntelliSenseController : IDisposable
         _autoPairs = autoPairs;
         _roblox = roblox;
         _typeResolver = typeResolver;
+        _hover = hover;
+        _signatureHelp = signatureHelp;
 
         _eventBus.Subscribe<DocumentAnalyzedEvent>(OnDocumentAnalyzed);
     }
@@ -95,6 +104,8 @@ public sealed class EditorIntelliSenseController : IDisposable
         editor.TextArea.TextEntered += OnTextEntered;
         editor.TextArea.KeyDown += OnKeyDown;
         editor.TextChanged += OnEditorTextChanged;
+        editor.TextArea.TextView.MouseHover += OnMouseHover;
+        editor.TextArea.TextView.MouseHoverStopped += OnMouseHoverStopped;
 
         var snapshot = _snapshots.UpdateContent(documentId, editor.Document.Text, filePath, dialect);
         _analysis.RequestAnalysis(snapshot);
@@ -119,6 +130,8 @@ public sealed class EditorIntelliSenseController : IDisposable
         _editor.TextArea.TextEntered -= OnTextEntered;
         _editor.TextArea.KeyDown -= OnKeyDown;
         _editor.TextChanged -= OnEditorTextChanged;
+        _editor.TextArea.TextView.MouseHover -= OnMouseHover;
+        _editor.TextArea.TextView.MouseHoverStopped -= OnMouseHoverStopped;
 
         if (_semanticHighlight is not null)
         {
@@ -135,6 +148,7 @@ public sealed class EditorIntelliSenseController : IDisposable
         _inline.Detach();
         _smartEnter.Detach();
         _autoPairs.Detach();
+        CloseIntelligencePopups();
         CloseCompletion();
         _snippetSession?.Dispose();
         _snippetSession = null;
@@ -198,6 +212,11 @@ public sealed class EditorIntelliSenseController : IDisposable
             return;
         }
 
+        if (e.Text is "(" or ",")
+            await ShowSignatureHelpAsync().ConfigureAwait(false);
+        else if (e.Text == ")")
+            _mainThread.Send(CloseSignatureHelp);
+
         if (IsEnabled(SettingKeys.EditorAutoComplete) && ShouldTriggerCompletion(e.Text))
         {
             await ShowCompletionPopupAsync(selectIndex: 0).ConfigureAwait(false);
@@ -206,6 +225,75 @@ public sealed class EditorIntelliSenseController : IDisposable
         {
             _inline.OnTextChanged();
         }
+    }
+
+    private async void OnMouseHover(object? sender, MouseEventArgs e)
+    {
+        if (_editor is null) return;
+        var position = _editor.GetPositionFromPoint(e.GetPosition(_editor));
+        if (position is null) return;
+        var offset = _editor.Document.GetOffset(position.Value.Location);
+        var context = CreateContext(offset);
+        if (context is null) return;
+        var info = await _hover.GetHoverAsync(context).ConfigureAwait(false);
+        if (string.IsNullOrWhiteSpace(info)) return;
+        _mainThread.Send(() =>
+        {
+            if (_editor is null) return;
+            _hoverTip = new ToolTip { Content = new TextBlock { Text = info, TextWrapping = TextWrapping.Wrap, MaxWidth = 440 } };
+            _editor.ToolTip = _hoverTip;
+            _hoverTip.IsOpen = true;
+        });
+    }
+
+    private void OnMouseHoverStopped(object? sender, MouseEventArgs e)
+    {
+        if (_hoverTip is not null) _hoverTip.IsOpen = false;
+        if (_editor is not null) _editor.ToolTip = null;
+        _hoverTip = null;
+    }
+
+    private async Task ShowSignatureHelpAsync()
+    {
+        if (_editor is null) return;
+        var context = CreateContext(_editor.CaretOffset);
+        if (context is null) return;
+        var signature = await _signatureHelp.GetSignatureAsync(context).ConfigureAwait(false);
+        if (signature is null) return;
+        _mainThread.Send(() =>
+        {
+            if (_editor is null) return;
+            var text = signature.Documentation is null ? signature.Label : $"{signature.Label}\n{signature.Documentation}";
+            _signaturePopup ??= new Popup { Placement = PlacementMode.Relative, PlacementTarget = _editor.TextArea, AllowsTransparency = true };
+            _signaturePopup.Child = new Border
+            {
+                Background = new SolidColorBrush(Color.FromRgb(0x1F, 0x20, 0x23)), BorderBrush = new SolidColorBrush(Color.FromRgb(0x3A, 0x3D, 0x44)),
+                BorderThickness = new Thickness(1), Padding = new Thickness(8),
+                Child = new TextBlock { Text = text, Foreground = Brushes.White, MaxWidth = 520, TextWrapping = TextWrapping.Wrap }
+            };
+            var caret = _editor.TextArea.Caret.CalculateCaretRectangle();
+            _signaturePopup.HorizontalOffset = caret.Left;
+            _signaturePopup.VerticalOffset = caret.Bottom + 4;
+            _signaturePopup.IsOpen = true;
+        });
+    }
+
+    private CompletionContext? CreateContext(int offset)
+    {
+        var snapshot = _snapshots.GetSnapshot(_documentId);
+        return snapshot is null ? null : new CompletionContext(snapshot, offset, _analysis.GetLatestResult(_documentId)?.SemanticModel, string.Empty);
+    }
+
+    private void CloseSignatureHelp()
+    {
+        if (_signaturePopup is not null) _signaturePopup.IsOpen = false;
+    }
+
+    private void CloseIntelligencePopups()
+    {
+        OnMouseHoverStopped(this, null!);
+        CloseSignatureHelp();
+        _signaturePopup = null;
     }
 
     private async void OnKeyDown(object? sender, KeyEventArgs e)

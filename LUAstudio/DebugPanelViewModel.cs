@@ -62,7 +62,7 @@ public sealed partial class DebugPanelViewModel : ObservableObject
 
     public ObservableCollection<StackFrameInfo> StackFrames { get; } = new();
 
-    public ObservableCollection<VariableInfo> Variables { get; } = new();
+    public ObservableCollection<VariableNode> Variables { get; } = new();
 
     public ObservableCollection<string> OutputLog { get; } = new();
 
@@ -456,7 +456,7 @@ public sealed partial class DebugPanelViewModel : ObservableObject
                 var vars = await _client.GetVariablesAsync(_sessionId, scope.VariablesReference);
                 foreach (var v in vars)
                 {
-                    Variables.Add(v);
+                    Variables.Add(await CreateVariableNodeAsync(v, 0));
                 }
             }
         }
@@ -464,6 +464,18 @@ public sealed partial class DebugPanelViewModel : ObservableObject
         {
             OutputLog.Add($"Error getting variables: {ex.Message}");
         }
+    }
+
+    private async Task<VariableNode> CreateVariableNodeAsync(VariableInfo variable, int depth)
+    {
+        var node = new VariableNode(variable.Name, variable.Value, variable.TypeName);
+        if (_client is null || variable.VariablesReference is not > 0 || depth >= 8)
+            return node;
+
+        var children = await _client.GetVariablesAsync(_sessionId, variable.VariablesReference.Value);
+        foreach (var child in children)
+            node.Children.Add(await CreateVariableNodeAsync(child, depth + 1));
+        return node;
     }
 
     [RelayCommand]
@@ -620,7 +632,10 @@ public sealed partial class DebugPanelViewModel : ObservableObject
 
         foreach (var bp in _breakpoints.Breakpoints.OrderBy(b => b.SourcePath).ThenBy(b => b.Line))
         {
-            Breakpoints.Add(new BreakpointListItem(bp.SourcePath, bp.Line));
+            var spec = _breakpoints.GetBreakpointGroups()
+                .FirstOrDefault(group => string.Equals(group.SourcePath, bp.SourcePath, StringComparison.OrdinalIgnoreCase))
+                .Breakpoints?.FirstOrDefault(candidate => candidate.Line == bp.Line);
+            Breakpoints.Add(new BreakpointListItem(bp.SourcePath, bp.Line, spec?.Condition, spec?.HitCount));
         }
     }
 
@@ -662,4 +677,16 @@ public sealed partial class DebugPanelViewModel : ObservableObject
     }
 }
 
-public sealed record BreakpointListItem(string? SourcePath, int Line);
+public sealed record BreakpointListItem(string? SourcePath, int Line, string? Condition, int? HitCount);
+
+public sealed class VariableNode
+{
+    public VariableNode(string name, string value, string typeName)
+    {
+        Name = name; Value = value; TypeName = typeName;
+    }
+    public string Name { get; }
+    public string Value { get; }
+    public string TypeName { get; }
+    public ObservableCollection<VariableNode> Children { get; } = new();
+}

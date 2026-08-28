@@ -19,6 +19,7 @@ public sealed partial class MainViewModel : ObservableObject, IFileSystemActivit
     private readonly IUserPromptService _prompts;
     private readonly IWorkspaceService _workspace;
     private readonly IAppLogger _logger;
+    private readonly IRecentFilesService _recentFiles;
     private TextDocument? _hookedDocument;
 
     public MainViewModel(
@@ -26,6 +27,7 @@ public sealed partial class MainViewModel : ObservableObject, IFileSystemActivit
         IFileDialogService fileDialogs,
         IUserPromptService prompts,
         IWorkspaceService workspace,
+        IRecentFilesService recentFiles,
         IAppLogger logger,
         WorkspaceExplorerViewModel explorer)
     {
@@ -33,6 +35,7 @@ public sealed partial class MainViewModel : ObservableObject, IFileSystemActivit
         _fileDialogs = fileDialogs;
         _prompts = prompts;
         _workspace = workspace;
+        _recentFiles = recentFiles;
         _logger = logger;
         Explorer = explorer;
 
@@ -51,6 +54,7 @@ public sealed partial class MainViewModel : ObservableObject, IFileSystemActivit
     public WorkspaceExplorerViewModel Explorer { get; }
 
     public ObservableCollection<TextDocument> OpenDocuments => _documents.Documents;
+    public ObservableCollection<RecentFileItem> RecentFiles { get; } = new();
 
     public TextDocument? ActiveDocument
     {
@@ -89,6 +93,7 @@ public sealed partial class MainViewModel : ObservableObject, IFileSystemActivit
     {
         RestoreWorkspaceOnStartup = await _workspace.GetRestoreWorkspaceRootsAsync().ConfigureAwait(true);
         await _workspace.LoadAsync().ConfigureAwait(true);
+        await RefreshRecentFilesAsync().ConfigureAwait(true);
     }
 
     void IFileSystemActivitySink.ReportFileSystemActivity(string? message)
@@ -151,11 +156,37 @@ public sealed partial class MainViewModel : ObservableObject, IFileSystemActivit
         try
         {
             await _documents.OpenFromPathAsync(path).ConfigureAwait(true);
+            await _recentFiles.RecordFileOpenedAsync(path).ConfigureAwait(true);
+            await RefreshRecentFilesAsync().ConfigureAwait(true);
         }
         catch (Exception ex)
         {
             _prompts.ShowError($"Could not open file:{Environment.NewLine}{ex.Message}");
         }
+    }
+
+    [RelayCommand]
+    private async Task OpenRecentAsync(RecentFileItem? item)
+    {
+        if (item is null) return;
+        try
+        {
+            await _documents.OpenFromPathAsync(item.FullPath).ConfigureAwait(true);
+            await _recentFiles.RecordFileOpenedAsync(item.FullPath).ConfigureAwait(true);
+            await RefreshRecentFilesAsync().ConfigureAwait(true);
+        }
+        catch (Exception ex)
+        {
+            _prompts.ShowError($"Could not open file:{Environment.NewLine}{ex.Message}");
+        }
+    }
+
+    private async Task RefreshRecentFilesAsync()
+    {
+        var paths = await _recentFiles.GetRecentFilesAsync().ConfigureAwait(true);
+        RecentFiles.Clear();
+        foreach (var path in paths)
+            RecentFiles.Add(new RecentFileItem(path, Path.GetFileName(path)));
     }
 
     [RelayCommand]
@@ -305,3 +336,5 @@ public sealed partial class MainViewModel : ObservableObject, IFileSystemActivit
         }
     }
 }
+
+public sealed record RecentFileItem(string FullPath, string DisplayName);
