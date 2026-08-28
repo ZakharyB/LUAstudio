@@ -6,10 +6,12 @@ namespace LUAstudio.IDE.Services;
 public sealed class ExplorerNodeDecorationProvider : IExplorerNodeDecorationProvider
 {
     private readonly IDocumentService _documents;
+    private readonly IGitDecorationProvider _git;
 
-    public ExplorerNodeDecorationProvider(IDocumentService documents)
+    public ExplorerNodeDecorationProvider(IDocumentService documents, IGitDecorationProvider git)
     {
         _documents = documents;
+        _git = git;
     }
 
     public ExplorerNodeDecoration GetDecoration(FileSystemEntryNode node)
@@ -23,7 +25,7 @@ public sealed class ExplorerNodeDecorationProvider : IExplorerNodeDecorationProv
         string? tooltip = null;
         var showModifiedDot = false;
         var hasError = false;
-        string? gitGlyph = null;
+        var gitGlyph = _git.GetGlyph(node.FullPath);
 
         var doc = _documents.Documents.FirstOrDefault(d =>
             d.FilePath is not null &&
@@ -53,8 +55,11 @@ public sealed class ExplorerNodeDecorationProvider : IExplorerNodeDecorationProv
             // ignore IO errors for decoration
         }
 
-        // Git integration placeholder — wired when LUAstudio.Git is available.
-        // gitGlyph examples: "M", "A", "?", "U"
+        var gitToolTip = _git.GetToolTip(node.FullPath);
+        if (!string.IsNullOrEmpty(gitToolTip))
+        {
+            tooltip = string.IsNullOrEmpty(tooltip) ? gitToolTip : $"{tooltip}; {gitToolTip}";
+        }
 
         return new ExplorerNodeDecoration(
             badgeParts.Count > 0 ? string.Join(' ', badgeParts) : null,

@@ -4,6 +4,7 @@ using System.ComponentModel;
 using LUAstudio.Abstractions;
 using LUAstudio.Core;
 using LUAstudio.Core.Logging;
+using LUAstudio.Core.Threading;
 using LUAstudio.IDE.Documents;
 using LUAstudio.IDE.Explorer;
 using LUAstudio.IDE.Services;
@@ -22,6 +23,7 @@ public sealed partial class WorkspaceExplorerViewModel : ObservableObject
     private readonly IUserPromptService _prompts;
     private readonly IExplorerShellService _shell;
     private readonly IExplorerNodeDecorationProvider _decorations;
+    private readonly IMainThread _mainThread;
     private CancellationTokenSource? _filterDebounceCts;
 
     public WorkspaceExplorerViewModel(
@@ -31,7 +33,9 @@ public sealed partial class WorkspaceExplorerViewModel : ObservableObject
         IAppLogger logger,
         IUserPromptService prompts,
         IExplorerShellService shell,
-        IExplorerNodeDecorationProvider decorations)
+        IExplorerNodeDecorationProvider decorations,
+        IGitDecorationProvider gitDecorations,
+        IMainThread mainThread)
     {
         _workspace = workspace;
         _documents = documents;
@@ -40,6 +44,9 @@ public sealed partial class WorkspaceExplorerViewModel : ObservableObject
         _prompts = prompts;
         _shell = shell;
         _decorations = decorations;
+        _mainThread = mainThread;
+        gitDecorations.DecorationsChanged += (_, _) =>
+            _mainThread.Send(() => _decorations.RefreshAll(RootNodes));
         RootNodes.CollectionChanged += OnRootNodesChanged;
         _documents.Documents.CollectionChanged += OnDocumentsCollectionChanged;
         foreach (var doc in _documents.Documents)

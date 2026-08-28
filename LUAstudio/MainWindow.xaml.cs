@@ -17,6 +17,7 @@ using AvalonDock;
 using AvalonDock.Layout;
 using AvalonDock.Themes;
 using System.Reflection;
+using LUAstudio.Git;
 
 namespace LUAstudio;
 
@@ -78,7 +79,8 @@ public partial class MainWindow
         DebugPanelViewModel debugPanelViewModel,
         DebugSessionCoordinator debugCoordinator,
         IBreakpointService breakpointService,
-        IDebugEditorNavigation debugNavigation)
+        IDebugEditorNavigation debugNavigation,
+        SourceControlViewModel sourceControl)
     {
         _debugCoordinator = debugCoordinator;
         _breakpointService = breakpointService;
@@ -88,6 +90,8 @@ public partial class MainWindow
         DebugPanelViewModel = debugPanelViewModel;
         DebugPanelViewModel.Configure(debugCoordinator, breakpointService, debugNavigation);
         DebugPanel.DataContext = DebugPanelViewModel;
+        SourceControlPanel.DataContext = sourceControl;
+        _ = sourceControl.InitializeAsync();
         Loaded += OnLoaded;
         Closing += OnClosing;
         SourceInitialized += OnSourceInitialized;
@@ -318,6 +322,8 @@ public partial class MainWindow
             explorer.IsSelected = true;
             explorer.Show();
         }
+
+        FindAnchorable("SourceControl")?.Show();
 
         FindAnchorable("Problems")?.Show();
         var output = FindAnchorable("Output");

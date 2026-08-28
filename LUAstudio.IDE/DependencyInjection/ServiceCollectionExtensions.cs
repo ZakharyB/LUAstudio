@@ -11,6 +11,7 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddLuaStudioIde(this IServiceCollection services)
     {
         services.AddSingleton<IDocumentService, DocumentService>();
+        services.AddSingleton<IGitDecorationProvider, NullGitDecorationProvider>();
         services.AddSingleton<IExplorerNodeDecorationProvider, ExplorerNodeDecorationProvider>();
         services.AddSingleton<WorkspaceExplorerViewModel>();
         services.AddSingleton<MainViewModel>();

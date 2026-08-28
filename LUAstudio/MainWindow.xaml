@@ -28,6 +28,7 @@
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
         <conv:InverseBooleanToVisibilityConverter x:Key="InverseBoolToVisibility" />
+        <local:StageButtonTextConverter x:Key="StageButtonTextConverter" />
     </Window.Resources>
     <Window.InputBindings>
         <KeyBinding Key="N" Modifiers="Control" Command="{Binding NewDocumentCommand}" />
@@ -287,6 +288,14 @@
                                 CanHide="True"
                                 CanAutoHide="True">
                             <local:WorkspaceExplorerView DataContext="{Binding Explorer}" />
+                        </dock:LayoutAnchorable>
+                        <dock:LayoutAnchorable
+                            Title="Source Control"
+                            ContentId="SourceControl"
+                            CanClose="False"
+                            CanHide="True"
+                            CanAutoHide="True">
+                            <local:SourceControlView x:Name="SourceControlPanel" />
                         </dock:LayoutAnchorable>
                     </dock:LayoutAnchorablePane>
                     <dock:LayoutPanel Orientation="Vertical">
